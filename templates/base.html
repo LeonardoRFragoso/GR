@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Meta tag para CSRF token - importante para requisições AJAX -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}Sistema de Atendimento{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='assets/favicon.png') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% block body %}{% endblock %}
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Script de proteção CSRF para todas as páginas -->
+    <script src="{{ url_for('static', filename='js/csrf_protection.js') }}"></script>
+    
+    <!-- Incluir o gerenciador de sessão apenas para páginas autenticadas -->
+    {% if 'user' in session %}
+        {% include 'includes/session_manager.html' %}
+    {% endif %}
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

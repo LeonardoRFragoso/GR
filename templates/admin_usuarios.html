@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Usuários - Administração</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        /* Estilização da barra lateral */
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+            color: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover {
+            color: white;
+            background-color: rgba(255,255,255,0.1);
+        }
+        .nav-link.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .section-title {
+            border-left: 4px solid #007bff;
+            padding-left: 10px;
+            margin-bottom: 20px;
+        }
+        .badge-gr {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .badge-admin {
+            background-color: #dc3545;
+            color: white;
+        }
+        .badge-comum {
+            background-color: #28a745;
+            color: white;
+        }
+        .main-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .main-card:hover {
+            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            padding: 15px 20px;
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(13, 110, 253, 0.05);
+        }
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        .btn-action i {
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar p-0">
+                <div class="p-3 text-center mb-4">
+                    <h4>AutoSAT</h4>
+                    <p class="small mb-0">Painel Administrativo</p>
+                </div>
+                <div class="nav flex-column">
+                    <a href="{{ url_for('admin.admin_dashboard') }}" class="nav-link p-3">
+                        <i class="fas fa-chart-line me-2"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('admin.usuarios') }}" class="nav-link p-3 active">
+                        <i class="fas fa-users me-2"></i> Usuários
+                    </a>
+                    <a href="{{ url_for('admin.solicitacoes') }}" class="nav-link p-3">
+                        <i class="fas fa-user-plus me-2"></i> Solicitações
+                        {% if total_pendentes > 0 %}
+                        <span class="badge bg-danger rounded-pill">{{ total_pendentes }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="{{ url_for('admin.logs') }}" class="nav-link p-3">
+                        <i class="fas fa-history me-2"></i> Logs
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}" class="nav-link p-3">
+                        <i class="fas fa-sign-out-alt me-2"></i> Sair
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Content -->
+            <div class="col-md-10 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="section-title">
+                        <i class="fas fa-users me-2 text-primary"></i> Gestão de Usuários
+                    </h2>
+                    <div>
+                        <span class="badge bg-secondary">{{ session.user }}</span>
+                        <span class="badge badge-admin">Admin</span>
+                    </div>
+                </div>
+                
+                <!-- Modo de Lista de Usuários -->
+                <div class="main-card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Lista de Usuários</h5>
+                        <a href="{{ url_for('admin.novo_usuario') }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-2"></i> Novo Usuário
+                        </a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Usuário</th>
+                                        <th>Email</th>
+                                        <th>Nível</th>
+                                        <th>Senha Temporária</th>
+                                        <th>Último Acesso</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for usuario in usuarios %}
+                                    <tr>
+                                        <td>{{ usuario.id }}</td>
+                                        <td>{{ usuario.username }}</td>
+                                        <td>{{ usuario.email }}</td>
+                                        <td>
+                                            <span class="badge {% if usuario.nivel == 'admin' %}bg-danger{% elif usuario.nivel == 'gr' %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                                                {{ usuario.nivel }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if usuario.senha_temporaria == 1 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                                {% if usuario.senha_temporaria == 1 %}Sim{% else %}Não{% endif %}
+                                            </span>
+                                        </td>
+                                        <td>{{ usuario.last_login or 'Nunca acessou' }}</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <a href="{{ url_for('admin.editar_usuario', usuario_id=usuario.id) }}" class="btn btn-sm btn-outline-primary btn-action">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                {% if usuario.username != session.user %}
+                                                <button type="button" class="btn btn-sm btn-outline-danger btn-action" data-bs-toggle="modal" data-bs-target="#excluirModal{{ usuario.id }}">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    
+                                    <!-- Modal de confirmação de exclusão -->
+                                    <div class="modal fade" id="excluirModal{{ usuario.id }}" tabindex="-1" aria-labelledby="excluirModalLabel{{ usuario.id }}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-danger text-white">
+                                                    <h5 class="modal-title" id="excluirModalLabel{{ usuario.id }}">Confirmar Exclusão</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>Tem certeza que deseja excluir o usuário <strong>{{ usuario.username }}</strong>?</p>
+                                                    <p class="text-danger"><strong>Atenção:</strong> Esta ação não pode ser desfeita.</p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <form action="{{ url_for('admin.excluir_usuario', usuario_id=usuario.id) }}" method="post">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                        <button type="submit" class="btn btn-danger">Excluir</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        {% if not usuarios %}
+                        <div class="alert alert-info m-3">
+                            <i class="fas fa-info-circle"></i> Nenhum usuário encontrado.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

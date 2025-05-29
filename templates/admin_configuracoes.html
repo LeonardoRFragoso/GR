@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações do Sistema - Administração</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        /* Estilização da barra lateral */
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+            color: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover {
+            color: white;
+            background-color: rgba(255,255,255,0.1);
+        }
+        .nav-link.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            margin-bottom: 1.5rem;
+        }
+        .config-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .config-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Barra lateral -->
+            <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.admin_dashboard') }}">
+                                <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.usuarios') }}">
+                                <i class="fas fa-users me-2"></i> Usuários
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.solicitacoes') }}">
+                                <i class="fas fa-clipboard-list me-2"></i> Solicitações
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.logs') }}">
+                                <i class="fas fa-history me-2"></i> Logs
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.estatisticas') }}">
+                                <i class="fas fa-chart-bar me-2"></i> Estatísticas
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{{ url_for('admin.configuracoes') }}">
+                                <i class="fas fa-cogs me-2"></i> Configurações
+                            </a>
+                        </li>
+                        <li class="nav-item mt-3">
+                            <a class="nav-link text-danger" href="{{ url_for('admin.backup') }}">
+                                <i class="fas fa-database me-2"></i> Backup
+                            </a>
+                        </li>
+                        <li class="nav-item mt-3">
+                            <a class="nav-link" href="{{ url_for('index') }}">
+                                <i class="fas fa-home me-2"></i> Voltar ao Início
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Conteúdo principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2"><i class="fas fa-cogs"></i> Configurações do Sistema</h1>
+                </div>
+
+                <!-- Mensagens de alerta -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="card-title mb-0">Configurações Gerais</h5>
+                            </div>
+                            <div class="card-body">
+                                <form method="post" action="{{ url_for('admin.configuracoes') }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    
+                                    {% for config in configuracoes %}
+                                        <div class="config-item">
+                                            <div class="row align-items-center">
+                                                <div class="col-md-4">
+                                                    <label for="{{ config.chave }}" class="form-label fw-bold">{{ config.descricao }}</label>
+                                                    <small class="d-block text-muted">{{ config.chave }}</small>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    {% if config.tipo == 'booleano' %}
+                                                        <select class="form-select" id="{{ config.chave }}" name="{{ config.chave }}">
+                                                            <option value="true" {% if config.valor == 'true' %}selected{% endif %}>Sim</option>
+                                                            <option value="false" {% if config.valor == 'false' %}selected{% endif %}>Não</option>
+                                                        </select>
+                                                    {% elif config.tipo == 'numero' %}
+                                                        <input type="number" class="form-control" id="{{ config.chave }}" name="{{ config.chave }}" value="{{ config.valor }}">
+                                                    {% else %}
+                                                        <input type="text" class="form-control" id="{{ config.chave }}" name="{{ config.chave }}" value="{{ config.valor }}">
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col-md-2 text-end">
+                                                    <small class="text-muted">Última atualização:<br>{{ config.data_modificacao }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                    
+                                    <div class="mt-4 text-end">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-2"></i> Salvar Configurações
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="card-title mb-0">Informações do Sistema</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Versão do Sistema
+                                        <span class="badge bg-primary rounded-pill">1.0.0</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Banco de Dados
+                                        <span class="badge bg-success rounded-pill">SQLite</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Data de Instalação
+                                        <span>{{ datetime.now().strftime('%d/%m/%Y') }}</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="card-title mb-0">Ações do Sistema</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <a href="{{ url_for('admin.backup') }}" class="btn btn-outline-primary">
+                                        <i class="fas fa-database me-2"></i> Realizar Backup do Banco de Dados
+                                    </a>
+                                    
+                                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#limparLogsModal">
+                                        <i class="fas fa-trash-alt me-2"></i> Limpar Logs Antigos
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal para limpar logs -->
+    <div class="modal fade" id="limparLogsModal" tabindex="-1" aria-labelledby="limparLogsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="limparLogsModalLabel">Limpar Logs Antigos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <form action="{{ url_for('admin.limpar_logs') }}" method="post">
+                    <div class="modal-body">
+                        <p class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i> Esta ação removerá permanentemente logs antigos do sistema. Esta ação não pode ser desfeita.
+                        </p>
+                        <div class="mb-3">
+                            <label for="dias" class="form-label">Remover logs mais antigos que:</label>
+                            <select class="form-select" id="dias" name="dias">
+                                <option value="30">30 dias</option>
+                                <option value="60">60 dias</option>
+                                <option value="90" selected>90 dias</option>
+                                <option value="180">180 dias</option>
+                                <option value="365">1 ano</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger">Confirmar Limpeza</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

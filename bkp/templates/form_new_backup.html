@@ -1,0 +1,907 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Formulário de Atendimento | iTracker</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='assets/favicon.ico') }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .navbar {
+      background-color: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 0.5rem 1rem;
+    }
+    .navbar-brand img {
+      height: 28px;
+    }
+    .navbar-title {
+      font-size: 18px;
+      font-weight: 500;
+      color: #0d6efd;
+      margin-left: 8px;
+    }
+    .empty-field {
+      background-color: #fffde7; /* Amarelo claro para campos vazios */
+    }
+    .form-section {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .form-section-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid #dee2e6;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .form-section-header i {
+      color: #0d6efd;
+    }
+    .form-section-header h5 {
+      margin: 0;
+      font-weight: 500;
+      font-size: 16px;
+    }
+    .form-section-body {
+      padding: 16px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .form-item {
+      margin-bottom: 12px;
+    }
+    .form-label {
+      font-size: 14px;
+      margin-bottom: 4px;
+      font-weight: 500;
+      color: #343a40;
+    }
+    .required {
+      color: #dc3545;
+      margin-left: 3px;
+    }
+    .data-type-hint {
+      font-size: 11px;
+      background-color: #e9ecef;
+      color: #6c757d;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-left: 5px;
+      font-weight: normal;
+    }
+    .select-wrapper {
+      position: relative;
+    }
+    /* Removido o pseudo-elemento ::after que adicionava uma seta extra */
+    .select-wrapper select {
+      /* Mantemos o estilo do select, mas sem alterar a aparência padrão do Bootstrap */
+    }
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+    .observations-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    .file-upload-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .upload-area {
+      border: 2px dashed #ddd;
+      border-radius: 5px;
+      padding: 20px;
+      text-align: center;
+      background-color: #f8f9fa;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .upload-area:hover, .upload-area.dragover {
+      border-color: #007bff;
+      background-color: #e9f2ff;
+    }
+    .upload-placeholder {
+      color: #6c757d;
+      font-size: 14px;
+    }
+    .upload-placeholder i {
+      font-size: 20px;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .file-name {
+      margin-top: 10px;
+      font-size: 12px;
+      word-break: break-all;
+    }
+    @media (max-width: 768px) {
+      .form-grid, .file-upload-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    .submit-btn {
+      display: block;
+      width: 100%;
+      max-width: 300px;
+      margin: 0 auto;
+      padding: 10px;
+      background-color: #0d6efd;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-weight: 500;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">
+      <img src="{{ url_for('static', filename='assets/itracker_logo.png') }}" alt="Logo iTracker">
+      <span class="navbar-title">Novo Registro</span>
+    </a>
+    <a href="{% if session['nivel'] == 'gr' %}{{ url_for('gr.ambiente') }}{% else %}{{ url_for('comum.dashboard_comum') }}{% endif %}" class="btn btn-outline-primary btn-sm">
+      <i class="fas fa-arrow-left"></i> Voltar
+    </a>
+  </div>
+</nav>
+
+<div class="container mt-4 mb-4">
+  <form action="{{ url_for('comum.novo_registro') }}" method="post" enctype="multipart/form-data" autocomplete="off">
+    
+    <!-- SEÇÃO 1: Dados da Unidade -->
+    <div class="form-section">
+      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #0d6efd;">
+        <i class="fas fa-building text-primary"></i>
+        <h5>Dados da Unidade</h5>
+      </div>
+      <div class="form-section-body">
+        <div class="form-grid">
+          <!-- Unidade -->
+          <div class="form-item">
+            <label class="form-label">
+              UNIDADE{% if 'UNIDADE' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['UNIDADE']|default('Texto') }}</span>
+            </label>
+            <div class="select-wrapper">
+              <select name="CAVALO" class="form-select">
+                <option value="">Selecione</option>
+                {% for placa in COMBOBOX_OPTIONS.get('CAVALO', []) %}
+                  <option value="{{ placa }}">{{ placa }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          
+          <!-- Requisitante -->
+          <div class="form-item">
+            <label class="form-label">
+              Requisitante{% if 'Requisitante' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['Requisitante']|default('Texto') }}</span>
+            </label>
+            <input type="text" name="Requisitante" class="form-control" value="{{ usuario }}" readonly>
+          </div>
+          
+          <!-- O campo DATA foi removido do frontend conforme solicitado -->
+          <input type="hidden" name="DATA" value="{% if 'DATA' in valores %}{{ valores.DATA }}{% endif %}">
+        </div>
+      </div>
+    </div>
+    
+    <!-- SEÇÃO 2: Dados do Cliente -->
+    <div class="form-section">
+      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #28a745;">
+        <i class="fas fa-user-tie text-success"></i>
+        <h5>Dados do Cliente</h5>
+      </div>
+      <div class="form-section-body">
+        <div class="form-grid">
+          <!-- CLIENTE -->
+          <div class="form-item">
+            <label class="form-label">
+              CLIENTE{% if 'CLIENTE' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['CLIENTE']|default('Texto') }}</span>
+            </label>
+            <input type="text" name="CLIENTE" class="form-control">
+          </div>
+          
+          <!-- MODALIDADE -->
+          <div class="form-item">
+            <label class="form-label">
+              MODALIDADE{% if 'MODALIDADE' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['MODALIDADE']|default('Texto') }}</span>
+            </label>
+            <div class="select-wrapper">
+              <select name="MODALIDADE" class="form-select">
+                <option value="">Selecione</option>
+                {% for modalidade in COMBOBOX_OPTIONS.get('MODALIDADE', []) %}
+                  <option value="{{ modalidade }}">{{ modalidade }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          
+          <!-- PEDIDO/REFERÊNCIA -->
+          <div class="form-item">
+            <label class="form-label">
+              PEDIDO/REFERÊNCIA{% if 'PEDIDO/REFERÊNCIA' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['PEDIDO/REFERÊNCIA']|default('Texto') }}</span>
+            </label>
+            <input type="text" name="PEDIDO/REFERÊNCIA" class="form-control">
+          </div>
+          
+          <!-- BOOKING / DI -->
+          <div class="form-item">
+            <label class="form-label">
+              BOOKING / DI{% if 'BOOKING / DI' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['BOOKING / DI']|default('Texto') }}</span>
+            </label>
+            <input type="text" name="BOOKING / DI" class="form-control">
+          </div>
+          
+          <!-- CONTAINER 1 -->
+          <div class="form-item">
+            <label class="form-label">
+              CONTAINER 1{% if 'CONTAINER 1' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['CONTAINER 1']|default('Texto') }}</span>
+            </label>
+            <input type="text" name="CONTAINER 1" class="form-control">
+          </div>
+          
+          <!-- CONTAINER 2 -->
+          <div class="form-item">
+            <label class="form-label">
+              CONTAINER 2{% if 'CONTAINER 2' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['CONTAINER 2']|default('Texto') }}</span>
+            </label>
+            <input type="text" name="CONTAINER 2" class="form-control">
+          </div>
+          
+          <!-- LOTE CS -->
+          <div class="form-item">
+            <label class="form-label">
+              LOTE CS{% if 'LOTE CS' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['LOTE CS']|default('Texto') }}</span>
+            </label>
+            <input type="text" name="LOTE CS" class="form-control">
+          </div>
+          
+          <!-- STATUS CONTAINER -->
+          <div class="form-item">
+            <label class="form-label">
+              <label for="status_container">STATUS CONTAINER <span class="text-danger">*</span></label>
+              <span class="data-type-hint">{{ tipos['STATUS CONTAINER']|default('Texto') }}</span>
+            </label>
+            <div class="select-wrapper">
+              <select name="STATUS CONTAINER" class="form-select">
+                <option value="">Selecione</option>
+                {% for op in campos['STATUS CONTAINER'] %}
+                  <option value="{{ op }}">{{ op }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          
+          <!-- ORIGEM -->
+          <div class="form-item">
+            <label class="form-label">
+              ORIGEM <span class="required">*</span>
+              <span class="data-type-hint">{{ tipos['ORIGEM']|default('Texto') }}</span>
+            </label>
+            <input type="text" name="ORIGEM" class="form-control">
+          </div>
+          
+          <!-- DESTINO INTERMEDIÁRIO -->
+          <div class="form-item">
+            <label class="form-label">
+              DESTINO INTERMEDIÁRIO{% if 'DESTINO INTERMEDIÁRIO' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['DESTINO INTERMEDIÁRIO']|default('Texto') }}</span>
+            </label>
+            <input type="text" name="DESTINO INTERMEDIÁRIO" class="form-control">
+          </div>
+          
+          <!-- DESTINO FINAL -->
+          <div class="form-item">
+            <label class="form-label">
+              <label for="destino_final">DESTINO FINAL <span class="text-danger">*</span></label>
+              <span class="data-type-hint">{{ tipos['DESTINO FINAL']|default('Texto') }}</span>
+            </label>
+            <input type="text" name="DESTINO FINAL" class="form-control">
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- SEÇÃO 3: Dados da Operação -->
+    <div class="form-section">
+      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #fd7e14;">
+        <i class="fas fa-truck text-warning"></i>
+        <h5>Dados da Operação</h5>
+      </div>
+      <div class="form-section-body">
+        <div class="form-grid">
+          <!-- MOTORISTA -->
+          <div class="form-item">
+            <label class="form-label">
+              MOTORISTA{% if 'MOTORISTA' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['MOTORISTA']|default('Texto') }}</span>
+            </label>
+            <div class="select-wrapper">
+              <select name="MOTORISTA" id="motorista-select" class="form-select" onchange="atualizarCpfMotorista()">
+                <option value="">Selecione</option>
+                {% for motorista in COMBOBOX_OPTIONS.get('MOTORISTA', []) %}
+                  <option value="{{ motorista }}" data-cpf="{{ MOTORISTA_CPF_MAP.get(motorista, '') }}">{{ motorista }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          
+          <!-- CPF MOTORISTA -->
+          <div class="form-item">
+            <label class="form-label">
+              CPF MOTORISTA{% if 'CPF MOTORISTA' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['CPF MOTORISTA']|default('Texto') }}</span>
+            </label>
+            <input type="text" name="CPF MOTORISTA" id="cpf-motorista" class="form-control" readonly>
+          </div>
+          
+          <!-- CAVALO -->
+          <div class="form-item">
+            <label class="form-label">
+              CAVALO{% if 'CAVALO' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['CAVALO']|default('Texto') }}</span>
+            </label>
+            <div class="select-wrapper">
+              <select name="CAVALO" class="form-select">
+                <option value="">Selecione</option>
+                {% for placa in COMBOBOX_OPTIONS.get('CAVALO', []) %}
+                  <option value="{{ placa }}">{{ placa }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          
+          <!-- CARRETA 1 -->
+          <div class="form-item">
+            <label class="form-label">
+              CARRETA 1{% if 'CARRETA 1' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['CARRETA 1']|default('Texto') }}</span>
+            </label>
+            <div class="select-wrapper">
+              <select name="CARRETA 1" class="form-select" onchange="verificarCarreta2()">
+                <option value="">Selecione</option>
+                {% for carreta in COMBOBOX_OPTIONS.get('CARRETAS', []) %}
+                  <option value="{{ carreta }}">{{ carreta }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          
+          <!-- CARRETA 2 -->
+          <div class="form-item">
+            <label class="form-label">
+              CARRETA 2{% if 'CARRETA 2' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['CARRETA 2']|default('Texto') }}</span>
+            </label>
+            <div class="select-wrapper">
+              <select name="CARRETA 2" class="form-select">
+                <option value="">Selecione</option>
+                {% for carreta in COMBOBOX_OPTIONS.get('CARRETA 2', []) %}
+                  <option value="{{ carreta }}">{{ carreta }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          
+          <!-- TIPO DE CARGA -->
+          <div class="form-item">
+            <label class="form-label">
+              TIPO DE CARGA{% if 'TIPO DE CARGA' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['TIPO DE CARGA']|default('Texto') }}</span>
+            </label>
+            <div class="select-wrapper">
+              <select name="TIPO DE CARGA" class="form-select">
+                <option value="">Selecione</option>
+                {% for op in campos['TIPO DE CARGA'] %}
+                  <option value="{{ op }}">{{ op }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          
+          <!-- ON TIME (CLIENTE) -->
+          <div class="form-item">
+            <label class="form-label">
+              ON TIME (CLIENTE){% if 'ON TIME (CLIENTE)' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['ON TIME (CLIENTE)']|default('Data/Hora') }}</span>
+            </label>
+            <input type="datetime-local" name="ON TIME (CLIENTE)" class="form-control datetime-input" data-original-format="dd/mm/yyyy hh:mm">
+          </div>
+          
+          <!-- HORÁRIO PREVISTO DE INÍCIO -->
+          <div class="form-item">
+            <label class="form-label">
+              HORÁRIO PREVISTO DE INÍCIO{% if 'HORÁRIO PREVISTO DE INÍCIO' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['HORÁRIO PREVISTO DE INÍCIO']|default('Data/Hora') }}</span>
+            </label>
+            <input type="datetime-local" name="HORÁRIO PREVISTO DE INÍCIO" class="form-control datetime-input" data-original-format="dd/mm/yyyy hh:mm">
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- SEÇÃO 4: Dados de GR -->
+    {% if mostrar_campos_gr %}
+    <div class="form-section">
+      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #6c757d;">
+        <i class="fas fa-shield-alt text-secondary"></i>
+        <h5>Dados de GR</h5>
+      </div>
+      <div class="form-section-body">
+        <div class="form-grid">
+          <!-- GERENCIADORA -->
+          <div class="form-item">
+            <label class="form-label">
+              GERENCIADORA{% if 'GERENCIADORA' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['GERENCIADORA']|default('Texto') }}</span>
+            </label>
+            <div class="select-wrapper">
+              <select name="GERENCIADORA" class="form-select">
+                <option value="">Selecione</option>
+                {% for op in campos['GERENCIADORA'] %}
+                  <option value="{{ op }}">{{ op }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          
+          <!-- NÚMERO AE -->
+          <div class="form-item">
+            <label class="form-label">
+              NÚMERO AE{% if 'NÚMERO AE' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['NÚMERO AE']|default('Texto') }}</span>
+            </label>
+            <input type="text" name="NÚMERO AE" class="form-control">
+          </div>
+          
+          <!-- DT CRIACAO AE -->
+          <div class="form-item">
+            <label class="form-label">
+              DT CRIACAO AE{% if 'DT CRIACAO AE' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['DT CRIACAO AE']|default('Texto') }}</span>
+            </label>
+            <input type="text" name="DT CRIACAO AE" class="form-control">
+          </div>
+          
+          <!-- NUMERO SM -->
+          <div class="form-item">
+            <label class="form-label">
+              NUMERO SM{% if 'NUMERO SM' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['NUMERO SM']|default('Texto') }}</span>
+            </label>
+            <input type="text" name="NUMERO SM" class="form-control">
+          </div>
+          
+          <!-- DT CRIACAO SM -->
+          <div class="form-item">
+            <label class="form-label">
+              DT CRIACAO SM{% if 'DT CRIACAO SM' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+              <span class="data-type-hint">{{ tipos['DT CRIACAO SM']|default('Texto') }}</span>
+            </label>
+            <input type="text" name="DT CRIACAO SM" class="form-control">
+          </div>
+
+          <!-- STATUS SM (oculto, preenchido automaticamente) -->
+          <div class="form-item" style="display: none;">
+            <input type="hidden" name="STATUS SM" value="não">
+          </div>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <!-- Campos ocultos para usuários sem acesso a GR -->
+    <input type="hidden" name="GERENCIADORA" value="">
+    <input type="hidden" name="NÚMERO AE" value="">
+    <input type="hidden" name="DT CRIACAO AE" value="">
+    <input type="hidden" name="NUMERO SM" value="">
+    <input type="hidden" name="DT CRIACAO SM" value="">
+    <input type="hidden" name="STATUS SM" value="não">
+    {% endif %}
+    
+    <!-- Observações -->
+    <div class="form-section">
+      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #20c997;">
+        <i class="fas fa-comment-alt text-success"></i>
+        <h5>Observações</h5>
+      </div>
+      <div class="form-section-body">
+        <div class="observations-container">
+          <div class="observation-card">
+            <label class="form-label">Observação Operacional</label>
+            <textarea name="OBSERVACAO OPERACIONAL" class="form-control" rows="4"></textarea>
+          </div>
+          
+          {% if mostrar_campos_gr %}
+          <div class="observation-card">
+            <label class="form-label">Observação de Gestão de Risco</label>
+            <textarea name="OBSERVAÇÃO DE GR" class="form-control" rows="4"></textarea>
+          </div>
+          {% else %}
+          <input type="hidden" name="OBSERVAÇÃO DE GR" value="">
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Campos de upload (anexos) -->
+    <div class="form-section">
+      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #20c997;">
+        <i class="fas fa-file-upload text-success"></i>
+        <h5>Anexos</h5>
+      </div>
+      <div class="form-section-body">
+        <div class="file-upload-container">
+          <!-- Anexar NF -->
+          <div class="form-item">
+            <label class="form-label">ANEXAR NF <span class="data-type-hint">Arquivo</span></label>
+            <div class="upload-area" id="upload-nf">
+              <div class="upload-placeholder"><i class="fas fa-file-upload"></i> Arraste e solte ou clique para selecionar</div>
+              <input type="file" name="ANEXAR NF" class="form-control file-input" id="file-nf" style="opacity: 0; position: absolute;">
+            </div>
+          </div>
+          
+          <!-- Anexar OS -->
+          <div class="form-item">
+            <label class="form-label">ANEXAR OS <span class="data-type-hint">Arquivo</span></label>
+            <div class="upload-area" id="upload-os">
+              <div class="upload-placeholder"><i class="fas fa-file-upload"></i> Arraste e solte ou clique para selecionar</div>
+              <input type="file" name="ANEXAR OS" class="form-control file-input" id="file-os" style="opacity: 0; position: absolute;">
+            </div>
+          </div>
+          
+          <!-- Anexar Agendamento (Novo campo - só aparece se modalidade for CST) -->
+          <div class="form-item" id="anexo-agendamento" style="display: none;">
+            <label class="form-label">ANEXAR AGENDAMENTO <span class="data-type-hint">Arquivo</span></label>
+            <div class="upload-area" id="upload-agendamento">
+              <div class="upload-placeholder"><i class="fas fa-file-upload"></i> Arraste e solte ou clique para selecionar</div>
+              <input type="file" name="ANEXAR AGENDAMENTO" class="form-control file-input" id="file-agendamento" style="opacity: 0; position: absolute;">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="mt-5 text-center">
+      <button class="submit-btn" type="submit">
+        <i class="fas fa-save me-2"></i> Salvar Registro
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+  // Mapeamento de motoristas para CPFs
+  const MOTORISTA_CPF_MAP = {
+    {% for motorista, cpf in MOTORISTA_CPF_MAP.items() %}
+      "{{ motorista }}": "{{ cpf }}",
+    {% endfor %}
+  };
+
+  // Corrigir os campos do formulário quando a página carregar
+  document.addEventListener('DOMContentLoaded', function() {
+    // 1. Corrigir o campo UNIDADE (que tem name="CAVALO")
+    const campoUnidade = document.querySelector('select[name="CAVALO"]');
+    if (campoUnidade) {
+      // Limpar as opções existentes
+      while (campoUnidade.options.length > 1) {
+        campoUnidade.remove(1);
+      }
+      
+      // Adicionar as unidades corretas
+      const unidades = ['Rio de Janeiro', 'Floriano', 'Suzano'];
+      unidades.forEach(unidade => {
+        const option = document.createElement('option');
+        option.value = unidade;
+        option.textContent = unidade;
+        campoUnidade.appendChild(option);
+      });
+    }
+    
+    // 2. Corrigir o campo CARRETA 1 (que tem name="MOTORISTA")
+    const campoCarreta1 = document.querySelector('select[name="MOTORISTA"]');
+    if (campoCarreta1) {
+      // Salvar o evento onchange original
+      const onchangeOriginal = campoCarreta1.onchange;
+      
+      // Remover o evento onchange temporariamente
+      campoCarreta1.onchange = null;
+      
+      // Salvar as opções originais (motoristas)
+      const opcoesOriginais = [];
+      for (let i = 0; i < campoCarreta1.options.length; i++) {
+        opcoesOriginais.push({
+          value: campoCarreta1.options[i].value,
+          text: campoCarreta1.options[i].text
+        });
+      }
+      
+      // Limpar as opções existentes
+      while (campoCarreta1.options.length > 1) {
+        campoCarreta1.remove(1);
+      }
+      
+      // Adicionar as carretas corretas
+      const carretas = {{ COMBOBOX_OPTIONS.get('CARRETAS', [])|tojson }};
+      if (carretas && carretas.length > 0) {
+        carretas.forEach(carreta => {
+          const option = document.createElement('option');
+          option.value = carreta;
+          option.textContent = carreta;
+          campoCarreta1.appendChild(option);
+        });
+      }
+      
+      // Adicionar um novo evento onchange para verificar CARRETA 2
+      campoCarreta1.onchange = function() {
+        verificarCarreta2();
+      };
+    }
+    
+    // 3. Garantir que o campo CARRETA 2 só esteja disponível quando CARRETA 1 estiver preenchido
+    verificarCarreta2();
+    
+    // 4. Marcar o campo ORIGEM como obrigatório
+    const origemLabels = document.querySelectorAll('label.form-label');
+    origemLabels.forEach(label => {
+      if (label.textContent.trim().startsWith('ORIGEM')) {
+        // Verificar se já tem o asterisco
+        if (!label.querySelector('.required')) {
+          const requiredSpan = document.createElement('span');
+          requiredSpan.className = 'required';
+          requiredSpan.textContent = '*';
+          label.appendChild(requiredSpan);
+        }
+      }
+    });
+  });
+  
+  function atualizarCpfMotorista() {
+    const select = document.getElementById('motorista-select');
+    const cpfInput = document.getElementById('cpf-motorista');
+    if (select && cpfInput) {
+      const selectedMotorista = select.value;
+      const cpf = MOTORISTA_CPF_MAP[selectedMotorista] || '';
+      cpfInput.value = cpf;
+    }
+  }
+
+  function verificarCarreta2() {
+    // Agora o campo CARRETA 1 tem o nome correto
+    const carreta1 = document.querySelector('select[name="CARRETA 1"]');
+    const carreta2 = document.querySelector('select[name="CARRETA 2"]');
+    
+    if (carreta1 && carreta2) {
+      // Se CARRETA 1 estiver vazio ou com valor "Selecione", desabilita CARRETA 2
+      if (!carreta1.value || carreta1.value === '' || carreta1.value === 'Selecione') {
+        carreta2.disabled = true;
+        carreta2.value = '';
+      } else {
+        carreta2.disabled = false;
+      }
+    }
+  }
+
+  // Inicializar estado do CARRETA 2
+  document.addEventListener('DOMContentLoaded', function() {
+    verificarCarreta2();
+  });
+</script>
+
+<script>
+  // Função para vincular o CPF ao motorista selecionado
+  function atualizarCpfMotorista() {
+    const motoristaSelect = document.getElementById('motorista-select');
+    const cpfInput = document.getElementById('cpf-motorista');
+    
+    if (motoristaSelect && cpfInput) {
+      const selectedOption = motoristaSelect.options[motoristaSelect.selectedIndex];
+      const cpf = selectedOption.getAttribute('data-cpf');
+      cpfInput.value = cpf || '';
+    }
+  }
+  
+  // Função para controlar disponibilidade do Container 2
+  function verificarContainer2() {
+    const container1 = document.querySelector('input[name="CONTAINER 1"]');
+    const container2 = document.querySelector('input[name="CONTAINER 2"]');
+    
+    if (container1 && container2) {
+      // Se Container 1 estiver vazio, desabilita Container 2
+      if (!container1.value.trim()) {
+        container2.disabled = true;
+        container2.value = '';
+      } else {
+        container2.disabled = false;
+      }
+    }
+  }
+  
+  // Função para controlar disponibilidade de CARRETA 2
+  function verificarCarreta2() {
+    const carreta1 = document.querySelector('select[name="CARRETA 1"]');
+    const carreta2 = document.querySelector('select[name="CARRETA 2"]');
+    
+    if (carreta1 && carreta2) {
+      // Se CARRETA 1 não estiver selecionada, desabilita CARRETA 2
+      if (!carreta1.value || carreta1.value === '' || carreta1.value === 'Selecione') {
+        carreta2.disabled = true;
+        carreta2.value = '';
+      } else {
+        carreta2.disabled = false;
+      }
+    }
+  }
+  
+  // Função para controlar visibilidade do anexo de agendamento baseado na modalidade
+  function verificarAnexoAgendamento() {
+    const modalidadeSelect = document.querySelector('select[name="MODALIDADE"]');
+    const anexoAgendamento = document.getElementById('anexo-agendamento');
+    
+    if (modalidadeSelect && anexoAgendamento) {
+      // Mostra o anexo de agendamento apenas se a modalidade for CST
+      if (modalidadeSelect.value === 'CST') {
+        anexoAgendamento.style.display = 'block';
+      } else {
+        anexoAgendamento.style.display = 'none';
+      }
+    }
+  }
+  
+  // Converter formato de data de DD/MM/AAAA HH:MM para YYYY-MM-DDTHH:MM (usado pelo input datetime-local)
+  function convertDateFormatToISO(dateStr) {
+    if (!dateStr) return '';
+    
+    // Verificar se a string está no formato esperado DD/MM/AAAA HH:MM
+    const dateParts = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}) (\d{1,2}):(\d{1,2})/);
+    if (!dateParts) return '';
+    
+    // Extrair partes da data
+    const day = dateParts[1].padStart(2, '0');
+    const month = dateParts[2].padStart(2, '0');
+    const year = dateParts[3];
+    const hours = dateParts[4].padStart(2, '0');
+    const minutes = dateParts[5].padStart(2, '0');
+    
+    // Retornar no formato YYYY-MM-DDTHH:MM
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+  
+  // Converter formato de data de YYYY-MM-DDTHH:MM para DD/MM/AAAA HH:MM
+  function convertDateFormatToBR(isoDateStr) {
+    if (!isoDateStr) return '';
+    
+    try {
+      const date = new Date(isoDateStr);
+      if (isNaN(date.getTime())) return '';
+      
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    } catch (error) {
+      console.error('Erro ao converter data:', error);
+      return '';
+    }
+  }
+  
+  // Configurar inputs de data com datepicker e formato brasileiro
+  function setupDateTimeInputs() {
+    const dateTimeInputs = document.querySelectorAll('.datetime-input');
+    
+    dateTimeInputs.forEach(input => {
+      // Criar um campo hidden para armazenar o valor no formato brasileiro
+      const hiddenField = document.createElement('input');
+      hiddenField.type = 'hidden';
+      hiddenField.name = input.name + '_original';
+      hiddenField.value = input.value;
+      input.parentNode.appendChild(hiddenField);
+      
+      // Adicionar listener para atualizar o campo hidden quando o valor mudar
+      input.addEventListener('change', function() {
+        hiddenField.value = convertDateFormatToBR(this.value);
+      });
+    });
+    
+    // Atualizar o formulário antes do envio para garantir o formato correto
+    const form = document.querySelector('form');
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        const dateTimeFields = document.querySelectorAll('.datetime-input');
+        
+        dateTimeFields.forEach(field => {
+          const hiddenField = document.querySelector(`input[name="${field.name}_original"]`);
+          if (hiddenField) {
+            field.value = hiddenField.value;
+          }
+        });
+      });
+    }
+  }
+  
+  // Função para destacar campos vazios
+  function destacarCamposVazios() {
+    const inputs = document.querySelectorAll('input:not([type="hidden"]), select, textarea');
+    inputs.forEach(input => {
+      const value = input.value;
+      if (!value || value === 'none' || value === 'NaN' || value === 'undefined' || value.trim() === '') {
+        input.classList.add('empty-field');
+        if (value === 'none' || value === 'NaN' || value === 'undefined') {
+          input.value = ''; // Limpar valores 'none', 'NaN' ou 'undefined'
+        }
+      } else {
+        input.classList.remove('empty-field');
+      }
+    });
+  }
+  
+  // Inicializar o campo CPF e configurar Container 2 e Carreta 2 quando a página carrega
+  document.addEventListener('DOMContentLoaded', function() {
+    atualizarCpfMotorista();
+    verificarContainer2();
+    verificarCarreta2();
+    verificarAnexoAgendamento();
+    setupDateTimeInputs();
+    destacarCamposVazios();
+    
+    // Adicionar evento para verificar Container 2 sempre que Container 1 mudar
+    const container1 = document.querySelector('input[name="CONTAINER 1"]');
+    if (container1) {
+      container1.addEventListener('input', verificarContainer2);
+      container1.addEventListener('change', verificarContainer2);
+    }
+    
+    // Adicionar evento para verificar Carreta 2 sempre que Carreta 1 mudar
+    const carreta1 = document.querySelector('select[name="CARRETA 1"]');
+    if (carreta1) {
+      carreta1.addEventListener('change', verificarCarreta2);
+    }
+    
+    // Adicionar evento para verificar anexo de agendamento sempre que a modalidade mudar
+    const modalidadeSelect = document.querySelector('select[name="MODALIDADE"]');
+    if (modalidadeSelect) {
+      modalidadeSelect.addEventListener('change', verificarAnexoAgendamento);
+    }
+  });
+</script>
+</body>
+</html>

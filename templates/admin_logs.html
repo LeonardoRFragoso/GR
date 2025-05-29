@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logs Administrativos - AutoSAT</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Estilização da barra lateral */
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+            color: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .nav-link:hover {
+            color: white;
+        }
+        .nav-link.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .badge-gestao {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .badge-admin {
+            background-color: #dc3545;
+            color: white;
+        }
+        .badge-comum {
+            background-color: #28a745;
+            color: white;
+        }
+    /* Estilos para cards do dashboard */
+    .card {
+        transition: transform 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-3px);
+    }
+    .logs-table {
+      background-color: white;
+      border-radius: var(--card-border-radius);
+      overflow: hidden;
+    }
+    .logs-table .table {
+      margin-bottom: 0;
+    }
+    .logs-table th {
+      background-color: #f8f9fa;
+      font-weight: 500;
+      background-color: #e9f2ff;
+      color: var(--primary-color);
+    }
+    .sidebar-menu li i {
+      margin-right: 10px;
+      font-size: 16px;
+    }
+    .pagination {
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .pagination .page-item.active .page-link {
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+    .pagination .page-link {
+      color: var(--primary-color);
+    }
+    .search-logs {
+      margin-bottom: 20px;
+    }
+    .filter-section {
+      background-color: #f8f9fa;
+      border-radius: var(--card-border-radius);
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar p-0">
+                <div class="p-3 text-center mb-4">
+                    <h4>AutoSAT</h4>
+                    <p class="small mb-0">Painel Administrativo</p>
+                </div>
+                <div class="nav flex-column">
+                    <a href="{{ url_for('admin.admin_dashboard') }}" class="nav-link p-3">
+                        <i class="fas fa-chart-line me-2"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('admin.usuarios') }}" class="nav-link p-3">
+                        <i class="fas fa-users me-2"></i> Usuários
+                    </a>
+                    <a href="{{ url_for('admin.solicitacoes') }}" class="nav-link p-3">
+                        <i class="fas fa-user-plus me-2"></i> Solicitações
+                        {% if total_pendentes > 0 %}
+                        <span class="badge bg-danger rounded-pill">{{ total_pendentes }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="{{ url_for('admin.logs') }}" class="nav-link p-3 active">
+                        <i class="fas fa-history me-2"></i> Logs
+                    </a>
+                    <!-- Removido link para Gerenciar Registros pois admin não deve ter acesso -->
+                    <a href="{{ url_for('auth.logout') }}" class="nav-link p-3">
+                        <i class="fas fa-sign-out-alt me-2"></i> Sair
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Content -->
+            <div class="col-md-10 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-history me-2"></i> Logs Administrativos</h2>
+                    <div>
+                        <span class="badge bg-secondary">{{ usuario }}</span>
+                        <span class="badge badge-admin">{{ nivel }}</span>
+                    </div>
+                </div>
+                
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header d-flex justify-content-between">
+                        <h5 class="mb-0">Histórico de Ações do Sistema</h5>
+                        <div>
+                            <div class="input-group">
+                                <button class="btn btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#filterModal">
+                                    <i class="fas fa-filter"></i> Filtros
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Usuário</th>
+                                        <th>Tipo</th>
+                                        <th>Ação</th>
+                                        <th>Detalhes</th>
+                                        <th>Data/Hora</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in logs %}
+                                    <tr class="log-row" data-log-id="{{ log.id }}">
+                                        <td>{{ log.id }}</td>
+                                        <td>{{ log.usuario }}</td>
+                                        <td>
+                                            {% if log.tipo_log == 'sistema' %}
+                                                <span class="badge bg-primary">Sistema</span>
+                                            {% elif log.tipo_log == 'usuarios' %}
+                                                <span class="badge bg-info">Usuários</span>
+                                            {% elif log.tipo_log == 'registros' %}
+                                                <span class="badge bg-secondary">Registros</span>
+                                            {% else %}
+                                                <span class="badge bg-dark">{{ log.tipo_log|default('Desconhecido') }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if 'CRIAÇÃO' in log.acao %}
+                                                <span class="badge bg-success">{{ log.acao }}</span>
+                                            {% elif 'EXCLUSÃO' in log.acao %}
+                                                <span class="badge bg-danger">{{ log.acao }}</span>
+                                            {% elif 'EDIÇÃO' in log.acao %}
+                                                <span class="badge bg-warning text-dark">{{ log.acao }}</span>
+                                            {% elif 'TENTATIVA' in log.acao %}
+                                                <span class="badge bg-secondary">{{ log.acao }}</span>
+                                            {% else %}
+                                                <span class="badge bg-info">{{ log.acao }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div style="max-width: 350px; overflow: hidden; text-overflow: ellipsis;">
+                                                    {% if log.detalhes is defined %}
+                                                        {{ log.detalhes }}
+                                                    {% else %}
+                                                        {{ log.descricao }}
+                                                    {% endif %}
+                                                </div>
+                                                {% if 'EDIÇÃO' in log.acao or 'alterado de' in log.detalhes|default('') or 'alterado de' in log.descricao|default('') or 'Campos:' in log.descricao|default('') %}
+                                                <button class="btn btn-sm btn-outline-primary ms-2 toggle-details" data-bs-toggle="collapse" data-bs-target="#details-{{ log.id }}">
+                                                    <i class="fas fa-chevron-down"></i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>{{ log.data }}</td>
+                                    </tr>
+                                    {% if 'EDIÇÃO' in log.acao or 'alterado de' in log.descricao|default('') or 'alterado de' in log.detalhes|default('') or 'Campos:' in log.descricao|default('') %}
+                                    <tr class="details-row">
+                                        <td colspan="6" class="p-0 border-0">
+                                            <div class="collapse" id="details-{{ log.id }}">
+                                                <div class="card card-body border-0 shadow-sm m-2">
+                                                    <h6 class="text-primary">Detalhes da alteração:</h6>
+                                                    {% if 'Registro ID' in log.descricao %}
+                                                        {% set registro_id = log.descricao.split('Registro ID:')[1].split(',')[0].strip() if 'Registro ID:' in log.descricao else '' %}
+                                                        <p>Registro ID: <strong>{{ registro_id }}</strong></p>
+                                                    {% endif %}
+                                                    
+                                                    {% if 'Campos:' in log.descricao or 'alterado de' in log.detalhes|default('') %}
+                                                        <div class="table-responsive mt-2">
+                                                            <table class="table table-sm table-bordered">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Campo</th>
+                                                                        <th>Valor Anterior</th>
+                                                                        <th>Novo Valor</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {% if 'alterado de' in log.detalhes|default('') %}
+                                                                        {% set detalhes = log.detalhes|default('') %}
+                                                                        {% if 'Campo' in detalhes and 'alterado de' in detalhes and 'para' in detalhes %}
+                                                                            {% set campo = detalhes.split('Campo')[1].split('alterado de')[0].strip() %}
+                                                                            {% set valor_anterior = detalhes.split('alterado de')[1].split('para')[0].strip() %}
+                                                                            {% set novo_valor = detalhes.split('para')[1].strip() %}
+                                                                            <tr>
+                                                                                <td><strong>{{ campo }}</strong></td>
+                                                                                <td>{{ valor_anterior }}</td>
+                                                                                <td>{{ novo_valor }}</td>
+                                                                            </tr>
+                                                                        {% endif %}
+                                                                    {% elif 'Campos:' in log.descricao %}
+                                                                        {% set campos_texto = log.descricao.split('Campos:')[1].strip() %}
+                                                                        {% set campos_alterados = campos_texto.split(',') %}
+                                                                        {% for campo_info in campos_alterados %}
+                                                                            {% if ' de ' in campo_info and ' para ' in campo_info %}
+                                                                                {% set campo_nome = campo_info.split(' de ')[0].strip() %}
+                                                                                {% set valor_anterior = campo_info.split(' de ')[1].split(' para ')[0].strip() %}
+                                                                                {% set novo_valor = campo_info.split(' para ')[1].strip() %}
+                                                                                <tr>
+                                                                                    <td><strong>{{ campo_nome }}</strong></td>
+                                                                                    <td>{{ valor_anterior }}</td>
+                                                                                    <td>{{ novo_valor }}</td>
+                                                                                </tr>
+                                                                            {% else %}
+                                                                                <tr>
+                                                                                    <td colspan="3">{{ campo_info.strip() }}</td>
+                                                                                </tr>
+                                                                            {% endif %}
+                                                                        {% endfor %}
+                                                                    {% endif %}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    {% else %}
+                                                        <p>{{ log.descricao }}</p>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if not logs or logs|length == 0 %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4">
+                                            <i class="fas fa-info-circle me-2"></i> Nenhum log administrativo encontrado
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if total_pages > 1 %}
+                        <div class="d-flex justify-content-center mt-4">
+                            <nav>
+                                <ul class="pagination">
+                                    <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                                        <a class="page-link" href="{{ url_for('admin.logs', page=page-1) if page > 1 else '#' }}">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                    
+                                    {% for p in range(1, total_pages + 1) %}
+                                        {% if p == page %}
+                                            <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+                                        {% elif p <= 3 or p >= total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('admin.logs', page=p) }}">{{ p }}</a>
+                                            </li>
+                                        {% elif p == 4 and page > 5 or p == total_pages - 3 and page < total_pages - 4 %}
+                                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+                                        <a class="page-link" href="{{ url_for('admin.logs', page=page+1) if page < total_pages else '#' }}">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Modal de Filtros -->
+    <div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="filterModalLabel">Filtrar Logs</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ url_for('admin.logs') }}" method="get">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="tipo_log" class="form-label">Tipo de Log</label>
+                                <select class="form-select" id="tipo_log" name="tipo_log">
+                                    <option value="todos" {% if tipo_log == 'todos' %}selected{% endif %}>Todos</option>
+                                    <option value="sistema" {% if tipo_log == 'sistema' %}selected{% endif %}>Sistema (Login/Logout)</option>
+                                    <option value="usuarios" {% if tipo_log == 'usuarios' %}selected{% endif %}>Usuários (Alterações)</option>
+                                    <option value="registros" {% if tipo_log == 'registros' %}selected{% endif %}>Registros (Alterações)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="nivel_filtro" class="form-label">Nível de Usuário</label>
+                                <select class="form-select" id="nivel_filtro" name="nivel">
+                                    <option value="" {% if nivel_filtro == '' %}selected{% endif %}>Todos</option>
+                                    {% for nivel in niveis %}
+                                        <option value="{{ nivel }}" {% if nivel_filtro == nivel %}selected{% endif %}>{{ nivel|title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="usuario_filtro" class="form-label">Usuário</label>
+                            <input type="text" class="form-control" id="usuario_filtro" name="usuario" value="{{ usuario_filtro }}" placeholder="Filtrar por usuário">
+                        </div>
+                        <div class="mb-3">
+                            <label for="acao_filtro" class="form-label">Ação</label>
+                            <input type="text" class="form-control" id="acao_filtro" name="acao" value="{{ acao_filtro }}" placeholder="Filtrar por ação (ex: EDIÇÃO, CRIAÇÃO)">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="data_inicio" class="form-label">Data Início</label>
+                                <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="data_fim" class="form-label">Data Fim</label>
+                                <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <a href="{{ url_for('admin.logs') }}" class="btn btn-outline-secondary me-2">Limpar Filtros</a>
+                            <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

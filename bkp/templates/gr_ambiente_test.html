@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ambiente GR - Teste</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .header {
+            background-color: #343a40;
+            color: white;
+            padding: 15px 0;
+            margin-bottom: 30px;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background-color: #fd7e14;
+            color: white;
+            font-weight: bold;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-tasks me-2"></i> Ambiente GR - Teste</h2>
+                <div>
+                    <span><i class="fas fa-user-circle me-1"></i> {{ usuario }}</span>
+                    <span class="badge bg-warning text-dark ms-2">{{ nivel }}</span>
+                    <a href="/auth/logout" class="btn btn-sm btn-outline-light ms-3">
+                        <i class="fas fa-sign-out-alt me-1"></i> Sair
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-success">
+                    <h4><i class="fas fa-check-circle me-2"></i> Login bem-sucedido!</h4>
+                    <p>Vocu00ea estu00e1 logado como usuu00e1rio GR e tem acesso a este ambiente.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-info-circle me-2"></i> Informau00e7u00f5es da Sessu00e3o
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Usuu00e1rio
+                                <span class="badge bg-primary rounded-pill">{{ usuario }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Nu00edvel
+                                <span class="badge bg-warning text-dark rounded-pill">{{ nivel }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                ID do Usuu00e1rio
+                                <span class="badge bg-info text-dark rounded-pill">{{ user_id }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-cogs me-2"></i> Au00e7u00f5es Disponu00edveis
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="/gr/ambiente" class="btn btn-outline-primary">
+                                <i class="fas fa-chart-line me-2"></i> Ambiente GR Original
+                            </a>
+                            <a href="/gr/dashboard" class="btn btn-outline-success">
+                                <i class="fas fa-clipboard-list me-2"></i> Dashboard GR
+                            </a>
+                            <a href="/comum/view_registros" class="btn btn-outline-info">
+                                <i class="fas fa-file-alt me-2"></i> Visualizar Registros
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-bug me-2"></i> Informau00e7u00f5es de Depurau00e7u00e3o
+                    </div>
+                    <div class="card-body">
+                        <h5>Conteu00fado da Sessu00e3o:</h5>
+                        <pre class="bg-light p-3 rounded">{{ session_data }}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

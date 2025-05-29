@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Visualizar Registro | iTracker</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='assets/favicon.ico') }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .navbar {
+      background-color: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .form-section {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .form-section-header {
+      padding: 15px 20px;
+      border-bottom: 1px solid #dee2e6;
+      background-color: #f8f9fa;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .form-section-header i {
+      color: #0d6efd;
+    }
+    .form-section-header h5 {
+      margin: 0;
+      font-weight: 500;
+    }
+    .form-section-body {
+      padding: 15px;
+    }
+    .form-control {
+      padding: 0.375rem 0.5rem;
+      font-size: 0.9rem;
+      height: calc(1.5em + 0.75rem + 2px);
+    }
+    .mb-3 {
+      margin-bottom: 0.75rem !important;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+    }
+    .form-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .data-type-hint {
+      font-size: 12px;
+      color: #6c757d;
+      font-weight: normal;
+    }
+    .required {
+      color: #dc3545;
+    }
+    .file-upload-area {
+      border: 2px dashed #dee2e6;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .file-upload-area:hover {
+      border-color: #0d6efd;
+    }
+    .file-name {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #0d6efd;
+    }
+    .form-control:disabled, .form-control[readonly] {
+      background-color: #f8f9fa;
+      opacity: 1;
+    }
+    @media (max-width: 1200px) {
+      .form-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    @media (max-width: 992px) {
+      .form-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 576px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container">
+      <div class="d-flex align-items-center">
+        <a href="{% if nivel == 'gr' %}{{ url_for('gr.ambiente') }}{% else %}{{ url_for('comum.dashboard_comum') }}{% endif %}" class="btn btn-outline-primary me-3">
+          <i class="fas fa-arrow-left me-1"></i> Voltar
+        </a>
+        <a class="navbar-brand" href="#">
+          <span>Visualizar Registro #{{ registro.id }}</span>
+        </a>
+      </div>
+      <div class="d-flex align-items-center">
+        <span class="me-3">
+          <i class="fas fa-user-circle me-1"></i> {{ usuario }}
+          <span class="badge {% if nivel == 'admin' %}bg-danger{% elif nivel == 'gr' %}bg-success{% else %}bg-primary{% endif %}">
+            {{ nivel|upper }}
+          </span>
+        </span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-4">
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle me-2"></i>
+      Você está visualizando o registro #{{ registro.id }}. Todos os campos estão em modo somente leitura.
+    </div>
+
+    <!-- Seções dinâmicas baseadas no controle de acesso -->
+    {% for secao in secoes_visiveis %}
+    <div class="form-section mb-4">
+      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #0d6efd;">
+        <i class="fas {{ ICONES_SECOES[secao] }} text-primary"></i>
+        <h5>{{ TITULOS_SECOES[secao] }}</h5>
+        {% if secao == 'unidade' %}
+        <span class="ms-auto badge bg-light text-dark border">
+          <i class="fas fa-calendar me-1"></i> Criado em {{ registro.data_registro|formatar_data_br if registro.data_registro else 'N/A' }}
+        </span>
+        {% endif %}
+      </div>
+      <div class="form-section-body">
+        <div class="form-grid">
+          <!-- Campos dinâmicos baseados na seção atual -->
+          {% for campo in CAMPOS_SECAO[secao] %}
+            {% if campo in registro and registro[campo] %}
+            <div class="mb-3">
+              <label class="form-label">{{ campo }}</label>
+              {% if campo == 'ON TIME (CLIENTE)' or campo == 'HORÁRIO PREVISTO DE INÍCIO' %}
+                <input type="text" class="form-control" value="{{ registro[campo]|formatar_data_br }}" readonly>
+              {% elif campo == 'ANEXAR NF' and registro[campo] %}
+                <div class="input-group">
+                  <input type="text" class="form-control" value="{{ registro.get('arquivo_nf_nome', 'Nota Fiscal') }}" readonly>
+                  <button type="button" class="btn btn-danger" title="Visualizar" onclick="visualizarArquivo('nf')">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <a href="{{ url_for('comum.download_anexo', registro_id=registro['id'], tipo='nf') }}" class="btn btn-outline-danger" download title="Baixar">
+                    <i class="fas fa-download"></i>
+                  </a>
+                </div>
+              {% elif campo == 'ANEXAR OS' and registro[campo] %}
+                <div class="input-group">
+                  <input type="text" class="form-control" value="{{ registro.get('arquivo_os_nome', 'Ordem de Serviço') }}" readonly>
+                  <button type="button" class="btn btn-success" title="Visualizar" onclick="visualizarArquivo('os')">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <a href="{{ url_for('comum.download_anexo', registro_id=registro['id'], tipo='os') }}" class="btn btn-outline-success" download title="Baixar">
+                    <i class="fas fa-download"></i>
+                  </a>
+                </div>
+              {% elif campo == 'ANEXAR AGENDAMENTO' and registro[campo] %}
+                <div class="input-group">
+                  <input type="text" class="form-control" value="{{ registro.get('arquivo_agendamento_nome', 'Agendamento') }}" readonly>
+                  <button type="button" class="btn btn-primary" title="Visualizar" onclick="visualizarArquivo('agendamento')">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <a href="{{ url_for('comum.download_anexo', registro_id=registro['id'], tipo='agendamento') }}" class="btn btn-outline-primary" download title="Baixar">
+                    <i class="fas fa-download"></i>
+                  </a>
+                </div>
+              {% else %}
+                <input type="text" class="form-control" value="{{ registro[campo] if registro[campo] is not none else '' }}" readonly>
+              {% endif %}
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    {% if registro.get('anexar_nf') or registro.get('anexar_os') or registro.get('anexar_agendamento') %}
+    <div class="form-section mb-4">
+      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #fd7e14;">
+        <i class="fas fa-file-alt text-warning"></i>
+        <h5>Anexos</h5>
+      </div>
+      <div class="form-section-body">
+        <div class="row">
+          {% if registro.get('anexar_nf') %}
+          <div class="col-md-4 mb-3">
+            <div class="card h-100 border-danger">
+              <div class="card-header bg-danger text-white">
+                <i class="fas fa-file-invoice me-2"></i>Nota Fiscal
+              </div>
+              <div class="card-body text-center">
+                <i class="fas fa-file-pdf fa-3x mb-3 text-danger"></i>
+                <p class="text-truncate" title="{{ registro.get('arquivo_nf_nome', 'arquivo.pdf') }}">
+                  {{ registro.get('arquivo_nf_nome', 'arquivo.pdf') }}
+                </p>
+                <div class="d-flex justify-content-center gap-2 mt-3">
+                  <!-- Botão de visualização direto -->
+                  <a href="{{ url_for('comum.visualizar_anexo', registro_id=registro['id'], tipo='nf') }}" target="_blank" class="btn btn-danger">
+                    <i class="fas fa-eye me-1"></i> Visualizar
+                  </a>
+                  <!-- Botão de download -->
+                  <a href="{{ url_for('comum.download_anexo', registro_id=registro['id'], tipo='nf') }}" class="btn btn-outline-danger" download>
+                    <i class="fas fa-download me-1"></i> Baixar
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          
+          {% if registro.get('anexar_os') %}
+          <div class="col-md-4 mb-3">
+            <div class="card h-100 border-success">
+              <div class="card-header bg-success text-white">
+                <i class="fas fa-file-contract me-2"></i>Ordem de Serviço
+              </div>
+              <div class="card-body text-center">
+                <i class="fas fa-file-pdf fa-3x mb-3 text-success"></i>
+                <p class="text-truncate" title="{{ registro.get('arquivo_os_nome', 'arquivo.pdf') }}">
+                  {{ registro.get('arquivo_os_nome', 'arquivo.pdf') }}
+                </p>
+                <div class="d-flex justify-content-center gap-2 mt-3">
+                  <!-- Botão de visualização direto -->
+                  <a href="{{ url_for('comum.visualizar_anexo', registro_id=registro['id'], tipo='os') }}" target="_blank" class="btn btn-success">
+                    <i class="fas fa-eye me-1"></i> Visualizar
+                  </a>
+                  <!-- Botão de download -->
+                  <a href="{{ url_for('comum.download_anexo', registro_id=registro['id'], tipo='os') }}" class="btn btn-outline-success" download>
+                    <i class="fas fa-download me-1"></i> Baixar
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          
+          {% if registro.get('anexar_agendamento') %}
+          <div class="col-md-4 mb-3">
+            <div class="card h-100 border-primary">
+              <div class="card-header bg-primary text-white">
+                <i class="fas fa-calendar-alt me-2"></i>Agendamento
+              </div>
+              <div class="card-body text-center">
+                <i class="fas fa-file-pdf fa-3x mb-3 text-primary"></i>
+                <p class="text-truncate" title="{{ registro.get('arquivo_agendamento_nome', 'arquivo.pdf') }}">
+                  {{ registro.get('arquivo_agendamento_nome', 'arquivo.pdf') }}
+                </p>
+                <div class="d-flex justify-content-center gap-2 mt-3">
+                  <!-- Botão de visualização direto -->
+                  <a href="{{ url_for('comum.visualizar_anexo', registro_id=registro['id'], tipo='agendamento') }}" target="_blank" class="btn btn-primary">
+                    <i class="fas fa-eye me-1"></i> Visualizar
+                  </a>
+                  <!-- Botão de download -->
+                  <a href="{{ url_for('comum.download_anexo', registro_id=registro['id'], tipo='agendamento') }}" class="btn btn-outline-primary" download>
+                    <i class="fas fa-download me-1"></i> Baixar
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Seção de histórico de alterações -->
+    {% if historico %}
+    <div class="form-section mb-4">
+      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #6c757d;">
+        <i class="fas fa-history text-secondary"></i>
+        <h5>Histórico de Alterações</h5>
+      </div>
+      <div class="form-section-body">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Usuário</th>
+                <th>Nível</th>
+                <th>Ação</th>
+                <th>Detalhes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in historico %}
+              <tr>
+                <td>{{ item.data_alteracao|formatar_data_br }}</td>
+                <td>{{ item.usuario }}</td>
+                <td>
+                  <span class="badge {% if item.nivel == 'admin' %}bg-danger{% elif item.nivel == 'gr' %}bg-success{% else %}bg-primary{% endif %}">
+                    {{ item.nivel|upper }}
+                  </span>
+                </td>
+                <td>{{ item.acao }}</td>
+                <td>
+                  <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#detalhes{{ item.id }}" aria-expanded="false">
+                    <i class="fas fa-info-circle"></i> Ver detalhes
+                  </button>
+                  <div class="collapse mt-2" id="detalhes{{ item.id }}">
+                    <div class="card card-body">
+                      <pre class="mb-0">{{ item.detalhes }}</pre>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    
+    <div class="d-flex justify-content-center mt-4">
+      <a href="{% if nivel == 'gr' %}{{ url_for('gr.ambiente') }}{% else %}{{ url_for('comum.dashboard_comum') }}{% endif %}" class="btn btn-primary">
+        <i class="fas fa-arrow-left me-2"></i> Voltar
+      </a>
+    </div>
+  </div>
+
+  <!-- Garantir que o Bootstrap seja carregado corretamente -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- jQuery para facilitar manipulação do DOM -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  
+  <!-- Modal único para visualização de arquivos -->
+  <div class="modal fade" id="visualizarModal" tabindex="-1" aria-labelledby="visualizarModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="visualizarModalLabel">Visualizar Anexo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body p-0">
+          <div id="modalContent" class="text-center p-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Carregando...</span>
+            </div>
+            <p class="mt-3">Carregando visualização do arquivo...</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+          <a id="downloadBtn" href="#" class="btn btn-primary" download>
+            <i class="fas fa-download me-1"></i> Baixar
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Aguardar o carregamento completo da página
+    document.addEventListener('DOMContentLoaded', function() {
+      // Inicializar o modal
+      const visualizarModal = new bootstrap.Modal(document.getElementById('visualizarModal'));
+      
+      // Função para abrir o modal com o arquivo
+      window.visualizarArquivo = function(tipo) {
+        console.log('Visualizando arquivo do tipo:', tipo);
+        
+        // Definir o título do modal de acordo com o tipo
+        const titulos = {
+          'nf': 'Visualizar Nota Fiscal',
+          'os': 'Visualizar Ordem de Serviço',
+          'agendamento': 'Visualizar Agendamento'
+        };
+        
+        // Atualizar o título do modal
+        document.getElementById('visualizarModalLabel').textContent = titulos[tipo] || 'Visualizar Anexo';
+        
+        // Construir a URL para visualização
+        const url = `{{ url_for('comum.visualizar_anexo', registro_id=registro['id'], tipo='') }}${tipo}`;
+        console.log('URL de visualização:', url);
+        
+        // Construir a URL para download
+        const downloadUrl = `{{ url_for('comum.download_anexo', registro_id=registro['id'], tipo='') }}${tipo}`;
+        console.log('URL de download:', downloadUrl);
+        
+        // Atualizar o botão de download
+        document.getElementById('downloadBtn').href = downloadUrl;
+        
+        // Mostrar indicador de carregamento
+        document.getElementById('modalContent').innerHTML = `
+          <div class="text-center p-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Carregando...</span>
+            </div>
+            <p class="mt-3">Carregando visualização do arquivo...</p>
+          </div>
+        `;
+        
+        // Abrir o modal
+        visualizarModal.show();
+        
+        // Obter o nome do arquivo do campo de entrada
+        let nomeArquivo = '';
+        if (tipo === 'nf') {
+          const input = document.querySelector('.input-group input[value*="Nota Fiscal"]');
+          nomeArquivo = input ? input.value : 'Nota Fiscal';
+        } else if (tipo === 'os') {
+          const input = document.querySelector('.input-group input[value*="Ordem de Serviço"]');
+          nomeArquivo = input ? input.value : 'Ordem de Serviço';
+        } else if (tipo === 'agendamento') {
+          const input = document.querySelector('.input-group input[value*="Agendamento"]');
+          nomeArquivo = input ? input.value : 'Agendamento';
+        }
+        
+        console.log('Nome do arquivo:', nomeArquivo);
+        const extensao = nomeArquivo.split('.').pop().toLowerCase();
+        console.log('Extensão detectada:', extensao);
+        
+        // Carregar o conteúdo do arquivo
+        fetch(url)
+          .then(response => {
+            const contentType = response.headers.get('content-type');
+            const documentType = response.headers.get('x-document-type');
+            console.log('Tipo de conteúdo:', contentType);
+            console.log('Tipo de documento:', documentType);
+            
+            // Atualizar o título do modal para incluir o nome do arquivo
+            document.getElementById('visualizarModalLabel').textContent += `: ${nomeArquivo}`;
+            
+            if (contentType && contentType.includes('image/')) {
+              // É uma imagem, retornar como blob
+              return response.blob().then(blob => {
+                const imageUrl = URL.createObjectURL(blob);
+                document.getElementById('modalContent').innerHTML = `
+                  <div class="text-center">
+                    <img src="${imageUrl}" class="img-fluid" alt="${nomeArquivo}">
+                    <p class="mt-2 text-muted">${nomeArquivo}</p>
+                  </div>
+                `;
+              });
+            } else if (contentType && contentType.includes('application/pdf')) {
+              // É um PDF, usar iframe
+              document.getElementById('modalContent').innerHTML = `
+                <iframe src="${url}" style="width: 100%; height: 80vh; border: none;"></iframe>
+                <p class="mt-2 text-muted text-center">${nomeArquivo}</p>
+              `;
+            } else if (documentType === 'office' || ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(extensao)) {
+              // É um documento do Office, oferecer download e informar o usuário
+              document.getElementById('modalContent').innerHTML = `
+                <div class="alert alert-info text-center m-5">
+                  <h4><i class="fas fa-file me-2"></i>Documento do Office</h4>
+                  <p>O arquivo "${nomeArquivo}" é um documento do Microsoft Office e não pode ser visualizado diretamente no navegador.</p>
+                  <p>Clique no botão abaixo para baixar e abrir no aplicativo apropriado.</p>
+                  <a href="${downloadUrl}" class="btn btn-primary" download>
+                    <i class="fas fa-download me-1"></i> Baixar Arquivo
+                  </a>
+                </div>
+              `;
+            } else {
+              // Para outros tipos, oferecer download
+              document.getElementById('modalContent').innerHTML = `
+                <div class="alert alert-info text-center m-5">
+                  <h4><i class="fas fa-file me-2"></i>Arquivo: ${nomeArquivo}</h4>
+                  <p>Este tipo de arquivo não pode ser visualizado diretamente no navegador.</p>
+                  <a href="${downloadUrl}" class="btn btn-primary" download>
+                    <i class="fas fa-download me-1"></i> Baixar Arquivo
+                  </a>
+                </div>
+              `;
+            }
+          })
+          .catch(error => {
+            console.error('Erro ao carregar arquivo:', error);
+            document.getElementById('modalContent').innerHTML = `
+              <div class="alert alert-danger text-center m-5">
+                <h4><i class="fas fa-exclamation-triangle me-2"></i>Erro ao carregar arquivo</h4>
+                <p>${error.message}</p>
+              </div>
+            `;
+          });
+      };
+    });
+  </script>
+</body>
+</html>

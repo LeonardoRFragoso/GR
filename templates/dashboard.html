@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ambiente Operações</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            background-color: var(--gray-light);
+        }
+        .navbar {
+            background-color: white;
+            box-shadow: var(--shadow-sm);
+            padding: 0.5rem 1rem;
+        }
+        .navbar-brand img {
+            height: 28px;
+        }
+        .navbar-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--primary-color);
+            margin-left: 8px;
+        }
+        .user-info {
+            font-size: 14px;
+            color: var(--gray);
+        }
+        .logout-btn {
+            border-color: #dc3545;
+            color: #dc3545;
+            font-size: 14px;
+            padding: 0.25rem 0.5rem;
+        }
+        .table thead th {
+            vertical-align: middle;
+            text-align: left;
+            background-color: #f8f9fa;
+            font-weight: 500;
+            font-size: 0.8rem;
+            padding: 0.5rem;
+        }
+        .table tbody td {
+            font-size: 0.85rem;
+            padding: 0.5rem;
+            vertical-align: middle;
+        }
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(0,0,0,.02);
+        }
+        .file-link::before {
+            content: "\f0c6";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            margin-right: 5px;
+        }
+        .search-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .search-input {
+            flex: 1;
+            height: 38px;
+        }
+        .add-btn {
+            background-color: var(--success-color);
+            color: white;
+        }
+        .logs-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .log-item {
+            transition: background-color 0.2s ease;
+        }
+        .log-item:hover {
+            background-color: #f8f9fa;
+        }
+        .log-date {
+            color: #6c757d;
+        }
+        .log-user {
+            color: var(--primary-color);
+        }
+        .log-changes .badge {
+            font-weight: normal;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+            <span class="navbar-title">Ambiente Operações</span>
+        </a>
+        <div class="d-flex align-items-center gap-2">
+            <div class="user-info me-3">
+                <i class="fas fa-user-circle"></i> {{ usuario }}
+                {% if nivel in ['admin', 'gr'] %}
+                <span class="badge {% if nivel == 'admin' %}bg-danger{% else %}bg-info{% endif %}">{{ nivel }}</span>
+                {% endif %}
+            </div>
+            <a href="{{ url_for('comum.novo_registro') }}" class="btn btn-warning btn-sm">
+                <i class="fas fa-plus-circle"></i> Novo Registro
+            </a>
+            {% if nivel == 'admin' %}
+            <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-danger btn-sm">
+                <i class="fas fa-tachometer-alt"></i> Painel Admin
+            </a>
+            {% elif nivel == 'gr' %}
+            <a href="{{ url_for('gr.ambiente') }}" class="btn btn-danger btn-sm">
+                <i class="fas fa-tachometer-alt"></i> Ambiente GR
+            </a>
+            {% endif %}
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid mt-4">
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+    <!-- Conteúdo Principal -->
+    <!-- Cards de estatísticas (KPIs) -->
+    <div class="row mb-4">
+        <!-- 1. Quantidade de operações sem NF anexada -->
+        <div class="col-md-3 mb-3">
+            <a href="{{ url_for('comum.dashboard_comum', filtro='sem_nf') }}" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm {% if request.args.get('filtro') == 'sem_nf' %}border border-warning{% endif %}">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="flex-shrink-0 me-3">
+                            <i class="fas fa-file-invoice text-warning fa-2x"></i>
+                        </div>
+                        <div>
+                            <p class="card-text text-muted mb-1">Operações sem NF</p>
+                            <h3 class="card-title mb-0">{{ operacoes_sem_nf }}</h3>
+                            {% if request.args.get('filtro') == 'sem_nf' %}
+                            <span class="badge bg-warning text-dark">Filtro ativo</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <!-- 2. Quantidade de operações sem OS anexada -->
+        <div class="col-md-3 mb-3">
+            <a href="{{ url_for('comum.dashboard_comum', filtro='sem_os') }}" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm {% if request.args.get('filtro') == 'sem_os' %}border border-info{% endif %}">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="flex-shrink-0 me-3">
+                            <i class="fas fa-file-alt text-info fa-2x"></i>
+                        </div>
+                        <div>
+                            <p class="card-text text-muted mb-1">Operações sem OS</p>
+                            <h3 class="card-title mb-0">{{ operacoes_sem_os }}</h3>
+                            {% if request.args.get('filtro') == 'sem_os' %}
+                            <span class="badge bg-info text-dark">Filtro ativo</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <!-- 3. Quantidade de operações sem Container 1 preenchido -->
+        <div class="col-md-3 mb-3">
+            <a href="{{ url_for('comum.dashboard_comum', filtro='sem_container') }}" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm {% if request.args.get('filtro') == 'sem_container' %}border border-warning{% endif %}">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="icon-wrapper bg-light rounded-circle me-3">
+                            <i class="fas fa-box text-warning"></i>
+                        </div>
+                        <div>
+                            <h6 class="card-subtitle text-muted mb-1">Operações sem Container</h6>
+                            <h3 class="card-title mb-0">{{ operacoes_sem_container }}</h3>
+                            {% if request.args.get('filtro') == 'sem_container' %}
+                            <span class="badge bg-warning text-dark">Filtro ativo</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <!-- 4. Quantidade de operações sem SM definida -->
+        <div class="col-md-3 mb-3">
+            <a href="{{ url_for('comum.dashboard_comum', filtro='sem_sm') }}" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm {% if request.args.get('filtro') == 'sem_sm' %}border border-danger{% endif %}">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="flex-shrink-0 me-3">
+                            <i class="fas fa-clipboard-list text-danger fa-2x"></i>
+                        </div>
+                        <div>
+                            <p class="card-text text-muted mb-1">Operações sem SM</p>
+                            <h3 class="card-title mb-0">{{ operacoes_sem_sm }}</h3>
+                            {% if request.args.get('filtro') == 'sem_sm' %}
+                            <span class="badge bg-danger text-white">Filtro ativo</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <!-- 5. Quantidade de operações sem AE definida -->
+        <div class="col-md-3 mb-3">
+            <a href="{{ url_for('comum.dashboard_comum', filtro='sem_ae') }}" class="text-decoration-none">
+                <div class="card h-100 border-0 shadow-sm {% if request.args.get('filtro') == 'sem_ae' %}border border-info{% endif %}">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="flex-shrink-0 me-3">
+                            <i class="fas fa-file-signature text-info fa-2x"></i>
+                        </div>
+                        <div>
+                            <p class="card-text text-muted mb-1">Operações sem AE</p>
+                            <h3 class="card-title mb-0">{{ operacoes_sem_ae }}</h3>
+                            {% if request.args.get('filtro') == 'sem_ae' %}
+                            <span class="badge bg-info text-dark">Filtro ativo</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-list-ul text-primary me-2"></i>
+                <h5 class="card-title mb-0">Registros</h5>
+                
+                <!-- Indicador de filtro ativo -->
+                {% if request.args.get('filtro') %}
+                    {% set filtro_tipo = request.args.get('filtro') %}
+                    <div class="ms-3 badge bg-info p-2">
+                        <i class="fas fa-filter me-1"></i>
+                        {% if filtro_tipo == 'sem_nf' %}
+                            Filtro ativo: Registros Sem NF Anexada
+                        {% elif filtro_tipo == 'sem_os' %}
+                            Filtro ativo: Registros Sem OS Anexada
+                        {% elif filtro_tipo == 'sem_container' %}
+                            Filtro ativo: Registros Sem Container Definido
+                        {% elif filtro_tipo == 'sem_sm' %}
+                            Filtro ativo: Registros Sem SM Definida
+                        {% elif filtro_tipo == 'sem_ae' %}
+                            Filtro ativo: Registros Sem AE Definida
+                        {% else %}
+                            Filtro ativo: {{ filtro_tipo }}
+                        {% endif %}
+                        
+                        <!-- Botão para limpar filtro -->
+                        <a href="{{ url_for('comum.view_registros') }}" class="text-white ms-2" title="Limpar filtro">
+                            <i class="fas fa-times-circle"></i>
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="search-container flex-grow-1">
+                    <div class="input-group">
+                        <input type="text" id="search-input" class="form-control search-input" placeholder="Pesquisar registros...">
+                        <button type="button" id="clear-search" class="btn btn-outline-secondary d-none">
+                            <i class="fas fa-times"></i> Limpar
+                        </button>
+                    </div>
+                </div>
+                <div class="ms-3">
+                    <a href="{{ url_for('comum.novo_registro') }}" class="btn btn-warning">
+                        <i class="fas fa-plus-circle"></i> Novo Registro
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtro de Unidade -->
+        <div class="card-body border-top">
+            <form action="{{ url_for('comum.dashboard_comum') }}" method="get" class="row align-items-center">
+                <div class="col-md-3">
+                    <div class="d-flex align-items-center">
+                        <label for="filtro_unidade" class="me-2 mb-0"><i class="fas fa-filter text-primary"></i> Filtrar por Unidade:</label>
+                        <select name="filtro_unidade" id="filtro_unidade" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="todas" {% if request.args.get('filtro_unidade') == 'todas' or not request.args.get('filtro_unidade') %}selected{% endif %}>Todas</option>
+                            <option value="RIO DE JANEIRO" {% if request.args.get('filtro_unidade') == 'RIO DE JANEIRO' %}selected{% endif %}>RIO DE JANEIRO</option>
+                            <option value="FLORIANO" {% if request.args.get('filtro_unidade') == 'FLORIANO' %}selected{% endif %}>FLORIANO</option>
+                            <option value="SUZANO" {% if request.args.get('filtro_unidade') == 'SUZANO' %}selected{% endif %}>SUZANO</option>
+                            {% for unidade in unidades_disponiveis %}
+                                {% if unidade != 'RIO DE JANEIRO' and unidade != 'FLORIANO' and unidade != 'SUZANO' %}
+                                <option value="{{ unidade }}" {% if request.args.get('filtro_unidade') == unidade %}selected{% endif %}>{{ unidade }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                {% if request.args.get('filtro') %}
+                    <input type="hidden" name="filtro" value="{{ request.args.get('filtro') }}">
+                {% endif %}
+                {% if request.args.get('page') %}
+                    <input type="hidden" name="page" value="{{ request.args.get('page') }}">
+                {% endif %}
+            </form>
+        </div>
+
+    {% if registros %}
+    <div class="table-responsive">
+        <div id="no-results-message" class="text-center py-4 d-none">
+            <i class="fas fa-search fa-2x text-muted mb-2"></i>
+            <p class="text-muted mb-0">Nenhum registro encontrado para a pesquisa.</p>
+        </div>
+        <table class="table table-hover align-middle bg-white rounded overflow-hidden">
+            <thead>
+                <tr class="bg-light">
+                    <!-- Colunas básicas sempre visíveis -->
+                    <th class="fw-medium text-center" style="width: 50px;">ID</th>
+                    <th class="fw-medium">UNIDADE</th>
+                    <th class="fw-medium">Data de Registro</th>
+                    <th class="fw-medium">Usuário</th>
+                    
+                    <!-- Colunas dinâmicas baseadas no nível de acesso -->
+                    {% if 'cliente' in colunas_visiveis %}
+                    <th class="fw-medium">Cliente</th>
+                    {% endif %}
+                    
+                    {% if 'cavalo' in colunas_visiveis %}
+                    <th class="fw-medium">Placa</th>
+                    {% endif %}
+                    
+                    {% if 'motorista' in colunas_visiveis %}
+                    <th class="fw-medium">Motorista</th>
+                    {% endif %}
+                    
+                    {% if 'cpf' in colunas_visiveis %}
+                    <th class="fw-medium">CPF</th>
+                    {% endif %}
+                    
+                    {% if 'container_1' in colunas_visiveis %}
+                    <th class="fw-medium">Container 1</th>
+                    {% endif %}
+                    
+                    {% if 'container_2' in colunas_visiveis %}
+                    <th class="fw-medium">Container 2</th>
+                    {% endif %}
+                    
+                    {% if 'nf' in colunas_visiveis %}
+                    <th class="fw-medium">NF</th>
+                    {% endif %}
+                    
+                    {% if 'os' in colunas_visiveis %}
+                    <th class="fw-medium">OS</th>
+                    {% endif %}
+                    
+                    {% if 'anexar_agendamento' in colunas_visiveis %}
+                    <th class="fw-medium">Agendamento</th>
+                    {% endif %}
+                    
+                    {% if 'sm' in colunas_visiveis %}
+                    <th class="fw-medium">SM</th>
+                    {% endif %}
+                    
+                    {% if 'ae' in colunas_visiveis %}
+                    <th class="fw-medium">AE</th>
+                    {% endif %}
+                    
+                    {% if 'tipo_carga' in colunas_visiveis %}
+                    <th class="fw-medium">Tipo Carga</th>
+                    {% endif %}
+                    
+                    {% if 'modalidade' in colunas_visiveis %}
+                    <th class="fw-medium">Modalidade</th>
+                    {% endif %}
+                    
+                    {% if 'status_container' in colunas_visiveis %}
+                    <th class="fw-medium">Status Container</th>
+                    {% endif %}
+                    
+                    {% if 'booking_di' in colunas_visiveis %}
+                    <th class="fw-medium">Booking/DI</th>
+                    {% endif %}
+                    
+                    {% if 'lote_cs' in colunas_visiveis %}
+                    <th class="fw-medium">Lote CS</th>
+                    {% endif %}
+                    
+                    {% if 'horario_previsto' in colunas_visiveis %}
+                    <th class="fw-medium">Saída Prevista</th>
+                    {% endif %}
+                    
+                    {% if 'on_time_cliente' in colunas_visiveis %}
+                    <th class="fw-medium">On Time</th>
+                    {% endif %}
+                    
+                    <!-- Ações sempre visíveis -->
+                    <th class="fw-medium text-center" style="width: 110px;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in registros %}
+                {% set tem_alteracoes_pos_smae = (r.get('numero_sm') or r.get('numero_ae')) and r.get('data_modificacao') and r.get('alteracoes_verificadas', 0) == 0 %}
+                <tr class="{% if tem_alteracoes_pos_smae %}table-warning{% endif %}" {% if tem_alteracoes_pos_smae %}data-bs-toggle="tooltip" title="Este registro possui alterações após SM/AE que precisam ser verificadas"{% endif %}>
+                    <!-- Colunas básicas sempre visíveis -->
+                    <td class="text-center fw-medium text-primary">{{ r['id'] }}</td>
+                    <td>{{ r['unidade'] if r['unidade'] is not none else '' }}</td>
+                    <td>{{ r['data_registro'] }}</td>
+                    <td>{{ r['usuario'] }}</td>
+                    
+                    <!-- Colunas dinâmicas baseadas no nível de acesso -->
+                    {% if 'cliente' in colunas_visiveis %}
+                    <td>{{ r['cliente'] if r['cliente'] is not none else '' }}</td>
+                    {% endif %}
+                    
+                    {% if 'cavalo' in colunas_visiveis %}
+                    <td>{{ r['cavalo'] if r['cavalo'] is not none else '' }}</td>
+                    {% endif %}
+                    
+                    {% if 'motorista' in colunas_visiveis %}
+                    <td>{{ r['motorista'] if r['motorista'] is not none else '' }}</td>
+                    {% endif %}
+                    
+                    {% if 'cpf' in colunas_visiveis %}
+                    <td>{{ r['cpf'] if r['cpf'] is not none else '' }}</td>
+                    {% endif %}
+                    
+                    {% if 'container_1' in colunas_visiveis %}
+                    <td>{{ r['container_1'] if r['container_1'] is not none else '' }}</td>
+                    {% endif %}
+                    
+                    {% if 'container_2' in colunas_visiveis %}
+                    <td>{{ r['container_2'] if r['container_2'] is not none else '' }}</td>
+                    {% endif %}
+                    
+                    {% if 'nf' in colunas_visiveis %}
+                    <td>{{ r['nf'] if r['nf'] is not none else '' }}</td>
+                    {% endif %}
+                    
+                    {% if 'os' in colunas_visiveis %}
+                    <td>{{ r['os'] if r['os'] is not none else '' }}</td>
+                    {% endif %}
+                    
+                    {% if 'anexar_agendamento' in colunas_visiveis %}
+                    <td>{{ r['anexar_agendamento'] if r['anexar_agendamento'] is not none else '' }}</td>
+                    {% endif %}
+                    
+                    {% if 'sm' in colunas_visiveis %}
+                    <td>{{ r['sm'] if r['sm'] is not none else '' }}</td>
+                    {% endif %}
+                    
+                    {% if 'ae' in colunas_visiveis %}
+                    <td>{{ r['ae'] if r['ae'] is not none else '' }}</td>
+                    {% endif %}
+                    
+                    {% if 'tipo_carga' in colunas_visiveis %}
+                    <td>{{ r['tipo_carga'] if r['tipo_carga'] is not none else '' }}</td>
+                    {% endif %}
+                    
+                    {% if 'modalidade' in colunas_visiveis %}
+                    <td>{{ r['modalidade'] if r['modalidade'] is not none else '' }}</td>
+                    {% endif %}
+                    
+                    {% if 'status_container' in colunas_visiveis %}
+                    <td>{{ r['status_container'] if r['status_container'] is not none else '' }}</td>
+                    {% endif %}
+                    
+                    {% if 'booking_di' in colunas_visiveis %}
+                    <td>{{ r['booking_di'] if r['booking_di'] is not none else '' }}</td>
+                    {% endif %}
+                    
+                    {% if 'lote_cs' in colunas_visiveis %}
+                    <td>{{ r['lote_cs'] if r['lote_cs'] is not none else '' }}</td>
+                    {% endif %}
+                    
+                    {% if 'horario_previsto' in colunas_visiveis %}
+                    <td>{{ r['horario_previsto'] if r['horario_previsto'] is not none else '' }}</td>
+                    {% endif %}
+                    
+                    {% if 'on_time_cliente' in colunas_visiveis %}
+                    <td>{{ r['on_time_cliente'] if r['on_time_cliente'] is not none else '' }}</td>
+                    {% endif %}
+                    <td>
+                        <div class="d-flex justify-content-center gap-1">
+                            <a href="{{ url_for('comum.visualizar_registro', registro_id=r['id']) }}" class="btn btn-sm btn-outline-primary p-1" title="Visualizar">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            {% if r['anexar_nf'] %}
+                            <a href="{{ url_for('comum.download_anexo', registro_id=r['id'], tipo='nf') }}" class="btn btn-sm btn-outline-info p-1" title="Download Nota Fiscal">
+                                <i class="fas fa-file-invoice"></i>
+                            </a>
+                            {% endif %}
+                            {% if r['anexar_os'] %}
+                            <a href="{{ url_for('comum.download_anexo', registro_id=r['id'], tipo='os') }}" class="btn btn-sm btn-outline-success p-1" title="Download Ordem de Serviço">
+                                <i class="fas fa-file-contract"></i>
+                            </a>
+                            {% endif %}
+                            {% if r['anexar_agendamento'] %}
+                            <a href="{{ url_for('comum.download_anexo', registro_id=r['id'], tipo='agendamento') }}" class="btn btn-sm btn-outline-warning p-1" title="Download Agendamento">
+                                <i class="fas fa-calendar-alt"></i>
+                            </a>
+                            {% endif %}
+                            {% if nivel == 'gr' %}
+                            <a href="{{ url_for('gr.editar_registro', registro_id=r['id']) }}" class="btn btn-sm btn-outline-warning p-1" title="Editar GR">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% elif nivel == 'admin' %}
+                            <a href="{{ url_for('admin.editar_registro', registro_id=r['id']) }}" class="btn btn-sm btn-outline-warning p-1" title="Editar Admin">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('comum.editar_registro_comum', registro_id=r['id']) }}" class="btn btn-sm btn-outline-warning p-1" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% endif %}
+                            {% if nivel == 'admin' or nivel == 'comum' %}
+                                <form action="{{ url_for('comum.delete_registro', registro_id=r['id']) }}" method="post" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger p-1" title="Excluir">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Paginação -->
+        {% if total_pages > 1 %}
+        <div class="d-flex justify-content-between align-items-center p-3">
+            <div class="text-muted small">
+                Mostrando {{ registros|length }} de {{ total_registros }} registros
+            </div>
+            <nav aria-label="Navegação de páginas">
+                <ul class="pagination mb-0">
+                    <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('comum.dashboard_comum', page=page-1, filtro=request.args.get('filtro'), filtro_unidade=request.args.get('filtro_unidade', 'todas')) if page > 1 else '#' }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    
+                    {% for p in range(max(1, page-2), min(total_pages+1, page+3)) %}
+                    <li class="page-item {% if p == page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('comum.dashboard_comum', page=p, filtro=request.args.get('filtro'), filtro_unidade=request.args.get('filtro_unidade', 'todas')) }}">{{ p }}</a>
+                    </li>
+                    {% endfor %}
+                    
+                    <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('comum.dashboard_comum', page=page+1, filtro=request.args.get('filtro'), filtro_unidade=request.args.get('filtro_unidade', 'todas')) if page < total_pages else '#' }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h4>Nenhum registro encontrado</h4>
+            <p class="text-muted">Tente ajustar os filtros ou adicione um novo registro.</p>
+            <a href="{{ url_for('comum.novo_registro') }}" class="btn btn-warning mt-2">
+                <i class="fas fa-plus-circle"></i> Novo Registro
+            </a>
+        </div>
+    {% endif %}
+
+        </div>
+    
+        <!-- Seção de logs recentes -->
+        {% if logs_recentes and logs_recentes|length > 0 %}
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-white py-3">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-history text-primary me-2"></i>
+                    <h5 class="card-title mb-0">Alterações Recentes</h5>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="logs-list">
+                    {% for log in logs_recentes %}
+                    <div class="log-item p-3 border-bottom">
+                        <div class="log-date text-muted small mb-1">
+                            {{ log.data_alteracao }}
+                        </div>
+                        <div class="log-content">
+                            <div class="d-flex justify-content-between">
+                                <span class="log-user fw-medium text-primary">{{ log.alterado_por }}</span>
+                                <span class="log-id small text-muted">(ID: {{ log.registro_id }})</span>
+                            </div>
+                            <div class="log-record d-flex align-items-center gap-1 small mb-1">
+                                {% if log.placa %}<span class="badge bg-light text-dark">{{ log.placa }}</span>{% endif %}
+                                {% if log.motorista %}<span class="badge bg-light text-dark">{{ log.motorista }}</span>{% endif %}
+                                {% if log.cliente %}<span class="badge bg-light text-dark">{{ log.cliente }}</span>{% endif %}
+                            </div>
+                            <div class="log-changes small">
+                                {% if log.campos_alterados and log.campos_alterados|length > 0 %}
+                                    <span class="text-muted">Campos alterados:</span>
+                                    <div class="mt-1">
+                                    {% for campo in log.campos_alterados %}
+                                        <span class="badge bg-warning text-dark me-1 mb-1">{{ campo }}</span>
+                                    {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="log-actions mt-2 text-end">
+                            <a href="{{ url_for('admin.historico_registro', registro_id=log.registro_id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i> Ver detalhes
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="card-footer bg-white text-center py-3">
+                    <span class="text-muted small">Exibindo as {{ logs_recentes|length }} alterações mais recentes</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div> <!-- Fechamento da col-lg-10 -->
+</div> <!-- Fechamento da row -->
+</div> <!-- Fechamento do container-fluid -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Font Awesome fix
+        var elements = document.getElementsByClassName('fas');
+        for (var i = 0; i < elements.length; i++) {
+            elements[i].style.fontFamily = 'Font Awesome 6 Free';
+        }
+
+        // Filtro de pesquisa
+        const searchInput = document.getElementById('search-input');
+        const clearSearchBtn = document.getElementById('clear-search');
+        const table = document.querySelector('table');
+        const tbody = table.querySelector('tbody');
+        const rows = tbody.getElementsByTagName('tr');
+
+        function filterTable(searchTerm) {
+            searchTerm = searchTerm.toLowerCase();
+            let found = false;
+
+            for (let row of rows) {
+                const cells = row.getElementsByTagName('td');
+                let rowText = '';
+                for (let cell of cells) {
+                    rowText += cell.textContent + ' ';
+                }
+                rowText = rowText.toLowerCase();
+
+                if (rowText.includes(searchTerm)) {
+                    row.style.display = '';
+                    found = true;
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+
+            // Mostrar/esconder mensagem de nenhum resultado
+            const noResultsMessage = document.getElementById('no-results-message');
+            if (noResultsMessage) {
+                noResultsMessage.style.display = found ? 'none' : 'block';
+            }
+
+            // Atualizar botão de limpar
+            clearSearchBtn.classList.toggle('d-none', !searchTerm);
+        }
+
+        // Event listener para o input de pesquisa
+        searchInput.addEventListener('input', function(e) {
+            filterTable(this.value);
+        });
+
+        // Event listener para o botão de limpar
+        clearSearchBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            filterTable('');
+        });
+        
+        // Função para atualizar os contadores automaticamente
+        function atualizarContadores() {
+            fetch('/comum/api/contadores')
+                .then(response => response.json())
+                .then(data => {
+                    // Atualizar os valores dos contadores nos cards
+                    if (data) {
+                        document.querySelectorAll('.kpi-value').forEach(element => {
+                            const cardTitle = element.closest('.kpi-card').querySelector('.kpi-title').textContent.trim();
+                            
+                            if (cardTitle.includes('Operações sem NF')) {
+                                element.textContent = data.operacoes_sem_nf;
+                            } else if (cardTitle.includes('Operações sem OS')) {
+                                element.textContent = data.operacoes_sem_os;
+                            } else if (cardTitle.includes('Operações sem Container')) {
+                                element.textContent = data.operacoes_sem_container;
+                            } else if (cardTitle.includes('Operações sem SM')) {
+                                element.textContent = data.operacoes_sem_sm;
+                            } else if (cardTitle.includes('Operações sem AE')) {
+                                element.textContent = data.operacoes_sem_ae;
+                            }
+                        });
+                    }
+                })
+                .catch(error => console.error('Erro ao atualizar contadores:', error));
+        }
+        
+        // Atualizar imediatamente na carga da página
+        atualizarContadores();
+        
+        // Configurar atualização a cada 30 segundos
+        setInterval(atualizarContadores, 30000);
+    });
+</script>
+
+</body>
+</html>

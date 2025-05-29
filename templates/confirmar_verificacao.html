@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Verificação de Alterações{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4>Confirmar Verificação de Alterações</h4>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <p><strong>Atenção:</strong> Você está prestes a confirmar que verificou as alterações realizadas neste registro após a inclusão dos números SM/AE.</p>
+                <p>Ao confirmar, este registro não será mais contabilizado no indicador "Alterações pós SM/AE".</p>
+            </div>
+            
+            <h5 class="mt-4">Detalhes do Registro</h5>
+            <table class="table table-bordered">
+                <tr>
+                    <th style="width: 30%">ID</th>
+                    <td>{{ registro.id }}</td>
+                </tr>
+                <tr>
+                    <th>Cliente</th>
+                    <td>{{ registro.cliente }}</td>
+                </tr>
+                <tr>
+                    <th>Motorista</th>
+                    <td>{{ registro.motorista }}</td>
+                </tr>
+                <tr>
+                    <th>Número SM</th>
+                    <td>{{ registro.numero_sm }}</td>
+                </tr>
+                <tr>
+                    <th>Data SM</th>
+                    <td>{{ registro.data_sm }}</td>
+                </tr>
+                <tr>
+                    <th>Número AE</th>
+                    <td>{{ registro.numero_ae }}</td>
+                </tr>
+                <tr>
+                    <th>Data AE</th>
+                    <td>{{ registro.data_ae }}</td>
+                </tr>
+                <tr>
+                    <th>Última Modificação</th>
+                    <td>{{ registro.data_modificacao }}</td>
+                </tr>
+            </table>
+            
+            {% if historico %}
+            <h5 class="mt-4">Histórico de Alterações</h5>
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Data</th>
+                            <th>Usuário</th>
+                            <th>Alterações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in historico %}
+                        <tr>
+                            <td>{{ item.data_alteracao }}</td>
+                            <td>{{ item.usuario_nome or item.alterado_por }}</td>
+                            <td>{{ item.alteracoes }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+            
+            <div class="mt-4 d-flex justify-content-between">
+                <form action="{{ url_for('gr.marcar_alteracoes_verificadas', registro_id=registro.id) }}" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Confirmar Verificação
+                    </button>
+                </form>
+                <a href="{{ url_for('gr.ambiente', alteracoes_pos_smae='true') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

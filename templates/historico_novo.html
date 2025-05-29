@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Histórico do Registro | iTracker</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .navbar {
+      background-color: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 0.5rem 1rem;
+    }
+    .navbar-brand img {
+      height: 28px;
+    }
+    .navbar-title {
+      font-size: 18px;
+      font-weight: 500;
+      color: #0d6efd;
+      margin-left: 8px;
+    }
+    .form-section {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .form-section-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid #dee2e6;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .form-section-header i {
+      color: #0d6efd;
+    }
+    .form-section-header h5 {
+      margin: 0;
+      font-weight: 500;
+      font-size: 16px;
+    }
+    .form-section-body {
+      padding: 16px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .form-item {
+      margin-bottom: 12px;
+    }
+    .form-label {
+      font-size: 14px;
+      margin-bottom: 4px;
+      font-weight: 500;
+      color: #343a40;
+    }
+    .timeline {
+      position: relative;
+      padding: 20px 0;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: #dee2e6;
+      left: 20px;
+      margin-left: -1.5px;
+    }
+    .timeline-item {
+      position: relative;
+      margin-bottom: 30px;
+      margin-left: 45px;
+    }
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      left: -38px;
+      top: 10px;
+      border-radius: 50%;
+      background: #0d6efd;
+      border: 2px solid white;
+    }
+    .timeline-item.new::before {
+      background: #ffc107;
+    }
+    .timeline-card {
+      padding: 15px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.05);
+    }
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .timeline-date {
+      font-size: 12px;
+      color: #6c757d;
+    }
+    .timeline-title {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 5px;
+      color: #343a40;
+    }
+    .timeline-content {
+      font-size: 14px;
+      color: #495057;
+    }
+    @media (max-width: 768px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">
+      <span class="navbar-title">Registros</span>
+    </a>
+    {% if nivel == 'gr' %}
+    <a href="{{ url_for('gr.ambiente') }}" class="btn btn-outline-primary btn-sm">
+      <i class="fas fa-arrow-left"></i> Voltar
+    </a>
+    {% elif nivel == 'admin' %}
+    <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline-primary btn-sm">
+      <i class="fas fa-arrow-left"></i> Voltar
+    </a>
+    {% else %}
+    <a href="{{ url_for('comum.dashboard_comum') }}" class="btn btn-outline-primary btn-sm">
+      <i class="fas fa-arrow-left"></i> Voltar
+    </a>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="container mt-4 mb-5">
+  <!-- Cabeçalho do registro -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0">
+      <i class="fas fa-clipboard-list text-primary me-2"></i>
+      Histórico do Registro #{{ registro.id }}
+      <span class="ms-2 badge {% if nivel == 'admin' %}bg-danger{% elif nivel == 'gr' %}bg-success{% else %}bg-primary{% endif %}">
+        {{ nivel|upper }}
+      </span>
+    </h3>
+    {% if nivel == 'admin' %}
+      <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline-primary btn-sm">
+        <i class="fas fa-arrow-left"></i> Voltar
+      </a>
+    {% elif nivel == 'gr' %}
+      <a href="{{ url_for('gr.ambiente') }}" class="btn btn-outline-primary btn-sm">
+        <i class="fas fa-arrow-left"></i> Voltar
+      </a>
+    {% else %}
+      <a href="{{ url_for('comum.dashboard_comum') }}" class="btn btn-outline-primary btn-sm">
+        <i class="fas fa-arrow-left"></i> Voltar
+      </a>
+    {% endif %}
+  </div>
+
+  <!-- Informações do Registro #ID -->
+  <div class="form-section mb-4">
+    <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #17a2b8;">
+      <i class="fas fa-info-circle text-info"></i>
+      <h5>Informações do Registro #{{ registro.id }}</h5>
+      <span class="ms-auto badge bg-light text-dark border">
+        <i class="fas fa-plus-circle me-1"></i> Criado em {{ registro.data_registro[:16] if registro.data_registro else 'N/A' }}
+      </span>
+    </div>
+  </div>
+
+    <!-- SEÇÃO 1: Dados da Unidade -->
+    <div class="form-section">
+      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #0d6efd;">
+        <i class="fas fa-building text-primary"></i>
+        <h5>Dados da Unidade</h5>
+      </div>
+      <div class="form-section-body">
+        <div class="form-grid">
+          <!-- Unidade -->
+          <div class="form-item">
+            <label class="form-label">UNIDADE</label>
+            <input type="text" class="form-control" value="{{ registro.placa }}" disabled>
+          </div>
+          
+          <!-- Requisitante -->
+          <div class="form-item">
+            <label class="form-label">Requisitante</label>
+            <input type="text" class="form-control" value="{{ registro.get('Requisitante', '') }}" disabled>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 2: Dados do Cliente -->
+    <div class="form-section">
+      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #28a745;">
+        <i class="fas fa-user-tie text-success"></i>
+        <h5>Dados do Cliente</h5>
+      </div>
+      <div class="form-section-body">
+        <div class="form-grid">
+          <!-- Cliente -->
+          <div class="form-item">
+            <label class="form-label">CLIENTE</label>
+            <input type="text" class="form-control" value="{{ registro.cliente }}" disabled>
+          </div>
+          
+          <!-- Modalidade -->
+          <div class="form-item">
+            <label class="form-label">MODALIDADE</label>
+            <input type="text" class="form-control" value="{{ registro.modalidade }}" disabled>
+          </div>
+          
+          <!-- Pedido/Referência -->
+          <div class="form-item">
+            <label class="form-label">PEDIDO/REFERÊNCIA</label>
+            <input type="text" class="form-control" value="{{ registro.pedido_referencia }}" disabled>
+          </div>
+          
+          <!-- Booking/DI -->
+          <div class="form-item">
+            <label class="form-label">BOOKING / DI</label>
+            <input type="text" class="form-control" value="{{ registro.booking_di }}" disabled>
+          </div>
+          
+          <!-- Container 1 -->
+          <div class="form-item">
+            <label class="form-label">CONTAINER 1</label>
+            <input type="text" class="form-control" value="{{ registro.container_1 }}" disabled>
+          </div>
+          
+          <!-- Container 2 -->
+          <div class="form-item">
+            <label class="form-label">CONTAINER 2</label>
+            <input type="text" class="form-control" value="{{ registro.container_2 }}" disabled>
+          </div>
+          
+          <!-- Status Container -->
+          <div class="form-item">
+            <label class="form-label">STATUS CONTAINER</label>
+            <input type="text" class="form-control" value="{{ registro.status_container }}" disabled>
+          </div>
+          
+          <!-- Origem -->
+          <div class="form-item">
+            <label class="form-label">ORIGEM</label>
+            <input type="text" class="form-control" value="{{ registro.loc_cliente }}" disabled>
+          </div>
+          
+          <!-- Destino Intermediário -->
+          <div class="form-item">
+            <label class="form-label">DESTINO INTERMEDIÁRIO</label>
+            <input type="text" class="form-control" value="{{ registro.destino_intermediario }}" disabled>
+          </div>
+          
+          <!-- Destino Final -->
+          <div class="form-item">
+            <label class="form-label">DESTINO FINAL</label>
+            <input type="text" class="form-control" value="{{ registro.destino_final }}" disabled>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEÇÃO 3: Dados da Operação -->
+    <div class="form-section">
+      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #fd7e14;">
+        <i class="fas fa-truck text-warning"></i>
+        <h5>Dados da Operação</h5>
+      </div>
+      <div class="form-section-body">
+        <div class="form-grid">
+          <!-- Motorista -->
+          <div class="form-item">
+            <label class="form-label">MOTORISTA</label>
+            <input type="text" class="form-control" value="{{ registro.motorista }}" disabled>
+          </div>
+          
+          <!-- CPF Motorista -->
+          <div class="form-item">
+            <label class="form-label">CPF MOTORISTA</label>
+            <input type="text" class="form-control" value="{{ registro.cpf }}" disabled>
+          </div>
+          
+          <!-- Cavalo 1 -->
+          <div class="form-item">
+            <label class="form-label">CAVALO 1</label>
+            <input type="text" class="form-control" value="{{ registro.placa }}" disabled>
+          </div>
+          
+          <!-- Carreta 1 -->
+          <div class="form-item">
+            <label class="form-label">CARRETA 1</label>
+            <input type="text" class="form-control" value="{{ registro.carreta }}" disabled>
+          </div>
+          
+          <!-- Tipo de Carga -->
+          <div class="form-item">
+            <label class="form-label">TIPO DE CARGA</label>
+            <input type="text" class="form-control" value="{{ registro.tipo_carga }}" disabled>
+          </div>
+          
+          <!-- Lote CS -->
+          <div class="form-item">
+            <label class="form-label">LOTE CS</label>
+            <input type="text" class="form-control" value="{{ registro.lote_cs }}" disabled>
+          </div>
+          
+          <!-- On Time Cliente -->
+          <div class="form-item">
+            <label class="form-label">ON TIME CLIENTE</label>
+            <input type="text" class="form-control" value="{{ registro.get('on_time_cliente', '') }}" disabled>
+          </div>
+          
+          <!-- Horário Previsto -->
+          <div class="form-item">
+            <label class="form-label">HORÁRIO PREVISTO DE INÍCIO</label>
+            <input type="text" class="form-control" value="{{ registro.get('horario_previsto', '') }}" disabled>
+          </div>
+          
+          <!-- Gerenciadora -->
+          <div class="form-item">
+            <label class="form-label">GERENCIADORA</label>
+            <input type="text" class="form-control" value="{{ registro.gerenciadora }}" disabled>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- SEÇÃO 4: Documentos -->
+    <div class="form-section">
+      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #6f42c1;">
+        <i class="fas fa-file-alt text-purple"></i>
+        <h5>Documentos</h5>
+      </div>
+      <div class="form-section-body">
+        <div class="form-grid">
+          <!-- Nº NF -->
+          <div class="form-item">
+            <label class="form-label">Nº NF</label>
+            <input type="text" class="form-control" value="{{ registro.numero_nf }}" disabled>
+          </div>
+          
+          <!-- Série -->
+          <div class="form-item">
+            <label class="form-label">SÉRIE</label>
+            <input type="text" class="form-control" value="{{ registro.serie }}" disabled>
+          </div>
+          
+          <!-- Quantidade -->
+          <div class="form-item">
+            <label class="form-label">QUANTIDADE</label>
+            <input type="text" class="form-control" value="{{ registro.quantidade }}" disabled>
+          </div>
+          
+          <!-- Peso Bruto -->
+          <div class="form-item">
+            <label class="form-label">PESO BRUTO</label>
+            <input type="text" class="form-control" value="{{ registro.peso_bruto }}" disabled>
+          </div>
+          
+          <!-- Valor Total da Nota -->
+          <div class="form-item">
+            <label class="form-label">VALOR TOTAL DA NOTA</label>
+            <input type="text" class="form-control" value="{{ registro.valor_total_nota }}" disabled>
+          </div>
+        </div>
+        
+        <!-- Anexos -->
+        <div class="mt-3">
+          <label class="form-label">Anexos</label>
+          <div class="d-flex gap-2 flex-wrap">
+            {% if registro.anexar_nf %}
+            <a href="{{ url_for('main.download_file', filename=registro.anexar_nf) }}" class="btn btn-sm btn-outline-primary" target="_blank">
+              <i class="fas fa-file-invoice me-1"></i> Nota Fiscal
+            </a>
+            {% endif %}
+            
+            {% if registro.anexar_os %}
+            <a href="{{ url_for('main.download_file', filename=registro.anexar_os) }}" class="btn btn-sm btn-outline-secondary" target="_blank">
+              <i class="fas fa-file-alt me-1"></i> Ordem de Serviço
+            </a>
+            {% endif %}
+            
+            {% if registro.anexar_agendamento %}
+            <a href="{{ url_for('main.download_file', filename=registro.anexar_agendamento) }}" class="btn btn-sm btn-outline-success" target="_blank">
+              <i class="fas fa-calendar-alt me-1"></i> Agendamento
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- SEÇÃO 5: Observações -->
+    <div class="form-section">
+      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #17a2b8;">
+        <i class="fas fa-comments text-info"></i>
+        <h5>Observações</h5>
+      </div>
+      <div class="form-section-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Observação Operacional</label>
+            <textarea class="form-control" rows="3" disabled>{{ registro.observacao_operacional }}</textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Observação de Gestão de Risco</label>
+            <textarea class="form-control" rows="3" disabled>{{ registro.observacao_gr }}</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Botões de Ação -->
+    <div class="d-flex justify-content-center mt-4 gap-3">
+      <a href="{{ url_for('comum.visualizar_registro', registro_id=registro.id) }}" class="btn btn-primary">
+        <i class="fas fa-edit me-1"></i> Editar Registro
+      </a>
+      
+      {% if nivel == 'admin' or (nivel == 'gr' and registro.get('usuario', '') not in ['admin', 'gr']) or (nivel == 'comum' and registro.get('usuario', '') == usuario) %}
+      <form action="{{ url_for('comum.excluir_registro', registro_id=registro.id) }}" method="post" style="display:inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja excluir este registro?')">
+          <i class="fas fa-trash me-1"></i> Excluir Registro
+        </button>
+      </form>
+      {% endif %}
+      {# Exibir botões de ação conforme o perfil do usuário #}
+      {% if nivel == 'admin' %}
+        <a href="{{ url_for('admin.editar_registro', registro_id=registro.id) }}" class="btn btn-sm btn-warning me-2">
+          <i class="fas fa-edit me-1"></i> Editar Registro
+        </a>
+        <a href="{{ url_for('admin.excluir_registro', registro_id=registro.id) }}" class="btn btn-sm btn-danger">
+          <i class="fas fa-trash me-1"></i> Excluir Registro
+        </a>
+      {% elif nivel == 'gr' %}
+        {# Se GR pode editar, mostrar botão de editar #}
+        <a href="{{ url_for('gr.editar_registro', registro_id=registro.id) }}" class="btn btn-sm btn-warning me-2">
+          <i class="fas fa-edit me-1"></i> Editar Registro
+        </a>
+      {% endif %}
+      {# Usuário comum não vê botões de ação #}
+    </div>
+    
+    <!-- Seção de Filtros -->
+    <div class="form-section mb-4">
+      <div class="form-section-header">
+        <i class="fas fa-filter"></i>
+        <h5>Filtros</h5>
+      </div>
+      <div class="form-section-body">
+        <form method="GET" action="{{ url_for('admin.view_registros') }}" class="row g-3">
+          <div class="col-md-4">
+            <label for="status" class="form-label">Status</label>
+            <select name="status" id="status" class="form-select">
+              <option value="">Todos</option>
+              <option value="pendente" {% if status_filtro == 'pendente' %}selected{% endif %}>Pendente</option>
+              <option value="em_andamento" {% if status_filtro == 'em_andamento' %}selected{% endif %}>Em Andamento</option>
+              <option value="concluido" {% if status_filtro == 'concluido' %}selected{% endif %}>Concluído</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="data_inicio" class="form-label">Data Início</label>
+            <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio }}">
+          </div>
+          <div class="col-md-4">
+            <label for="data_fim" class="form-label">Data Fim</label>
+            <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
+          </div>
+          <div class="mb-3">
+            <label for="unidade" class="form-label">Unidade</label>
+            <select class="form-select" id="unidade" name="unidade" required>
+              <option value="">Selecione a unidade</option>
+              <option value="Rio de Janeiro">Rio de Janeiro</option>
+              <option value="Floriano">Floriano</option>
+              <option value="Suzano">Suzano</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="motorista" class="form-label">Motorista</label>
+            <input type="text" class="form-control" id="motorista" name="motorista" required>
+          </div>
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-search me-2"></i>Filtrar</button>
+            <a href="{{ url_for('admin.view_registros') }}" class="btn btn-secondary"><i class="fas fa-times me-2"></i>Limpar Filtros</a>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Histórico de Alterações -->
+    <div class="form-section mt-5">
+      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #dc3545;">
+        <i class="fas fa-history text-danger"></i>
+        <h5>Histórico de Alterações</h5>
+      </div>
+      <div class="form-section-body">
+        <div class="timeline">
+          {% if historico and historico|length > 0 %}
+          <!-- Última alteração -->
+          <div class="timeline-item new">
+            <div class="timeline-card">
+              <div class="timeline-header">
+                <div class="timeline-title">{{ historico[0]['data_alteracao'] }}</div>
+                <div class="timeline-date">
+                  <i class="fas fa-user-edit me-1"></i> {{ historico[0]['usuario'] }}
+                </div>
+              </div>
+              <div class="timeline-content">
+                <p>{{ historico[0]['descricao_alteracao'] }}</p>
+                <div class="alert alert-light p-2 mb-0 mt-2">
+                  <small><i class="fas fa-edit me-1 text-primary"></i> <b>Campos alterados:</b> 
+                  {% if historico[0]['campos_alterados'] %}
+                    {% set campos = historico[0]['campos_alterados'].split(',') %}
+                    {% for campo in campos %}
+                      <span class="badge bg-light text-dark border me-1">{{ campo.strip() }}</span>
+                    {% endfor %}
+                  {% endif %}
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Alterações anteriores -->
+          {% for item in historico[1:] %}
+          <div class="timeline-item">
+            <div class="timeline-card">
+              <div class="timeline-header">
+                <div class="timeline-title">{{ item['data_alteracao'] }}</div>
+                <div class="timeline-date">
+                  <i class="fas fa-user-edit me-1"></i> {{ item['usuario'] }}
+                </div>
+              </div>
+              <div class="timeline-content">
+                <p>{{ item['descricao_alteracao'] }}</p>
+                <div class="alert alert-light p-2 mb-0 mt-2">
+                  <small><i class="fas fa-edit me-1 text-primary"></i> <b>Campos alterados:</b> 
+                  {% if item['campos_alterados'] %}
+                    {% set campos = item['campos_alterados'].split(',') %}
+                    {% for campo in campos %}
+                      <span class="badge bg-light text-dark border me-1">{{ campo.strip() }}</span>
+                    {% endfor %}
+                  {% endif %}
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+          {% endif %}
+          
+          <!-- Registro criado -->
+          <div class="timeline-item">
+            <div class="timeline-card">
+              <div class="timeline-header">
+                <div class="timeline-title">Registro criado</div>
+                <div class="timeline-date">por {{ registro.get('usuario_criacao', '') }}</div>
+              </div>
+              <div class="timeline-content">
+                <p>Registro criado no sistema</p>
+                <div class="alert alert-light p-2 mb-0 mt-2">
+                  <small><b>Data de criação:</b> {{ registro.get('data_criacao', '') }}</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {% if not historico or historico|length == 0 %}
+        <div class="text-center py-5">
+          <i class="fas fa-history fa-3x text-muted mb-3"></i>
+          <h5>Nenhuma alteração registrada</h5>
+          <p class="text-muted">Este registro não possui histórico de alterações.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Add Font Awesome icons
+    const icons = document.querySelectorAll('.fas');
+    icons.forEach(icon => {
+      icon.classList.add('fa');
+    });
+  </script>
+</body>
+</html>

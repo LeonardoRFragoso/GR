@@ -1,0 +1,5 @@
+{% extends 'form_new.html' %}
+
+{% block form_action %}
+  <form action="{{ url_for('comum.editar_registro_comum', registro_id=registro.id) }}" method="post" enctype="multipart/form-data" autocomplete="off">
+{% endblock %}

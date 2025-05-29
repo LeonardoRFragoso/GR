@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estatísticas do Sistema - Administração</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        /* Estilização da barra lateral */
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+            color: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover {
+            color: white;
+            background-color: rgba(255,255,255,0.1);
+        }
+        .nav-link.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            border-left: 4px solid;
+            transition: transform 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-card.primary {
+            border-left-color: #007bff;
+        }
+        .stat-card.success {
+            border-left-color: #28a745;
+        }
+        .stat-card.warning {
+            border-left-color: #ffc107;
+        }
+        .stat-card.danger {
+            border-left-color: #dc3545;
+        }
+        .stat-card .card-body {
+            padding: 1rem;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Barra lateral -->
+            <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.admin_dashboard') }}">
+                                <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.usuarios') }}">
+                                <i class="fas fa-users me-2"></i> Usuários
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.solicitacoes') }}">
+                                <i class="fas fa-clipboard-list me-2"></i> Solicitações
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.logs') }}">
+                                <i class="fas fa-history me-2"></i> Logs
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{{ url_for('admin.estatisticas') }}">
+                                <i class="fas fa-chart-bar me-2"></i> Estatísticas
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.configuracoes') }}">
+                                <i class="fas fa-cogs me-2"></i> Configurações
+                            </a>
+                        </li>
+                        <li class="nav-item mt-3">
+                            <a class="nav-link" href="{{ url_for('index') }}">
+                                <i class="fas fa-home me-2"></i> Voltar ao Início
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Conteúdo principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2"><i class="fas fa-chart-bar"></i> Estatísticas do Sistema</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <form action="{{ url_for('admin.estatisticas') }}" method="get">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <div class="input-group">
+                                    <label class="input-group-text" for="periodo">Período:</label>
+                                    <select class="form-select" id="periodo" name="periodo" onchange="this.form.submit()">
+                                        <option value="7" {% if periodo == '7' %}selected{% endif %}>Últimos 7 dias</option>
+                                        <option value="30" {% if periodo == '30' %}selected{% endif %}>Últimos 30 dias</option>
+                                        <option value="90" {% if periodo == '90' %}selected{% endif %}>Últimos 90 dias</option>
+                                        <option value="365" {% if periodo == '365' %}selected{% endif %}>Último ano</option>
+                                    </select>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mensagens de alerta -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Cards de estatísticas -->
+                <div class="row">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card primary mb-4">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-3">
+                                        <i class="fas fa-users fa-3x text-primary"></i>
+                                    </div>
+                                    <div class="col-9 text-end">
+                                        <div class="stat-value">{{ total_usuarios }}</div>
+                                        <div>Usuários Cadastrados</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer d-flex align-items-center justify-content-between">
+                                <span class="small text-muted">{{ usuarios_ativos_30d }} ativos nos últimos 30 dias</span>
+                                <a href="{{ url_for('admin.usuarios') }}" class="small text-primary">Detalhes</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card success mb-4">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-3">
+                                        <i class="fas fa-clipboard-list fa-3x text-success"></i>
+                                    </div>
+                                    <div class="col-9 text-end">
+                                        <div class="stat-value">{{ total_registros }}</div>
+                                        <div>Registros Totais</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer d-flex align-items-center justify-content-between">
+                                <span class="small text-muted">{{ registros_periodo }} nos últimos {{ periodo }} dias</span>
+                                <a href="#" class="small text-success">Detalhes</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card warning mb-4">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-3">
+                                        <i class="fas fa-user-plus fa-3x text-warning"></i>
+                                    </div>
+                                    <div class="col-9 text-end">
+                                        {% set total_solicitacoes = solicitacoes_senha_por_status|selectattr('status', 'equalto', 'pendente')|sum(attribute='count', start=0) + solicitacoes_registro_por_status|selectattr('status', 'equalto', 'pendente')|sum(attribute='count', start=0) %}
+                                        <div class="stat-value">{{ total_solicitacoes }}</div>
+                                        <div>Solicitações Pendentes</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer d-flex align-items-center justify-content-between">
+                                <span class="small text-muted">Requer sua atenção</span>
+                                <a href="{{ url_for('admin.solicitacoes') }}" class="small text-warning">Detalhes</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stat-card danger mb-4">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-3">
+                                        <i class="fas fa-history fa-3x text-danger"></i>
+                                    </div>
+                                    <div class="col-9 text-end">
+                                        {% set total_logs = logs_por_dia|sum(attribute='1', start=0) %}
+                                        <div class="stat-value">{{ total_logs }}</div>
+                                        <div>Logs Registrados</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer d-flex align-items-center justify-content-between">
+                                <span class="small text-muted">Nos últimos 30 dias</span>
+                                <a href="{{ url_for('admin.logs') }}" class="small text-danger">Detalhes</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráficos -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-chart-pie me-1"></i>
+                                Distribuição de Usuários por Nível
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="usuariosChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-chart-pie me-1"></i>
+                                Distribuição de Registros por Status
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="registrosChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-12">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-chart-bar me-1"></i>
+                                Atividade do Sistema (Logs por Dia)
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="logsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabelas de estatísticas -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-table me-1"></i>
+                                Usuários Mais Ativos (Logs)
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Usuário</th>
+                                                <th class="text-end">Ações Registradas</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for usuario, count in logs_por_usuario %}
+                                                <tr>
+                                                    <td>{{ usuario }}</td>
+                                                    <td class="text-end">{{ count }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-table me-1"></i>
+                                Status das Solicitações
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Tipo</th>
+                                                <th>Status</th>
+                                                <th class="text-end">Quantidade</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for status in solicitacoes_senha_por_status %}
+                                                <tr>
+                                                    <td>Redefinição de Senha</td>
+                                                    <td>
+                                                        {% if status.status == 'pendente' %}
+                                                            <span class="badge bg-warning">Pendente</span>
+                                                        {% elif status.status == 'aprovada' %}
+                                                            <span class="badge bg-success">Aprovada</span>
+                                                        {% elif status.status == 'rejeitada' %}
+                                                            <span class="badge bg-danger">Rejeitada</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="text-end">{{ status.count }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                            
+                                            {% for status in solicitacoes_registro_por_status %}
+                                                <tr>
+                                                    <td>Registro de Usuário</td>
+                                                    <td>
+                                                        {% if status.status == 'pendente' %}
+                                                            <span class="badge bg-warning">Pendente</span>
+                                                        {% elif status.status == 'aprovada' %}
+                                                            <span class="badge bg-success">Aprovada</span>
+                                                        {% elif status.status == 'rejeitada' %}
+                                                            <span class="badge bg-danger">Rejeitada</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="text-end">{{ status.count }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Scripts para os gráficos -->
+    <script>
+        // Configuração de cores
+        const colors = [
+            '#007bff', '#28a745', '#ffc107', '#dc3545', '#6610f2', 
+            '#fd7e14', '#20c997', '#17a2b8', '#6c757d', '#343a40'
+        ];
+        
+        // Gráfico de usuários por nível
+        const usuariosCtx = document.getElementById('usuariosChart').getContext('2d');
+        new Chart(usuariosCtx, {
+            type: 'pie',
+            data: {
+                labels: {{ labels_usuarios|tojson }},
+                datasets: [{
+                    data: {{ dados_usuarios|tojson }},
+                    backgroundColor: colors,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+        
+        // Gráfico de registros por status
+        const registrosCtx = document.getElementById('registrosChart').getContext('2d');
+        new Chart(registrosCtx, {
+            type: 'pie',
+            data: {
+                labels: {{ labels_registros|tojson }},
+                datasets: [{
+                    data: {{ dados_registros|tojson }},
+                    backgroundColor: colors,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+        
+        // Gráfico de logs por dia
+        const logsCtx = document.getElementById('logsChart').getContext('2d');
+        new Chart(logsCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ labels_logs|tojson }},
+                datasets: [{
+                    label: 'Logs por Dia',
+                    data: {{ dados_logs|tojson }},
+                    backgroundColor: 'rgba(0, 123, 255, 0.5)',
+                    borderColor: 'rgba(0, 123, 255, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

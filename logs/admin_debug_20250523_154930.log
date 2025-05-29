@@ -1,0 +1,192 @@
+2025-05-23 15:49:42,391 - admin_debug - INFO - Iniciando carregamento do dashboard administrativo
+2025-05-23 15:49:42,392 - admin_debug - DEBUG - TABELAS NO BANCO: [<sqlite3.Row object at 0x000002A380CE1C60>, <sqlite3.Row object at 0x000002A380CE1BD0>, <sqlite3.Row object at 0x000002A380CE1BA0>, <sqlite3.Row object at 0x000002A380CE1B70>, <sqlite3.Row object at 0x000002A380CE1B40>, <sqlite3.Row object at 0x000002A380CE1B10>, <sqlite3.Row object at 0x000002A380CE1AB0>, <sqlite3.Row object at 0x000002A380CE1A50>, <sqlite3.Row object at 0x000002A380CE19F0>, <sqlite3.Row object at 0x000002A380CE1990>, <sqlite3.Row object at 0x000002A380CE1930>, <sqlite3.Row object at 0x000002A380CE18D0>, <sqlite3.Row object at 0x000002A380CE1870>]
+2025-05-23 15:49:42,392 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM usuarios
+2025-05-23 15:49:42,392 - admin_debug - DEBUG - Total de usuários: 13
+2025-05-23 15:49:42,392 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM usuarios WHERE nivel = 'admin'
+2025-05-23 15:49:42,394 - admin_debug - DEBUG - Total de admins: 5
+2025-05-23 15:49:42,394 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM usuarios WHERE nivel = 'comum'
+2025-05-23 15:49:42,394 - admin_debug - DEBUG - Total de usuários comuns: 2
+2025-05-23 15:49:42,394 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM usuarios WHERE nivel = 'gr'
+2025-05-23 15:49:42,395 - admin_debug - DEBUG - Total de usuários GR: 6
+2025-05-23 15:49:42,395 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='solicitacoes_senha'
+2025-05-23 15:49:42,396 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM solicitacoes_senha WHERE status = 'pendente'
+2025-05-23 15:49:42,396 - admin_debug - DEBUG - Solicitações de senha pendentes: 0
+2025-05-23 15:49:42,397 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='solicitacoes_registro'
+2025-05-23 15:49:42,397 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM solicitacoes_registro WHERE status = 'pendente'
+2025-05-23 15:49:42,398 - admin_debug - DEBUG - Solicitações de registro pendentes: 0
+2025-05-23 15:49:42,399 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='logs'
+2025-05-23 15:49:42,399 - admin_debug - DEBUG - SCHEMA DE logs: [<sqlite3.Row object at 0x000002A380CE1C60>, <sqlite3.Row object at 0x000002A380CE18D0>, <sqlite3.Row object at 0x000002A380CE1870>, <sqlite3.Row object at 0x000002A380CE1810>, <sqlite3.Row object at 0x000002A380CE1540>]
+2025-05-23 15:49:42,399 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='usuarios'
+2025-05-23 15:49:42,399 - admin_debug - DEBUG - QUERY SQL: 
+                            SELECT l.*, u.username
+                            FROM logs l
+                            LEFT JOIN usuarios u ON l.usuario = u.username
+                            ORDER BY l.data DESC
+                            LIMIT 10
+                        
+2025-05-23 15:49:42,400 - admin_debug - DEBUG - Logs recentes: 1 registros
+2025-05-23 15:49:42,401 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='registros'
+2025-05-23 15:49:42,401 - admin_debug - DEBUG - SCHEMA DE registros: [<sqlite3.Row object at 0x000002A380CE1810>, <sqlite3.Row object at 0x000002A380CE14E0>, <sqlite3.Row object at 0x000002A380CE14B0>, <sqlite3.Row object at 0x000002A380CE1480>, <sqlite3.Row object at 0x000002A380CE1450>, <sqlite3.Row object at 0x000002A380CE1420>, <sqlite3.Row object at 0x000002A380CE13F0>, <sqlite3.Row object at 0x000002A380CE13C0>, <sqlite3.Row object at 0x000002A380CE1390>, <sqlite3.Row object at 0x000002A380CE1360>, <sqlite3.Row object at 0x000002A380CE1330>, <sqlite3.Row object at 0x000002A380CE1300>, <sqlite3.Row object at 0x000002A380CE12D0>, <sqlite3.Row object at 0x000002A380CE12A0>, <sqlite3.Row object at 0x000002A380CE1270>, <sqlite3.Row object at 0x000002A380CE1240>, <sqlite3.Row object at 0x000002A380CE1210>, <sqlite3.Row object at 0x000002A380CE11E0>, <sqlite3.Row object at 0x000002A380CE11B0>, <sqlite3.Row object at 0x000002A380CE1180>, <sqlite3.Row object at 0x000002A380CE1150>, <sqlite3.Row object at 0x000002A380CE1120>, <sqlite3.Row object at 0x000002A380CE10F0>, <sqlite3.Row object at 0x000002A380CE10C0>, <sqlite3.Row object at 0x000002A380CE1090>, <sqlite3.Row object at 0x000002A380CE1060>, <sqlite3.Row object at 0x000002A380CE1030>, <sqlite3.Row object at 0x000002A380CE1000>, <sqlite3.Row object at 0x000002A380CE0FD0>, <sqlite3.Row object at 0x000002A380CE0FA0>, <sqlite3.Row object at 0x000002A380CE0F70>, <sqlite3.Row object at 0x000002A380CE0DC0>, <sqlite3.Row object at 0x000002A380CE0CD0>, <sqlite3.Row object at 0x000002A380CE0D90>, <sqlite3.Row object at 0x000002A380CE0D30>, <sqlite3.Row object at 0x000002A380CE0D00>, <sqlite3.Row object at 0x000002A380CE0CA0>, <sqlite3.Row object at 0x000002A380CE0D60>, <sqlite3.Row object at 0x000002A380CE0C70>, <sqlite3.Row object at 0x000002A380CE0BB0>, <sqlite3.Row object at 0x000002A380CE0C10>, <sqlite3.Row object at 0x000002A380CE0BE0>, <sqlite3.Row object at 0x000002A380CE0B80>, <sqlite3.Row object at 0x000002A380CE0C40>, <sqlite3.Row object at 0x000002A380CE0B50>, <sqlite3.Row object at 0x000002A380CE0AF0>, <sqlite3.Row object at 0x000002A380CE0AC0>, <sqlite3.Row object at 0x000002A380CE09D0>, <sqlite3.Row object at 0x000002A380CE0850>, <sqlite3.Row object at 0x000002A380CE09A0>, <sqlite3.Row object at 0x000002A380CE07F0>, <sqlite3.Row object at 0x000002A380CE0070>, <sqlite3.Row object at 0x000002A380CE03D0>, <sqlite3.Row object at 0x000002A380CE04F0>]
+2025-05-23 15:49:42,401 - admin_debug - DEBUG - Colunas na tabela registros: [<sqlite3.Row object at 0x000002A380CE1810>, <sqlite3.Row object at 0x000002A380CE14E0>, <sqlite3.Row object at 0x000002A380CE14B0>, <sqlite3.Row object at 0x000002A380CE1480>, <sqlite3.Row object at 0x000002A380CE1450>, <sqlite3.Row object at 0x000002A380CE1420>, <sqlite3.Row object at 0x000002A380CE13F0>, <sqlite3.Row object at 0x000002A380CE13C0>, <sqlite3.Row object at 0x000002A380CE1390>, <sqlite3.Row object at 0x000002A380CE1360>, <sqlite3.Row object at 0x000002A380CE1330>, <sqlite3.Row object at 0x000002A380CE1300>, <sqlite3.Row object at 0x000002A380CE12D0>, <sqlite3.Row object at 0x000002A380CE12A0>, <sqlite3.Row object at 0x000002A380CE1270>, <sqlite3.Row object at 0x000002A380CE1240>, <sqlite3.Row object at 0x000002A380CE1210>, <sqlite3.Row object at 0x000002A380CE11E0>, <sqlite3.Row object at 0x000002A380CE11B0>, <sqlite3.Row object at 0x000002A380CE1180>, <sqlite3.Row object at 0x000002A380CE1150>, <sqlite3.Row object at 0x000002A380CE1120>, <sqlite3.Row object at 0x000002A380CE10F0>, <sqlite3.Row object at 0x000002A380CE10C0>, <sqlite3.Row object at 0x000002A380CE1090>, <sqlite3.Row object at 0x000002A380CE1060>, <sqlite3.Row object at 0x000002A380CE1030>, <sqlite3.Row object at 0x000002A380CE1000>, <sqlite3.Row object at 0x000002A380CE0FD0>, <sqlite3.Row object at 0x000002A380CE0FA0>, <sqlite3.Row object at 0x000002A380CE0F70>, <sqlite3.Row object at 0x000002A380CE0DC0>, <sqlite3.Row object at 0x000002A380CE0CD0>, <sqlite3.Row object at 0x000002A380CE0D90>, <sqlite3.Row object at 0x000002A380CE0D30>, <sqlite3.Row object at 0x000002A380CE0D00>, <sqlite3.Row object at 0x000002A380CE0CA0>, <sqlite3.Row object at 0x000002A380CE0D60>, <sqlite3.Row object at 0x000002A380CE0C70>, <sqlite3.Row object at 0x000002A380CE0BB0>, <sqlite3.Row object at 0x000002A380CE0C10>, <sqlite3.Row object at 0x000002A380CE0BE0>, <sqlite3.Row object at 0x000002A380CE0B80>, <sqlite3.Row object at 0x000002A380CE0C40>, <sqlite3.Row object at 0x000002A380CE0B50>, <sqlite3.Row object at 0x000002A380CE0AF0>, <sqlite3.Row object at 0x000002A380CE0AC0>, <sqlite3.Row object at 0x000002A380CE09D0>, <sqlite3.Row object at 0x000002A380CE0850>, <sqlite3.Row object at 0x000002A380CE09A0>, <sqlite3.Row object at 0x000002A380CE07F0>, <sqlite3.Row object at 0x000002A380CE0070>, <sqlite3.Row object at 0x000002A380CE03D0>, <sqlite3.Row object at 0x000002A380CE04F0>]
+2025-05-23 15:49:42,401 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM registros WHERE excluido = 0
+2025-05-23 15:49:42,401 - admin_debug - DEBUG - Total de registros: 1
+2025-05-23 15:49:42,401 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM registros WHERE data_registro >= date('now', '-7 days') AND excluido = 0
+2025-05-23 15:49:42,401 - admin_debug - DEBUG - Registros da última semana: 1
+2025-05-23 15:49:42,401 - admin_debug - DEBUG - QUERY SQL: PRAGMA table_info(registros)
+2025-05-23 15:49:42,401 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM registros WHERE data_modificacao >= datetime('now', '-7 days') AND excluido = 0
+2025-05-23 15:49:42,401 - admin_debug - DEBUG - Registros atualizados na última semana: 0
+2025-05-23 15:49:42,401 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) as total FROM registros WHERE alteracoes_verificadas = 1 AND excluido = 0
+2025-05-23 15:49:42,401 - admin_debug - DEBUG - Total de alterações verificadas: 0
+2025-05-23 15:49:42,401 - admin_debug - DEBUG - QUERY SQL: 
+                        SELECT usuario, COUNT(*) as total_acoes
+                        FROM logs
+                        GROUP BY usuario
+                        ORDER BY total_acoes DESC
+                        LIMIT 5
+                    
+2025-05-23 15:49:42,408 - admin_debug - DEBUG - Atividade por usuário: 1 registros
+2025-05-23 15:49:42,408 - admin_debug - INFO - Dashboard administrativo carregado com sucesso
+2025-05-23 15:50:07,557 - admin_debug - INFO - Iniciando carregamento do dashboard administrativo
+2025-05-23 15:50:07,559 - admin_debug - DEBUG - TABELAS NO BANCO: [<sqlite3.Row object at 0x000002A380DAE2F0>, <sqlite3.Row object at 0x000002A380DAEDD0>, <sqlite3.Row object at 0x000002A380DAEDA0>, <sqlite3.Row object at 0x000002A380DAEE00>, <sqlite3.Row object at 0x000002A380DAEE60>, <sqlite3.Row object at 0x000002A380DAEE90>, <sqlite3.Row object at 0x000002A380DAEEC0>, <sqlite3.Row object at 0x000002A380DAEEF0>, <sqlite3.Row object at 0x000002A380DAEF20>, <sqlite3.Row object at 0x000002A380DAEF50>, <sqlite3.Row object at 0x000002A380DAEF80>, <sqlite3.Row object at 0x000002A380DAEFB0>, <sqlite3.Row object at 0x000002A380DAEFE0>]
+2025-05-23 15:50:07,559 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM usuarios
+2025-05-23 15:50:07,560 - admin_debug - DEBUG - Total de usuários: 13
+2025-05-23 15:50:07,560 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM usuarios WHERE nivel = 'admin'
+2025-05-23 15:50:07,560 - admin_debug - DEBUG - Total de admins: 5
+2025-05-23 15:50:07,560 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM usuarios WHERE nivel = 'comum'
+2025-05-23 15:50:07,560 - admin_debug - DEBUG - Total de usuários comuns: 2
+2025-05-23 15:50:07,560 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM usuarios WHERE nivel = 'gr'
+2025-05-23 15:50:07,562 - admin_debug - DEBUG - Total de usuários GR: 6
+2025-05-23 15:50:07,562 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='solicitacoes_senha'
+2025-05-23 15:50:07,562 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM solicitacoes_senha WHERE status = 'pendente'
+2025-05-23 15:50:07,562 - admin_debug - DEBUG - Solicitações de senha pendentes: 0
+2025-05-23 15:50:07,563 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='solicitacoes_registro'
+2025-05-23 15:50:07,564 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM solicitacoes_registro WHERE status = 'pendente'
+2025-05-23 15:50:07,564 - admin_debug - DEBUG - Solicitações de registro pendentes: 0
+2025-05-23 15:50:07,565 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='logs'
+2025-05-23 15:50:07,565 - admin_debug - DEBUG - SCHEMA DE logs: [<sqlite3.Row object at 0x000002A380DAE2F0>, <sqlite3.Row object at 0x000002A380DAEE60>, <sqlite3.Row object at 0x000002A380DAEFB0>, <sqlite3.Row object at 0x000002A380DAF010>, <sqlite3.Row object at 0x000002A380DAF0D0>]
+2025-05-23 15:50:07,565 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='usuarios'
+2025-05-23 15:50:07,566 - admin_debug - DEBUG - QUERY SQL: 
+                            SELECT l.*, u.username
+                            FROM logs l
+                            LEFT JOIN usuarios u ON l.usuario = u.username
+                            ORDER BY l.data DESC
+                            LIMIT 10
+                        
+2025-05-23 15:50:07,567 - admin_debug - DEBUG - Logs recentes: 1 registros
+2025-05-23 15:50:07,567 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='registros'
+2025-05-23 15:50:07,568 - admin_debug - DEBUG - SCHEMA DE registros: [<sqlite3.Row object at 0x000002A380DAF130>, <sqlite3.Row object at 0x000002A380DAF100>, <sqlite3.Row object at 0x000002A380DAEFB0>, <sqlite3.Row object at 0x000002A380DAF0A0>, <sqlite3.Row object at 0x000002A380DAF040>, <sqlite3.Row object at 0x000002A380DAF160>, <sqlite3.Row object at 0x000002A380DAF190>, <sqlite3.Row object at 0x000002A380DAF1C0>, <sqlite3.Row object at 0x000002A380DAF220>, <sqlite3.Row object at 0x000002A380DAF1F0>, <sqlite3.Row object at 0x000002A380DAF250>, <sqlite3.Row object at 0x000002A380DAF280>, <sqlite3.Row object at 0x000002A380DAF2B0>, <sqlite3.Row object at 0x000002A380DAF2E0>, <sqlite3.Row object at 0x000002A380DAF310>, <sqlite3.Row object at 0x000002A380DAF340>, <sqlite3.Row object at 0x000002A380DAF370>, <sqlite3.Row object at 0x000002A380DAF3A0>, <sqlite3.Row object at 0x000002A380DAF3D0>, <sqlite3.Row object at 0x000002A380DAF400>, <sqlite3.Row object at 0x000002A380DAF430>, <sqlite3.Row object at 0x000002A380DAF460>, <sqlite3.Row object at 0x000002A380DAF490>, <sqlite3.Row object at 0x000002A380DAF4C0>, <sqlite3.Row object at 0x000002A380DAF4F0>, <sqlite3.Row object at 0x000002A380DAF5B0>, <sqlite3.Row object at 0x000002A380DAF580>, <sqlite3.Row object at 0x000002A380DAF550>, <sqlite3.Row object at 0x000002A380DAF520>, <sqlite3.Row object at 0x000002A380DAF5E0>, <sqlite3.Row object at 0x000002A380DAF610>, <sqlite3.Row object at 0x000002A380DAF640>, <sqlite3.Row object at 0x000002A380DAF670>, <sqlite3.Row object at 0x000002A380DAF6A0>, <sqlite3.Row object at 0x000002A380DAF6D0>, <sqlite3.Row object at 0x000002A380DAF700>, <sqlite3.Row object at 0x000002A380DAF730>, <sqlite3.Row object at 0x000002A380DAF760>, <sqlite3.Row object at 0x000002A380DAF790>, <sqlite3.Row object at 0x000002A380DAF7C0>, <sqlite3.Row object at 0x000002A380DAF7F0>, <sqlite3.Row object at 0x000002A380DAF820>, <sqlite3.Row object at 0x000002A380DAF850>, <sqlite3.Row object at 0x000002A380DAF880>, <sqlite3.Row object at 0x000002A380DAF8B0>, <sqlite3.Row object at 0x000002A380DAF8E0>, <sqlite3.Row object at 0x000002A380DAF910>, <sqlite3.Row object at 0x000002A380DAF940>, <sqlite3.Row object at 0x000002A380DAF970>, <sqlite3.Row object at 0x000002A380DAF9A0>, <sqlite3.Row object at 0x000002A380DAF9D0>, <sqlite3.Row object at 0x000002A380DAFA00>, <sqlite3.Row object at 0x000002A380DAFA30>, <sqlite3.Row object at 0x000002A380DAFA60>]
+2025-05-23 15:50:07,568 - admin_debug - DEBUG - Colunas na tabela registros: [<sqlite3.Row object at 0x000002A380DAF130>, <sqlite3.Row object at 0x000002A380DAF100>, <sqlite3.Row object at 0x000002A380DAEFB0>, <sqlite3.Row object at 0x000002A380DAF0A0>, <sqlite3.Row object at 0x000002A380DAF040>, <sqlite3.Row object at 0x000002A380DAF160>, <sqlite3.Row object at 0x000002A380DAF190>, <sqlite3.Row object at 0x000002A380DAF1C0>, <sqlite3.Row object at 0x000002A380DAF220>, <sqlite3.Row object at 0x000002A380DAF1F0>, <sqlite3.Row object at 0x000002A380DAF250>, <sqlite3.Row object at 0x000002A380DAF280>, <sqlite3.Row object at 0x000002A380DAF2B0>, <sqlite3.Row object at 0x000002A380DAF2E0>, <sqlite3.Row object at 0x000002A380DAF310>, <sqlite3.Row object at 0x000002A380DAF340>, <sqlite3.Row object at 0x000002A380DAF370>, <sqlite3.Row object at 0x000002A380DAF3A0>, <sqlite3.Row object at 0x000002A380DAF3D0>, <sqlite3.Row object at 0x000002A380DAF400>, <sqlite3.Row object at 0x000002A380DAF430>, <sqlite3.Row object at 0x000002A380DAF460>, <sqlite3.Row object at 0x000002A380DAF490>, <sqlite3.Row object at 0x000002A380DAF4C0>, <sqlite3.Row object at 0x000002A380DAF4F0>, <sqlite3.Row object at 0x000002A380DAF5B0>, <sqlite3.Row object at 0x000002A380DAF580>, <sqlite3.Row object at 0x000002A380DAF550>, <sqlite3.Row object at 0x000002A380DAF520>, <sqlite3.Row object at 0x000002A380DAF5E0>, <sqlite3.Row object at 0x000002A380DAF610>, <sqlite3.Row object at 0x000002A380DAF640>, <sqlite3.Row object at 0x000002A380DAF670>, <sqlite3.Row object at 0x000002A380DAF6A0>, <sqlite3.Row object at 0x000002A380DAF6D0>, <sqlite3.Row object at 0x000002A380DAF700>, <sqlite3.Row object at 0x000002A380DAF730>, <sqlite3.Row object at 0x000002A380DAF760>, <sqlite3.Row object at 0x000002A380DAF790>, <sqlite3.Row object at 0x000002A380DAF7C0>, <sqlite3.Row object at 0x000002A380DAF7F0>, <sqlite3.Row object at 0x000002A380DAF820>, <sqlite3.Row object at 0x000002A380DAF850>, <sqlite3.Row object at 0x000002A380DAF880>, <sqlite3.Row object at 0x000002A380DAF8B0>, <sqlite3.Row object at 0x000002A380DAF8E0>, <sqlite3.Row object at 0x000002A380DAF910>, <sqlite3.Row object at 0x000002A380DAF940>, <sqlite3.Row object at 0x000002A380DAF970>, <sqlite3.Row object at 0x000002A380DAF9A0>, <sqlite3.Row object at 0x000002A380DAF9D0>, <sqlite3.Row object at 0x000002A380DAFA00>, <sqlite3.Row object at 0x000002A380DAFA30>, <sqlite3.Row object at 0x000002A380DAFA60>]
+2025-05-23 15:50:07,569 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM registros WHERE excluido = 0
+2025-05-23 15:50:07,569 - admin_debug - DEBUG - Total de registros: 1
+2025-05-23 15:50:07,569 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM registros WHERE data_registro >= date('now', '-7 days') AND excluido = 0
+2025-05-23 15:50:07,569 - admin_debug - DEBUG - Registros da última semana: 1
+2025-05-23 15:50:07,570 - admin_debug - DEBUG - QUERY SQL: PRAGMA table_info(registros)
+2025-05-23 15:50:07,570 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM registros WHERE data_modificacao >= datetime('now', '-7 days') AND excluido = 0
+2025-05-23 15:50:07,571 - admin_debug - DEBUG - Registros atualizados na última semana: 0
+2025-05-23 15:50:07,571 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) as total FROM registros WHERE alteracoes_verificadas = 1 AND excluido = 0
+2025-05-23 15:50:07,572 - admin_debug - DEBUG - Total de alterações verificadas: 0
+2025-05-23 15:50:07,572 - admin_debug - DEBUG - QUERY SQL: 
+                        SELECT usuario, COUNT(*) as total_acoes
+                        FROM logs
+                        GROUP BY usuario
+                        ORDER BY total_acoes DESC
+                        LIMIT 5
+                    
+2025-05-23 15:50:07,572 - admin_debug - DEBUG - Atividade por usuário: 1 registros
+2025-05-23 15:50:07,572 - admin_debug - INFO - Dashboard administrativo carregado com sucesso
+2025-05-23 15:50:48,361 - admin_debug - INFO - Iniciando carregamento do dashboard administrativo
+2025-05-23 15:50:48,364 - admin_debug - DEBUG - TABELAS NO BANCO: [<sqlite3.Row object at 0x000002A380E1CBE0>, <sqlite3.Row object at 0x000002A380E1CC70>, <sqlite3.Row object at 0x000002A380E1CCA0>, <sqlite3.Row object at 0x000002A380E1CCD0>, <sqlite3.Row object at 0x000002A380E1CD00>, <sqlite3.Row object at 0x000002A380E1CD30>, <sqlite3.Row object at 0x000002A380E1CD60>, <sqlite3.Row object at 0x000002A380E1CD90>, <sqlite3.Row object at 0x000002A380E1CDC0>, <sqlite3.Row object at 0x000002A380E1CDF0>, <sqlite3.Row object at 0x000002A380E1CE20>, <sqlite3.Row object at 0x000002A380E1CE50>, <sqlite3.Row object at 0x000002A380E1CE80>]
+2025-05-23 15:50:48,364 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM usuarios
+2025-05-23 15:50:48,364 - admin_debug - DEBUG - Total de usuários: 13
+2025-05-23 15:50:48,365 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM usuarios WHERE nivel = 'admin'
+2025-05-23 15:50:48,365 - admin_debug - DEBUG - Total de admins: 5
+2025-05-23 15:50:48,366 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM usuarios WHERE nivel = 'comum'
+2025-05-23 15:50:48,366 - admin_debug - DEBUG - Total de usuários comuns: 2
+2025-05-23 15:50:48,366 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM usuarios WHERE nivel = 'gr'
+2025-05-23 15:50:48,366 - admin_debug - DEBUG - Total de usuários GR: 6
+2025-05-23 15:50:48,366 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='solicitacoes_senha'
+2025-05-23 15:50:48,367 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM solicitacoes_senha WHERE status = 'pendente'
+2025-05-23 15:50:48,367 - admin_debug - DEBUG - Solicitações de senha pendentes: 0
+2025-05-23 15:50:48,367 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='solicitacoes_registro'
+2025-05-23 15:50:48,367 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM solicitacoes_registro WHERE status = 'pendente'
+2025-05-23 15:50:48,368 - admin_debug - DEBUG - Solicitações de registro pendentes: 0
+2025-05-23 15:50:48,368 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='logs'
+2025-05-23 15:50:48,369 - admin_debug - DEBUG - SCHEMA DE logs: [<sqlite3.Row object at 0x000002A380E1CBE0>, <sqlite3.Row object at 0x000002A380E1CE50>, <sqlite3.Row object at 0x000002A380E1CE80>, <sqlite3.Row object at 0x000002A380E1CEB0>, <sqlite3.Row object at 0x000002A380E1CEE0>]
+2025-05-23 15:50:48,369 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='usuarios'
+2025-05-23 15:50:48,369 - admin_debug - DEBUG - QUERY SQL: 
+                            SELECT l.*, u.username
+                            FROM logs l
+                            LEFT JOIN usuarios u ON l.usuario = u.username
+                            ORDER BY l.data DESC
+                            LIMIT 10
+                        
+2025-05-23 15:50:48,369 - admin_debug - DEBUG - Logs recentes: 1 registros
+2025-05-23 15:50:48,370 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='registros'
+2025-05-23 15:50:48,370 - admin_debug - DEBUG - SCHEMA DE registros: [<sqlite3.Row object at 0x000002A380E1CEB0>, <sqlite3.Row object at 0x000002A380E1CF40>, <sqlite3.Row object at 0x000002A380E1CF70>, <sqlite3.Row object at 0x000002A380E1CFA0>, <sqlite3.Row object at 0x000002A380E1CFD0>, <sqlite3.Row object at 0x000002A380E1D000>, <sqlite3.Row object at 0x000002A380E1D030>, <sqlite3.Row object at 0x000002A380E1D060>, <sqlite3.Row object at 0x000002A380E1D090>, <sqlite3.Row object at 0x000002A380E1D0C0>, <sqlite3.Row object at 0x000002A380E1D0F0>, <sqlite3.Row object at 0x000002A380E1D120>, <sqlite3.Row object at 0x000002A380E1D150>, <sqlite3.Row object at 0x000002A380E1D180>, <sqlite3.Row object at 0x000002A380E1D1B0>, <sqlite3.Row object at 0x000002A380E1D1E0>, <sqlite3.Row object at 0x000002A380E1D210>, <sqlite3.Row object at 0x000002A380E1D240>, <sqlite3.Row object at 0x000002A380E1D270>, <sqlite3.Row object at 0x000002A380E1D2A0>, <sqlite3.Row object at 0x000002A380E1D2D0>, <sqlite3.Row object at 0x000002A380E1D300>, <sqlite3.Row object at 0x000002A380E1D330>, <sqlite3.Row object at 0x000002A380E1D360>, <sqlite3.Row object at 0x000002A380E1D390>, <sqlite3.Row object at 0x000002A380E1D3C0>, <sqlite3.Row object at 0x000002A380E1D3F0>, <sqlite3.Row object at 0x000002A380E1D420>, <sqlite3.Row object at 0x000002A380E1D450>, <sqlite3.Row object at 0x000002A380E1D480>, <sqlite3.Row object at 0x000002A380E1D4B0>, <sqlite3.Row object at 0x000002A380E1D4E0>, <sqlite3.Row object at 0x000002A380E1D510>, <sqlite3.Row object at 0x000002A380E1D540>, <sqlite3.Row object at 0x000002A380E1D570>, <sqlite3.Row object at 0x000002A380E1D5A0>, <sqlite3.Row object at 0x000002A380E1D5D0>, <sqlite3.Row object at 0x000002A380E1D600>, <sqlite3.Row object at 0x000002A380E1D630>, <sqlite3.Row object at 0x000002A380E1D660>, <sqlite3.Row object at 0x000002A380E1D690>, <sqlite3.Row object at 0x000002A380E1D6C0>, <sqlite3.Row object at 0x000002A380E1D6F0>, <sqlite3.Row object at 0x000002A380E1D720>, <sqlite3.Row object at 0x000002A380E1D750>, <sqlite3.Row object at 0x000002A380E1D780>, <sqlite3.Row object at 0x000002A380E1D7B0>, <sqlite3.Row object at 0x000002A380E1D7E0>, <sqlite3.Row object at 0x000002A380E1D810>, <sqlite3.Row object at 0x000002A380E1D840>, <sqlite3.Row object at 0x000002A380E1D870>, <sqlite3.Row object at 0x000002A380E1D8A0>, <sqlite3.Row object at 0x000002A380E1D8D0>, <sqlite3.Row object at 0x000002A380E1D900>]
+2025-05-23 15:50:48,370 - admin_debug - DEBUG - Colunas na tabela registros: [<sqlite3.Row object at 0x000002A380E1CEB0>, <sqlite3.Row object at 0x000002A380E1CF40>, <sqlite3.Row object at 0x000002A380E1CF70>, <sqlite3.Row object at 0x000002A380E1CFA0>, <sqlite3.Row object at 0x000002A380E1CFD0>, <sqlite3.Row object at 0x000002A380E1D000>, <sqlite3.Row object at 0x000002A380E1D030>, <sqlite3.Row object at 0x000002A380E1D060>, <sqlite3.Row object at 0x000002A380E1D090>, <sqlite3.Row object at 0x000002A380E1D0C0>, <sqlite3.Row object at 0x000002A380E1D0F0>, <sqlite3.Row object at 0x000002A380E1D120>, <sqlite3.Row object at 0x000002A380E1D150>, <sqlite3.Row object at 0x000002A380E1D180>, <sqlite3.Row object at 0x000002A380E1D1B0>, <sqlite3.Row object at 0x000002A380E1D1E0>, <sqlite3.Row object at 0x000002A380E1D210>, <sqlite3.Row object at 0x000002A380E1D240>, <sqlite3.Row object at 0x000002A380E1D270>, <sqlite3.Row object at 0x000002A380E1D2A0>, <sqlite3.Row object at 0x000002A380E1D2D0>, <sqlite3.Row object at 0x000002A380E1D300>, <sqlite3.Row object at 0x000002A380E1D330>, <sqlite3.Row object at 0x000002A380E1D360>, <sqlite3.Row object at 0x000002A380E1D390>, <sqlite3.Row object at 0x000002A380E1D3C0>, <sqlite3.Row object at 0x000002A380E1D3F0>, <sqlite3.Row object at 0x000002A380E1D420>, <sqlite3.Row object at 0x000002A380E1D450>, <sqlite3.Row object at 0x000002A380E1D480>, <sqlite3.Row object at 0x000002A380E1D4B0>, <sqlite3.Row object at 0x000002A380E1D4E0>, <sqlite3.Row object at 0x000002A380E1D510>, <sqlite3.Row object at 0x000002A380E1D540>, <sqlite3.Row object at 0x000002A380E1D570>, <sqlite3.Row object at 0x000002A380E1D5A0>, <sqlite3.Row object at 0x000002A380E1D5D0>, <sqlite3.Row object at 0x000002A380E1D600>, <sqlite3.Row object at 0x000002A380E1D630>, <sqlite3.Row object at 0x000002A380E1D660>, <sqlite3.Row object at 0x000002A380E1D690>, <sqlite3.Row object at 0x000002A380E1D6C0>, <sqlite3.Row object at 0x000002A380E1D6F0>, <sqlite3.Row object at 0x000002A380E1D720>, <sqlite3.Row object at 0x000002A380E1D750>, <sqlite3.Row object at 0x000002A380E1D780>, <sqlite3.Row object at 0x000002A380E1D7B0>, <sqlite3.Row object at 0x000002A380E1D7E0>, <sqlite3.Row object at 0x000002A380E1D810>, <sqlite3.Row object at 0x000002A380E1D840>, <sqlite3.Row object at 0x000002A380E1D870>, <sqlite3.Row object at 0x000002A380E1D8A0>, <sqlite3.Row object at 0x000002A380E1D8D0>, <sqlite3.Row object at 0x000002A380E1D900>]
+2025-05-23 15:50:48,371 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM registros WHERE excluido = 0
+2025-05-23 15:50:48,371 - admin_debug - DEBUG - Total de registros: 1
+2025-05-23 15:50:48,371 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM registros WHERE data_registro >= date('now', '-7 days') AND excluido = 0
+2025-05-23 15:50:48,371 - admin_debug - DEBUG - Registros da última semana: 1
+2025-05-23 15:50:48,371 - admin_debug - DEBUG - QUERY SQL: PRAGMA table_info(registros)
+2025-05-23 15:50:48,372 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM registros WHERE data_modificacao >= datetime('now', '-7 days') AND excluido = 0
+2025-05-23 15:50:48,372 - admin_debug - DEBUG - Registros atualizados na última semana: 0
+2025-05-23 15:50:48,372 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) as total FROM registros WHERE alteracoes_verificadas = 1 AND excluido = 0
+2025-05-23 15:50:48,373 - admin_debug - DEBUG - Total de alterações verificadas: 0
+2025-05-23 15:50:48,373 - admin_debug - DEBUG - QUERY SQL: 
+                        SELECT usuario, COUNT(*) as total_acoes
+                        FROM logs
+                        GROUP BY usuario
+                        ORDER BY total_acoes DESC
+                        LIMIT 5
+                    
+2025-05-23 15:50:48,373 - admin_debug - DEBUG - Atividade por usuário: 1 registros
+2025-05-23 15:50:48,373 - admin_debug - INFO - Dashboard administrativo carregado com sucesso
+2025-05-23 15:50:58,551 - admin_debug - INFO - Iniciando carregamento do dashboard administrativo
+2025-05-23 15:50:58,551 - admin_debug - DEBUG - TABELAS NO BANCO: [<sqlite3.Row object at 0x000002A380E1CB20>, <sqlite3.Row object at 0x000002A380E1DEA0>, <sqlite3.Row object at 0x000002A380E1DED0>, <sqlite3.Row object at 0x000002A380E1E020>, <sqlite3.Row object at 0x000002A380E1DE40>, <sqlite3.Row object at 0x000002A380E1DDE0>, <sqlite3.Row object at 0x000002A380E1DCF0>, <sqlite3.Row object at 0x000002A380E1E380>, <sqlite3.Row object at 0x000002A380E1CEB0>, <sqlite3.Row object at 0x000002A380E1E2F0>, <sqlite3.Row object at 0x000002A380E1E200>, <sqlite3.Row object at 0x000002A380E1E140>, <sqlite3.Row object at 0x000002A380E1D0F0>]
+2025-05-23 15:50:58,551 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM usuarios
+2025-05-23 15:50:58,551 - admin_debug - DEBUG - Total de usuários: 13
+2025-05-23 15:50:58,551 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM usuarios WHERE nivel = 'admin'
+2025-05-23 15:50:58,557 - admin_debug - DEBUG - Total de admins: 5
+2025-05-23 15:50:58,557 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM usuarios WHERE nivel = 'comum'
+2025-05-23 15:50:58,557 - admin_debug - DEBUG - Total de usuários comuns: 2
+2025-05-23 15:50:58,558 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM usuarios WHERE nivel = 'gr'
+2025-05-23 15:50:58,558 - admin_debug - DEBUG - Total de usuários GR: 6
+2025-05-23 15:50:58,558 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='solicitacoes_senha'
+2025-05-23 15:50:58,558 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM solicitacoes_senha WHERE status = 'pendente'
+2025-05-23 15:50:58,559 - admin_debug - DEBUG - Solicitações de senha pendentes: 0
+2025-05-23 15:50:58,559 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='solicitacoes_registro'
+2025-05-23 15:50:58,559 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM solicitacoes_registro WHERE status = 'pendente'
+2025-05-23 15:50:58,559 - admin_debug - DEBUG - Solicitações de registro pendentes: 0
+2025-05-23 15:50:58,559 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='logs'
+2025-05-23 15:50:58,561 - admin_debug - DEBUG - SCHEMA DE logs: [<sqlite3.Row object at 0x000002A380E1CB20>, <sqlite3.Row object at 0x000002A380E1E140>, <sqlite3.Row object at 0x000002A380E1D0F0>, <sqlite3.Row object at 0x000002A380E1D090>, <sqlite3.Row object at 0x000002A380E1D0C0>]
+2025-05-23 15:50:58,562 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='usuarios'
+2025-05-23 15:50:58,562 - admin_debug - DEBUG - QUERY SQL: 
+                            SELECT l.*, u.username
+                            FROM logs l
+                            LEFT JOIN usuarios u ON l.usuario = u.username
+                            ORDER BY l.data DESC
+                            LIMIT 10
+                        
+2025-05-23 15:50:58,563 - admin_debug - DEBUG - Logs recentes: 1 registros
+2025-05-23 15:50:58,563 - admin_debug - DEBUG - QUERY SQL: SELECT name FROM sqlite_master WHERE type='table' AND name='registros'
+2025-05-23 15:50:58,563 - admin_debug - DEBUG - SCHEMA DE registros: [<sqlite3.Row object at 0x000002A380E1D090>, <sqlite3.Row object at 0x000002A380E1E290>, <sqlite3.Row object at 0x000002A380E1E230>, <sqlite3.Row object at 0x000002A380E1E260>, <sqlite3.Row object at 0x000002A380E1E110>, <sqlite3.Row object at 0x000002A380E1DB10>, <sqlite3.Row object at 0x000002A380E1E1A0>, <sqlite3.Row object at 0x000002A380E1E170>, <sqlite3.Row object at 0x000002A380E1DBA0>, <sqlite3.Row object at 0x000002A380E1E050>, <sqlite3.Row object at 0x000002A380E1E080>, <sqlite3.Row object at 0x000002A380E1DFC0>, <sqlite3.Row object at 0x000002A380E1DFF0>, <sqlite3.Row object at 0x000002A380E1E0B0>, <sqlite3.Row object at 0x000002A380E1DF60>, <sqlite3.Row object at 0x000002A380E1DF30>, <sqlite3.Row object at 0x000002A380E1DDB0>, <sqlite3.Row object at 0x000002A380E1DC30>, <sqlite3.Row object at 0x000002A380E1DA80>, <sqlite3.Row object at 0x000002A380E1DB70>, <sqlite3.Row object at 0x000002A380E1DB40>, <sqlite3.Row object at 0x000002A380E1DAE0>, <sqlite3.Row object at 0x000002A380E1DAB0>, <sqlite3.Row object at 0x000002A380E1D9C0>, <sqlite3.Row object at 0x000002A380E1E3B0>, <sqlite3.Row object at 0x000002A380E1D930>, <sqlite3.Row object at 0x000002A380E1CBE0>, <sqlite3.Row object at 0x000002A380E1D9F0>, <sqlite3.Row object at 0x000002A380E1E440>, <sqlite3.Row object at 0x000002A380E1E410>, <sqlite3.Row object at 0x000002A380E1E3E0>, <sqlite3.Row object at 0x000002A380E1CF10>, <sqlite3.Row object at 0x000002A380E1D990>, <sqlite3.Row object at 0x000002A380E1D960>, <sqlite3.Row object at 0x000002A380E1CEE0>, <sqlite3.Row object at 0x000002A380E1CE80>, <sqlite3.Row object at 0x000002A380E1CE50>, <sqlite3.Row object at 0x000002A380E1CE20>, <sqlite3.Row object at 0x000002A380E1CDF0>, <sqlite3.Row object at 0x000002A380E1CDC0>, <sqlite3.Row object at 0x000002A380E1CD90>, <sqlite3.Row object at 0x000002A380E1CD60>, <sqlite3.Row object at 0x000002A380E1CD30>, <sqlite3.Row object at 0x000002A380E1CD00>, <sqlite3.Row object at 0x000002A380E1CCD0>, <sqlite3.Row object at 0x000002A380E1CCA0>, <sqlite3.Row object at 0x000002A380E1CC70>, <sqlite3.Row object at 0x000002A380E1CC40>, <sqlite3.Row object at 0x000002A380E1CC10>, <sqlite3.Row object at 0x000002A380E1CB80>, <sqlite3.Row object at 0x000002A380E1CB50>, <sqlite3.Row object at 0x000002A380E1ECE0>, <sqlite3.Row object at 0x000002A380E1ED10>, <sqlite3.Row object at 0x000002A380E1ECB0>]
+2025-05-23 15:50:58,565 - admin_debug - DEBUG - Colunas na tabela registros: [<sqlite3.Row object at 0x000002A380E1D090>, <sqlite3.Row object at 0x000002A380E1E290>, <sqlite3.Row object at 0x000002A380E1E230>, <sqlite3.Row object at 0x000002A380E1E260>, <sqlite3.Row object at 0x000002A380E1E110>, <sqlite3.Row object at 0x000002A380E1DB10>, <sqlite3.Row object at 0x000002A380E1E1A0>, <sqlite3.Row object at 0x000002A380E1E170>, <sqlite3.Row object at 0x000002A380E1DBA0>, <sqlite3.Row object at 0x000002A380E1E050>, <sqlite3.Row object at 0x000002A380E1E080>, <sqlite3.Row object at 0x000002A380E1DFC0>, <sqlite3.Row object at 0x000002A380E1DFF0>, <sqlite3.Row object at 0x000002A380E1E0B0>, <sqlite3.Row object at 0x000002A380E1DF60>, <sqlite3.Row object at 0x000002A380E1DF30>, <sqlite3.Row object at 0x000002A380E1DDB0>, <sqlite3.Row object at 0x000002A380E1DC30>, <sqlite3.Row object at 0x000002A380E1DA80>, <sqlite3.Row object at 0x000002A380E1DB70>, <sqlite3.Row object at 0x000002A380E1DB40>, <sqlite3.Row object at 0x000002A380E1DAE0>, <sqlite3.Row object at 0x000002A380E1DAB0>, <sqlite3.Row object at 0x000002A380E1D9C0>, <sqlite3.Row object at 0x000002A380E1E3B0>, <sqlite3.Row object at 0x000002A380E1D930>, <sqlite3.Row object at 0x000002A380E1CBE0>, <sqlite3.Row object at 0x000002A380E1D9F0>, <sqlite3.Row object at 0x000002A380E1E440>, <sqlite3.Row object at 0x000002A380E1E410>, <sqlite3.Row object at 0x000002A380E1E3E0>, <sqlite3.Row object at 0x000002A380E1CF10>, <sqlite3.Row object at 0x000002A380E1D990>, <sqlite3.Row object at 0x000002A380E1D960>, <sqlite3.Row object at 0x000002A380E1CEE0>, <sqlite3.Row object at 0x000002A380E1CE80>, <sqlite3.Row object at 0x000002A380E1CE50>, <sqlite3.Row object at 0x000002A380E1CE20>, <sqlite3.Row object at 0x000002A380E1CDF0>, <sqlite3.Row object at 0x000002A380E1CDC0>, <sqlite3.Row object at 0x000002A380E1CD90>, <sqlite3.Row object at 0x000002A380E1CD60>, <sqlite3.Row object at 0x000002A380E1CD30>, <sqlite3.Row object at 0x000002A380E1CD00>, <sqlite3.Row object at 0x000002A380E1CCD0>, <sqlite3.Row object at 0x000002A380E1CCA0>, <sqlite3.Row object at 0x000002A380E1CC70>, <sqlite3.Row object at 0x000002A380E1CC40>, <sqlite3.Row object at 0x000002A380E1CC10>, <sqlite3.Row object at 0x000002A380E1CB80>, <sqlite3.Row object at 0x000002A380E1CB50>, <sqlite3.Row object at 0x000002A380E1ECE0>, <sqlite3.Row object at 0x000002A380E1ED10>, <sqlite3.Row object at 0x000002A380E1ECB0>]
+2025-05-23 15:50:58,565 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM registros WHERE excluido = 0
+2025-05-23 15:50:58,566 - admin_debug - DEBUG - Total de registros: 1
+2025-05-23 15:50:58,566 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM registros WHERE data_registro >= date('now', '-7 days') AND excluido = 0
+2025-05-23 15:50:58,567 - admin_debug - DEBUG - Registros da última semana: 1
+2025-05-23 15:50:58,567 - admin_debug - DEBUG - QUERY SQL: PRAGMA table_info(registros)
+2025-05-23 15:50:58,568 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) FROM registros WHERE data_modificacao >= datetime('now', '-7 days') AND excluido = 0
+2025-05-23 15:50:58,568 - admin_debug - DEBUG - Registros atualizados na última semana: 0
+2025-05-23 15:50:58,568 - admin_debug - DEBUG - QUERY SQL: SELECT COUNT(*) as total FROM registros WHERE alteracoes_verificadas = 1 AND excluido = 0
+2025-05-23 15:50:58,568 - admin_debug - DEBUG - Total de alterações verificadas: 0
+2025-05-23 15:50:58,568 - admin_debug - DEBUG - QUERY SQL: 
+                        SELECT usuario, COUNT(*) as total_acoes
+                        FROM logs
+                        GROUP BY usuario
+                        ORDER BY total_acoes DESC
+                        LIMIT 5
+                    
+2025-05-23 15:50:58,570 - admin_debug - DEBUG - Atividade por usuário: 1 registros
+2025-05-23 15:50:58,570 - admin_debug - INFO - Dashboard administrativo carregado com sucesso

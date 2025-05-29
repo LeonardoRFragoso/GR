@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Solicitar Acesso | Sistema Atendimento GR</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        :root {
+            --primary-color: #0070c0;
+            --secondary-color: #ff6b00;
+        }
+        .login-container {
+            max-width: 450px;
+            margin: 80px auto;
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="auth-page">
+
+<div class="login-container">
+    <h2 class="auth-title">Solicitar Acesso</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages and messages|length > 0 %}
+            {% for category, message in messages %}
+                {% if category and message %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('auth.register') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="auth-form-field">
+            <label for="nome">Nome Completo*</label>
+            <input type="text" class="auth-input" name="nome" id="nome" required>
+        </div>
+        <div class="auth-form-field">
+            <label for="username">Nome de Usuário Desejado*</label>
+            <input type="text" class="auth-input" name="username" id="username" required>
+        </div>
+        <div class="auth-form-field">
+            <label for="email">E-mail Corporativo*</label>
+            <input type="email" class="auth-input" name="email" id="email" required>
+        </div>
+        <div class="auth-form-field">
+            <label for="setor">Setor/Departamento*</label>
+            <input type="text" class="auth-input" name="setor" id="setor" required>
+        </div>
+        <div class="auth-form-field">
+            <label for="justificativa">Justificativa para Acesso*</label>
+            <textarea class="auth-input" name="justificativa" id="justificativa" rows="3" required></textarea>
+        </div>
+        <button type="submit" class="auth-button">Solicitar Acesso</button>
+    </form>
+    
+    <div class="mt-3 text-center">
+        <p class="text-muted">Sua solicitação será analisada pelos administradores</p>
+        <a href="{{ url_for('auth.login') }}" class="auth-link">Voltar para Login</a>
+    </div>
+</div>
+
+</body>
+</html>

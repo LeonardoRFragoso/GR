@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Solicitar Redefinição de Senha | Sistema Atendimento GR</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="auth-page reset-password-page">
+    <div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+        <div class="login-container fade-in">
+            <h2 class="auth-title"><i class="fas fa-key me-2"></i> Solicitar Redefinição de Senha</h2>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <p class="mb-4 text-center">Informe seu nome de usuário para solicitar a redefinição de senha. Seu pedido será avaliado por um administrador.</p>
+            
+            <form method="POST" action="{{ url_for('auth.solicitar_senha') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="auth-form-field">
+                    <label for="username">Nome de Usuário</label>
+                    <input type="text" class="auth-input" id="username" name="username" required autofocus>
+                </div>
+                
+                <button type="submit" class="auth-button">
+                    <i class="fas fa-paper-plane me-2"></i> Enviar Solicitação
+                </button>
+            </form>
+            
+            <a href="{{ url_for('auth.login') }}" class="auth-link">
+                <i class="fas fa-arrow-left me-1"></i> Voltar para o login
+            </a>
+        </div>
+    </div>
+</body>
+</html>

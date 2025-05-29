@@ -1,0 +1,14 @@
+Usuário Comum
+Username: teste_comum
+Senha: Teste@123
+Usar a aba "Usuário" para login
+
+Usuário GR
+Username: teste_gr
+Senha: Teste@123
+Usar a aba "GR/Admin" para login
+
+Usuário Admin
+Username: teste_admin
+Senha: Teste@123
+Usar a aba "GR/Admin" para login

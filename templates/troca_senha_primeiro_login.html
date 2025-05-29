@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Alterar Senha | Sistema Atendimento GR</title>
+    {% if senha_alterada %}
+    <!-- Redirecionamento automático via meta refresh como fallback -->
+    <meta http-equiv="refresh" content="2;url={{ redirect_url }}">
+    {% endif %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0070c0;
+            --secondary-color: #ff6b00;
+        }
+        .login-container {
+            max-width: 450px;
+            margin: 80px auto;
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .password-requirements {
+            font-size: 0.85rem;
+            margin-top: 10px;
+        }
+        .password-requirements ul {
+            padding-left: 20px;
+            margin-bottom: 0;
+        }
+        .password-requirements li {
+            margin-bottom: 3px;
+        }
+        .password-match-indicator {
+            display: none;
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+        .password-match-indicator.match {
+            color: green;
+        }
+        .password-match-indicator.no-match {
+            color: red;
+        }
+        .success-message {
+            text-align: center;
+            padding: 30px;
+        }
+        .success-message i {
+            font-size: 48px;
+            color: #28a745;
+            margin-bottom: 20px;
+            display: block;
+        }
+        .success-message h2 {
+            margin-bottom: 20px;
+            color: #28a745;
+        }
+        .redirect-countdown {
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        .spinner {
+            margin: 20px auto;
+            font-size: 24px;
+            color: #0070c0;
+        }
+        
+        .auth-page {
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+        }
+        
+        .login-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
+        }
+        
+        .auth-title {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .auth-form-field {
+            margin-bottom: 20px;
+        }
+        
+        .auth-form-field label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .auth-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .auth-button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.3s;
+            display: block;
+            text-align: center;
+            text-decoration: none;
+        }
+        
+        .auth-button:hover {
+            background-color: #45a049;
+        }
+        
+        .password-requirements {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #666;
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .password-requirements ul {
+            margin: 5px 0 0 20px;
+            padding: 0;
+        }
+        
+        .password-match-indicator {
+            margin-top: 5px;
+            font-size: 12px;
+            display: none;
+        }
+        
+        .match {
+            color: #4CAF50;
+        }
+        
+        .no-match {
+            color: #f44336;
+        }
+        
+        .alert {
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .alert-success {
+            background-color: #dff0d8;
+            color: #3c763d;
+            border: 1px solid #d6e9c6;
+        }
+        
+        .alert-danger {
+            background-color: #f2dede;
+            color: #a94442;
+            border: 1px solid #ebccd1;
+        }
+        
+        .alert-warning {
+            background-color: #fcf8e3;
+            color: #8a6d3b;
+            border: 1px solid #faebcc;
+        }
+        
+        .alert-info {
+            background-color: #d9edf7;
+            color: #31708f;
+            border: 1px solid #bce8f1;
+        }
+        
+        /* Estilos para a página de sucesso */
+        .success-message {
+            text-align: center;
+        }
+        
+        .success-message i.fa-check-circle {
+            font-size: 60px;
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+        
+        .success-message h2 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+        }
+        
+        .spinner {
+            margin: 20px 0;
+        }
+        
+        .spinner i {
+            font-size: 30px;
+            color: #4CAF50;
+        }
+        
+        .redirect-countdown {
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .redirect-countdown span {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body class="auth-page">
+
+{% if senha_alterada %}
+<!-- Página de sucesso após alteração de senha -->
+<div class="login-container success-message">
+    <i class="fas fa-check-circle"></i>
+    <h2>Senha Alterada com Sucesso!</h2>
+    <p>Sua senha foi alterada com sucesso.</p>
+    <div class="spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+    </div>
+    <div class="redirect-countdown">
+        Você será redirecionado em <span id="countdown">2</span> segundos...
+    </div>
+    <div class="mt-3">
+        <a href="{{ redirect_url }}" class="auth-button">Ir para a página inicial</a>
+    </div>
+</div>
+{% else %}
+<!-- Formulário de alteração de senha -->
+<div class="login-container">
+    <h2 class="auth-title">Alterar Senha</h2>
+    
+    {% if primeiro_login %}
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle me-2"></i> É necessário alterar sua senha antes de continuar.
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i> Você está alterando sua senha de acesso.
+    </div>
+    {% endif %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {% if category == 'success' %}
+                        <i class="fas fa-check-circle me-2"></i>
+                    {% elif category == 'danger' %}
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                    {% elif category == 'warning' %}
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                    {% else %}
+                        <i class="fas fa-info-circle me-2"></i>
+                    {% endif %}
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('auth.troca_senha_primeiro_login') }}" id="passwordForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if not primeiro_login %}
+        <div class="auth-form-field">
+            <label for="senha_atual">Senha Atual*</label>
+            <input type="password" class="auth-input" name="senha_atual" id="senha_atual" required>
+        </div>
+        {% else %}
+        <!-- Não exibir campo de senha atual para primeiro login ou senha temporária -->
+        <input type="hidden" name="senha_atual" value="">
+        {% endif %}
+        
+        <div class="auth-form-field">
+            <label for="senha_nova">Nova Senha*</label>
+            <input type="password" class="auth-input" name="senha_nova" id="senha_nova" required>
+            <div class="password-requirements">
+                <p class="mb-1">A senha deve conter:</p>
+                <ul>
+                    <li>Pelo menos 8 caracteres</li>
+                    <li>Letras maiúsculas e minúsculas</li>
+                    <li>Pelo menos um número</li>
+                    <li>Pelo menos um caractere especial</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="auth-form-field">
+            <label for="senha_confirmacao">Confirmar Nova Senha*</label>
+            <input type="password" class="auth-input" name="senha_confirmacao" id="senha_confirmacao" required>
+            <div id="passwordMatch" class="password-match-indicator">
+                As senhas não conferem
+            </div>
+        </div>
+        
+        <button type="submit" class="auth-button" id="submitBtn">Alterar Senha</button>
+    </form>
+</div>
+{% endif %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Verificar se estamos na página de sucesso
+        {% if senha_alterada %}
+            console.log('Página de sucesso detectada. URL de redirecionamento: {{ redirect_url }}');
+            
+            // Iniciar contagem regressiva
+            let countdown = 2;
+            const countdownElement = document.getElementById('countdown');
+            
+            // Função para redirecionar
+            function redirecionarUsuario() {
+                console.log('Redirecionando para: {{ redirect_url }}');
+                window.location.href = "{{ redirect_url }}";
+            }
+            
+            // Atualizar contagem regressiva
+            const countdownInterval = setInterval(function() {
+                countdown--;
+                if (countdownElement) {
+                    countdownElement.textContent = countdown;
+                }
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    redirecionarUsuario();
+                }
+            }, 1000);
+            
+            // Garantir o redirecionamento após o tempo especificado
+            setTimeout(redirecionarUsuario, {{ redirect_delay }});
+            
+            // Adicionar evento de clique ao botão de redirecionamento manual
+            const redirectButton = document.querySelector('a.auth-button');
+            if (redirectButton) {
+                redirectButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    redirecionarUsuario();
+                });
+            }
+        {% else %}
+            // Código para o formulário de troca de senha
+            const newPassword = document.getElementById('senha_nova');
+            const confirmPassword = document.getElementById('senha_confirmacao');
+            const passwordMatch = document.getElementById('passwordMatch');
+            const submitBtn = document.getElementById('submitBtn');
+            const passwordForm = document.getElementById('passwordForm');
+            
+            if (!newPassword || !confirmPassword || !passwordMatch || !submitBtn || !passwordForm) {
+                console.error('Elementos do formulário não encontrados');
+                return;
+            }
+            
+            // Verificar se as senhas coincidem em tempo real
+            function checkPasswordMatch() {
+                if (confirmPassword.value === '') {
+                    passwordMatch.style.display = 'none';
+                    return;
+                }
+                
+                if (newPassword.value === confirmPassword.value) {
+                    passwordMatch.textContent = 'As senhas conferem';
+                    passwordMatch.className = 'password-match-indicator match';
+                    passwordMatch.style.display = 'block';
+                } else {
+                    passwordMatch.textContent = 'As senhas não conferem';
+                    passwordMatch.className = 'password-match-indicator no-match';
+                    passwordMatch.style.display = 'block';
+                }
+            }
+            
+            newPassword.addEventListener('input', checkPasswordMatch);
+            confirmPassword.addEventListener('input', checkPasswordMatch);
+            
+            // Validar formulário antes de enviar
+            passwordForm.addEventListener('submit', function(e) {
+                if (newPassword.value !== confirmPassword.value) {
+                    e.preventDefault();
+                    passwordMatch.textContent = 'As senhas não conferem';
+                    passwordMatch.className = 'password-match-indicator no-match';
+                    passwordMatch.style.display = 'block';
+                    return false;
+                }
+                
+                // Desabilitar o botão de envio para evitar múltiplos cliques
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+                
+                // Adicionar uma mensagem de feedback
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.className = 'alert alert-info';
+                feedbackDiv.innerHTML = '<i class="fas fa-info-circle me-2"></i> Alterando sua senha, por favor aguarde...';
+                const container = document.querySelector('.login-container');
+                if (container) {
+                    container.insertBefore(feedbackDiv, passwordForm);
+                }
+                
+                return true;
+            });
+        {% endif %}
+    });
+</script>
+
+</body>
+</html>

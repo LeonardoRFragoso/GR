@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Solicitação Enviada | Sistema Atendimento GR</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        :root {
+            --primary-color: #0070c0;
+            --secondary-color: #ff6b00;
+        }
+        .confirmation-container {
+            max-width: 450px;
+            margin: 80px auto;
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .confirmation-icon {
+            font-size: 48px;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+        .confirmation-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+        .confirmation-message {
+            margin-bottom: 25px;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #555;
+        }
+        .login-link {
+            margin-top: 20px;
+            display: inline-block;
+            padding: 10px 25px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .login-link:hover {
+            background-color: #005da6;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 112, 192, 0.2);
+        }
+        .countdown {
+            font-size: 14px;
+            color: #6c757d;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body class="auth-page">
+
+<div class="confirmation-container">
+    <i class="fas fa-check-circle confirmation-icon"></i>
+    
+    <h2 class="confirmation-title">Solicitação Enviada!</h2>
+    
+    <p class="confirmation-message">
+        {% if nome %}
+        <strong>{{ nome }}</strong>, sua solicitação de acesso para o usuário <strong>{{ username }}</strong> foi enviada com sucesso!
+        {% else %}
+        Sua solicitação de acesso foi enviada com sucesso!
+        {% endif %}
+        <br><br>
+        A solicitação será analisada pelos administradores e você receberá uma notificação quando for processada.
+    </p>
+    
+    <a href="{{ url_for('auth.login') }}" class="login-link">Voltar para Login</a>
+    
+    <div class="countdown">
+        Redirecionando para a página de login em <span id="timer">10</span> segundos...
+    </div>
+</div>
+
+<script>
+    // Contador regressivo para redirecionamento automático
+    let seconds = 10;
+    const timerElement = document.getElementById('timer');
+    
+    const countdown = setInterval(function() {
+        seconds--;
+        timerElement.textContent = seconds;
+        
+        if (seconds <= 0) {
+            clearInterval(countdown);
+            window.location.href = "{{ url_for('auth.login') }}";
+        }
+    }, 1000);
+</script>
+
+</body>
+</html>

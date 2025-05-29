@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Registro Salvo com Sucesso</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            background-color: var(--gray-light);
+        }
+        .success-container {
+            max-width: 700px;
+            margin: 100px auto;
+            padding: 30px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .success-icon {
+            font-size: 80px;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+        .countdown {
+            font-size: 24px;
+            font-weight: bold;
+            color: #6c757d;
+            margin: 20px 0;
+        }
+        .btn-actions {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-container">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 class="mb-3">Registro Salvo com Sucesso!</h2>
+            <p class="lead">O registro foi criado com o ID: <strong>{{ registro_id }}</strong></p>
+            <p>Você será redirecionado para o dashboard em <span id="countdown">5</span> segundos.</p>
+            
+            <div class="btn-actions">
+                <a href="{{ url_for('comum.visualizar_registro', registro_id=registro_id) }}" class="btn btn-primary">
+                    <i class="fas fa-eye me-2"></i>Visualizar Registro
+                </a>
+                <a href="{{ url_for('comum.dashboard_comum') }}" class="btn btn-outline-secondary ms-2">
+                    <i class="fas fa-th-list me-2"></i>Ir para Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Contagem regressiva para redirecionamento
+        let count = 5;
+        const countdownElement = document.getElementById('countdown');
+        
+        const interval = setInterval(function() {
+            count--;
+            countdownElement.textContent = count;
+            
+            if (count <= 0) {
+                clearInterval(interval);
+                window.location.href = "{{ url_for('comum.dashboard_comum') }}";
+            }
+        }, 1000);
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

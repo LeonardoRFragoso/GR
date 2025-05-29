@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema de Atendimento</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='assets/favicon.png') }}">
+</head>
+<body class="auth-page login-page">
+
+<div class="login-container">
+    <img src="{{ url_for('static', filename='assets/itracker_logo.png') }}" alt="Logo iTracker" class="login-logo">
+    <h2 class="auth-title">Sistema de Atendimento</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages and messages|length > 0 %}
+            {% for category, message in messages %}
+                {% if category and message %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="login-tabs">
+        <div class="login-tab active" onclick="showTab('user')">
+            <i class="fas fa-user"></i> Usuário
+            <span class="login-user-badge">Operacional</span>
+        </div>
+        <div class="login-tab" onclick="showTab('admin')">
+            <i class="fas fa-user-shield"></i> GR/Admin
+            <span class="login-admin-badge">Restrito</span>
+        </div>
+    </div>
+
+    <div id="tab-user" class="login-tab-content active">
+        <div class="auth-title">Acesso para usuários operacionais</div>
+        <form method="POST" action="{{ url_for('auth.login') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="login_type" value="user">
+            <div class="auth-form-field">
+                <label for="usuario">Usuário:</label>
+                <input type="text" class="auth-input" id="usuario" name="usuario" required>
+            </div>
+            <div class="auth-form-field">
+                <label for="senha">Senha:</label>
+                <input type="password" class="auth-input" id="senha" name="senha" required>
+            </div>
+            <button type="submit" class="auth-button">Entrar como Usuário</button>
+        </form>
+        <div class="auth-links">
+            <a href="{{ url_for('auth.register') }}" class="auth-link">Cadastrar novo usuário</a>
+            <a href="{{ url_for('auth.solicitar_senha') }}" class="auth-link">Esqueceu sua senha?</a>
+        </div>
+    </div>
+
+    <div id="tab-admin" class="login-tab-content">
+        <div class="auth-title">Acesso restrito para:</div>
+        <div class="auth-subtitle">• Gestão de Risco</div>
+        <div class="auth-subtitle">• Administradores</div>
+        <form method="POST" action="{{ url_for('auth.login') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="login_type" value="admin">
+            <div class="auth-form-field">
+                <label for="usuario-admin">Usuário Administrativo:</label>
+                <input type="text" class="auth-input" id="usuario-admin" name="usuario" required>
+            </div>
+            <div class="auth-form-field">
+                <label for="senha-admin">Senha:</label>
+                <input type="password" class="auth-input" id="senha-admin" name="senha" required>
+            </div>
+            <button type="submit" class="auth-button">Entrar como Administrador</button>
+        </form>
+        <div class="auth-links">
+            <a href="{{ url_for('auth.register') }}" class="auth-link">Cadastrar novo usuário</a>
+            <a href="{{ url_for('auth.solicitar_senha') }}" class="auth-link">Esqueceu sua senha?</a>
+        </div>
+        
+        <div class="mt-3 text-center">
+            <p class="text-muted mb-1">Acesso restrito para:</p>
+            <div>
+                <span class="login-gr-badge">Gestão de Risco</span>
+                <span class="login-admin-badge">Administradores</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showTab(tabName) {
+        // Esconder todos os conteúdos
+        document.querySelectorAll('.login-tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        
+        // Desmarcar todas as abas
+        document.querySelectorAll('.login-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Mostrar o conteúdo selecionado
+        document.getElementById('tab-' + tabName).classList.add('active');
+        
+        // Marcar a aba selecionada
+        document.querySelector(`.login-tab[onclick*="${tabName}"]`).classList.add('active');
+    }
+</script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

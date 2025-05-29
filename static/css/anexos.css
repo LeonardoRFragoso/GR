@@ -1,0 +1,93 @@
+/* Estilos para as áreas de drag-and-drop de anexos */
+.drag-area {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 15px;
+  text-align: center;
+  background-color: #f8f9fa;
+  transition: all 0.3s ease;
+  position: relative;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.drag-area.active {
+  border-color: #4CAF50;
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.drag-area.file-uploaded {
+  border-color: #28a745;
+  background-color: rgba(40, 167, 69, 0.05);
+}
+
+.drag-area.file-error {
+  border-color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.05);
+}
+
+.drag-area .browse-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.drag-area .browse-btn:hover {
+  background-color: #0069d9;
+}
+
+.selected-file {
+  min-height: 40px;
+  width: 100%;
+}
+
+/* Estilos para os alertas de anexos existentes */
+.anexo-existente {
+  transition: all 0.3s ease;
+}
+
+.anexo-existente:hover {
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Estado de exclusão */
+.anexo-existente.excluindo {
+  opacity: 0.7;
+  pointer-events: none;
+  position: relative;
+  border-color: #dc3545;
+}
+
+.anexo-existente.excluindo::before {
+  content: "Excluindo...";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.7);
+  z-index: 1;
+  font-weight: bold;
+  color: #dc3545;
+}
+
+/* Animação para quando um arquivo é solto na área */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.drag-area.active .drag-area-content {
+  animation: pulse 0.5s;
+}

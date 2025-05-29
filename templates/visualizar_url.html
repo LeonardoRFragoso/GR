@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">{{ titulo }}</h5>
+      <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Voltar
+      </a>
+    </div>
+    <div class="card-body p-0">
+      <iframe src="{{ url }}" style="width: 100%; height: 80vh; border: none;"></iframe>
+    </div>
+  </div>
+</div>
+{% endblock %}

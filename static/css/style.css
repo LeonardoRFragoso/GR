@@ -1,0 +1,665 @@
+/* Variáveis CSS */
+:root {
+  --primary-color: #0055a4;
+  --primary-light: #e7f0f9;
+  --secondary-color: #ff6600;
+  --secondary-light: #fff1e6;
+  --success-color: #28a745;
+  --danger-color: #dc3545;
+  --warning-color: #ffc107;
+  --gray-dark: #343a40;
+  --gray: #6c757d;
+  --gray-light: #f8f9fa;
+  --border-color: #dee2e6;
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
+  --border-radius: 4px;
+  --font-family: 'Segoe UI', 'Roboto', sans-serif;
+  --transition: all 0.2s ease-in-out;
+  --container-border-radius: 8px;
+  --input-height: 38px;
+}
+
+/* Estilos globais */
+body {
+  font-family: var(--font-family);
+  background-color: #f0f2f5;
+  margin: 0;
+  padding: 0;
+  color: #333;
+  line-height: 1.5;
+}
+
+/* Layout principal */
+.main-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Barra de navegação superior */
+.top-nav {
+  background-color: white;
+  box-shadow: var(--shadow-sm);
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-logo {
+  height: 40px;
+  width: auto;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin: 0;
+}
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.user-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--gray-dark);
+}
+
+.user-role {
+  font-size: 12px;
+  color: var(--gray);
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: white;
+  border: 1px solid var(--danger-color);
+  color: var(--danger-color);
+  padding: 6px 12px;
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.logout-btn:hover {
+  background-color: var(--danger-color);
+  color: white;
+  text-decoration: none;
+}
+
+/* Container de conteúdo */
+.content-container {
+  flex: 1;
+  padding: 24px;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Estilo dos cards */
+.card-container {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-md);
+  margin-bottom: 24px;
+  overflow: hidden;
+  border: none;
+}
+
+.card-header {
+  background-color: white;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.card-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-color);
+  margin: 0;
+}
+
+.icon-section {
+  font-size: 18px;
+  color: var(--secondary-color);
+}
+
+.card-body {
+  padding: 20px;
+}
+
+/* Layout de grade para os formulários */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+/* Layout de duas colunas */
+.two-column-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 992px) {
+  .two-column-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Estilos para campos de formulário */
+.form-item {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gray-dark);
+  margin-bottom: 8px;
+}
+
+.required {
+  color: var(--danger-color);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  height: var(--input-height);
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+  box-sizing: border-box;
+}
+
+.form-control:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(0, 85, 164, 0.25);
+  outline: none;
+}
+
+.form-control:read-only {
+  background-color: var(--gray-light);
+}
+
+/* Estilo para selects */
+.select-wrapper {
+  position: relative;
+}
+
+.select-wrapper::after {
+  content: "\f107";
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray);
+  pointer-events: none;
+}
+
+.form-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 100%;
+  height: var(--input-height);
+  padding: 8px 32px 8px 12px;
+  font-size: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background-color: white;
+  transition: var(--transition);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(0, 85, 164, 0.25);
+  outline: none;
+}
+
+/* Estilo para textarea */
+textarea.form-control {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Estilo para campos de arquivo */
+.file-upload {
+  position: relative;
+  width: 100%;
+}
+
+.file-upload input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.file-label {
+  display: block;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background-color: white;
+  color: var(--gray);
+  font-size: 14px;
+  cursor: pointer;
+  text-align: center;
+  transition: var(--transition);
+}
+
+.file-label:hover {
+  background-color: var(--gray-light);
+}
+
+.file-label::before {
+  content: "\f093";
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  margin-right: 8px;
+}
+
+/* Botões */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: var(--transition);
+  text-decoration: none;
+  line-height: 1.5;
+  height: var(--input-height);
+  box-sizing: border-box;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #004080;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-success {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: #218838;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-danger {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--gray);
+}
+
+.btn-outline:hover {
+  background-color: var(--gray-light);
+}
+
+/* Botão de envio */
+.submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 24px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  margin-top: 24px;
+  height: 44px;
+}
+
+.submit-btn:hover {
+  background-color: #004080;
+  box-shadow: var(--shadow-md);
+}
+
+.submit-btn:active {
+  transform: translateY(1px);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+
+  .top-nav {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .nav-user {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* Estados e feedback visuais */
+.is-invalid {
+  border-color: var(--danger-color);
+}
+
+.invalid-feedback {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--danger-color);
+}
+
+/* Animações e transições */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Tooltip personalizado */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltip-text {
+  visibility: hidden;
+  width: 200px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 5px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -100px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Estilos para telas de login e autenticação */
+.login-container {
+  background-color: white;
+  border-radius: var(--container-border-radius);
+  padding: 2rem;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: var(--shadow-md);
+  text-align: center;
+}
+
+.login-tabs {
+  display: flex;
+  margin-bottom: 2rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.login-tab {
+  flex: 1;
+  padding: 1rem;
+  background: var(--gray-light);
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--gray);
+}
+
+.login-tab.active {
+  background: white;
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.login-tab i {
+  font-size: 1rem;
+}
+
+.login-user-badge,
+.login-admin-badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 1rem;
+  color: white;
+  margin-left: 0.5rem;
+}
+
+.login-user-badge {
+  background-color: var(--success-color);
+}
+
+.login-admin-badge {
+  background-color: var(--danger-color);
+}
+
+.login-tab-content {
+  display: none;
+}
+
+.login-tab-content.active {
+  display: block;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.auth-title {
+  font-size: 1.1rem;
+  color: var(--gray-dark);
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+.auth-subtitle {
+  font-size: 0.9rem;
+  color: var(--gray);
+  margin-bottom: 0.5rem;
+  text-align: left;
+  padding-left: 1rem;
+}
+
+.login-logo {
+  height: 32px;
+  margin-bottom: 1.5rem;
+}
+
+/* Ajustes para elementos de autenticação */
+body.auth-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: var(--gray-light);
+}
+
+/* Estilo específico para páginas de autenticação */
+body.login-page,
+body.register-page,
+body.reset-password-page {
+  background-image: url('../assets/fundo.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Títulos nas páginas de autenticação */
+.auth-title {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--gray-dark);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* Campo de formulário de autenticação */
+.auth-form-field {
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.auth-form-field label {
+  display: block;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--gray-dark);
+  margin-bottom: 6px;
+}
+
+.auth-input {
+  width: 100%;
+  height: var(--input-height);
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-sizing: border-box;
+}
+
+.auth-input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+}
+
+/* Botão de autenticação */
+.auth-button {
+  width: 100%;
+  height: var(--input-height);
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 16px;
+}
+
+.auth-button:hover {
+  background-color: #004080;
+}
+
+/* Links nas páginas de autenticação */
+.auth-links {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.auth-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-size: 14px;
+  transition: var(--transition);
+  display: block;
+}
+
+.auth-link:hover {
+  color: var(--secondary-color);
+  text-decoration: underline;
+}
+
+/* Ajustes para botões e elementos de formulário em telas menores */
+@media (max-width: 576px) {
+  .login-container {
+    padding: 1.5rem;
+    max-width: 90%;
+  }
+  
+  .submit-btn {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+  
+  .form-control,
+  .form-select {
+    padding: 8px 10px;
+  }
+}

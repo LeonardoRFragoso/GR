@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitações - Administração</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        /* Estilização da barra lateral */
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+            color: white;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover {
+            color: white;
+            background-color: rgba(255,255,255,0.1);
+        }
+        .nav-link.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .section-title {
+            border-left: 4px solid #007bff;
+            padding-left: 10px;
+            margin-bottom: 20px;
+        }
+        .badge-gr {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .badge-admin {
+            background-color: #dc3545;
+            color: white;
+        }
+        .badge-comum {
+            background-color: #28a745;
+            color: white;
+        }
+        .main-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .main-card:hover {
+            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            padding: 15px 20px;
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(13, 110, 253, 0.05);
+        }
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        .btn-action i {
+            font-size: 0.75rem;
+        }
+        .nav-tabs .nav-link.active {
+            border-bottom: 2px solid #007bff;
+            color: #007bff;
+            background-color: transparent;
+            font-weight: 500;
+        }
+        .nav-tabs .nav-link {
+            border: none;
+            color: #6c757d;
+            padding: 0.75rem 1rem;
+            transition: all 0.2s ease;
+        }
+        .nav-tabs .nav-link:hover {
+            border-bottom: 2px solid #dee2e6;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar p-0">
+                <div class="p-3 text-center mb-4">
+                    <h4>AutoSAT</h4>
+                    <p class="small mb-0">Painel Administrativo</p>
+                </div>
+                <div class="nav flex-column">
+                    <a href="{{ url_for('admin.admin_dashboard') }}" class="nav-link p-3">
+                        <i class="fas fa-chart-line me-2"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('admin.usuarios') }}" class="nav-link p-3">
+                        <i class="fas fa-users me-2"></i> Usuários
+                    </a>
+                    <a href="{{ url_for('admin.solicitacoes') }}" class="nav-link p-3 active">
+                        <i class="fas fa-user-plus me-2"></i> Solicitações
+                        {% if total_pendentes > 0 %}
+                        <span class="badge bg-danger rounded-pill">{{ total_pendentes }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="{{ url_for('admin.logs') }}" class="nav-link p-3">
+                        <i class="fas fa-history me-2"></i> Logs
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}" class="nav-link p-3">
+                        <i class="fas fa-sign-out-alt me-2"></i> Sair
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Content -->
+            <div class="col-md-10 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="section-title">
+                        <i class="fas fa-user-plus me-2 text-primary"></i> Solicitações de Acesso
+                    </h2>
+                    <div>
+                        <span class="badge bg-secondary">{{ session.user }}</span>
+                        <span class="badge badge-admin">Admin</span>
+                    </div>
+                </div>
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show mb-4">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <div class="main-card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Gerenciamento de Solicitações</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-tabs" id="solicitacoesTabs">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="pendentes-tab" data-bs-toggle="tab" href="#pendentes">
+                                    Pendentes 
+                                    {% if total_pendentes > 0 %}
+                                    <span class="badge bg-danger">{{ total_pendentes }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="processadas-tab" data-bs-toggle="tab" href="#processadas">
+                                    Processadas
+                                </a>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content mt-3">
+                            <div class="tab-pane fade show active" id="pendentes">
+                                {% if solicitacoes_pendentes %}
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nome</th>
+                                                    <th>Usuário</th>
+                                                    <th>Email</th>
+                                                    <th>Setor</th>
+                                                    <th>Data</th>
+                                                    <th>Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for s in solicitacoes_pendentes %}
+                                                <tr>
+                                                    <td>{% if s.nome %}{{ s.nome }}{% else %}N/A{% endif %}</td>
+                                                    <td>{{ s.username }}</td>
+                                                    <td>{{ s.email }}</td>
+                                                    <td>{% if s.setor %}{{ s.setor }}{% else %}N/A{% endif %}</td>
+                                                    <td>{{ s.data_solicitacao }}</td>
+                                                    <td>
+                                                        <div class="btn-group">
+                                                            {% if s.tipo == 'senha' %}
+                                                            <button type="button" class="btn btn-sm btn-success btn-action" data-bs-toggle="modal" data-bs-target="#aprovarSenhaModal{{ s.id }}">
+                                                                <i class="fas fa-check"></i> Aprovar
+                                                            </button>
+                                                            <button type="button" class="btn btn-sm btn-danger btn-action" data-bs-toggle="modal" data-bs-target="#rejeitarSenhaModal{{ s.id }}">
+                                                                <i class="fas fa-times"></i> Rejeitar
+                                                            </button>
+                                                            <span class="badge bg-info ms-2">Redefinição de Senha</span>
+                                                            {% else %}
+                                                            <button type="button" class="btn btn-sm btn-success btn-action" data-bs-toggle="modal" data-bs-target="#aprovarModal{{ s.id }}">
+                                                                <i class="fas fa-check"></i> Aprovar
+                                                            </button>
+                                                            <button type="button" class="btn btn-sm btn-danger btn-action" data-bs-toggle="modal" data-bs-target="#rejeitarModal{{ s.id }}">
+                                                                <i class="fas fa-times"></i> Rejeitar
+                                                            </button>
+                                                            <span class="badge bg-primary ms-2">Novo Usuário</span>
+                                                            {% endif %}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i> Não há solicitações pendentes no momento.
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="tab-pane fade" id="processadas">
+                                {% if solicitacoes_processadas %}
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nome</th>
+                                                    <th>Usuário</th>
+                                                    <th>Email</th>
+                                                    <th>Setor</th>
+                                                    <th>Data</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for s in solicitacoes_processadas %}
+                                                <tr>
+                                                    <td>{{ s.nome }}</td>
+                                                    <td>{{ s.username }}</td>
+                                                    <td>{{ s.email }}</td>
+                                                    <td>{{ s.setor }}</td>
+                                                    <td>{{ s.data_solicitacao }}</td>
+                                                    <td>
+                                                        {% if s.status == 'aprovado' %}
+                                                            <span class="badge bg-success">Aprovado</span>
+                                                        {% elif s.status == 'rejeitado' %}
+                                                            <span class="badge bg-danger">Rejeitado</span>
+                                                            {% if s.motivo_rejeicao %}
+                                                                <button type="button" class="btn btn-sm btn-outline-secondary btn-action ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ s.motivo_rejeicao }}">
+                                                                    <i class="fas fa-info-circle"></i>
+                                                                </button>
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i> Não há solicitações processadas para exibir.
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modais para Aprovar/Rejeitar Solicitações -->
+    {% for s in solicitacoes_pendentes %}
+    <!-- Modal Aprovar -->
+    <div class="modal fade" id="aprovarModal{{ s.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{{ url_for('admin.aprovar_solicitacao_registro', solicitacao_id=s.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Aprovar Solicitação de Acesso</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p><strong>Nome:</strong> {{ s.nome }}</p>
+                        <p><strong>Usuário:</strong> {{ s.username }}</p>
+                        <p><strong>Email:</strong> {{ s.email }}</p>
+                        <p><strong>Setor:</strong> {{ s.setor }}</p>
+                        
+                        <div class="alert alert-info">
+                            <strong>Justificativa:</strong> {{ s.justificativa }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Nível de Acesso</label>
+                            <select class="form-select" name="nivel" required>
+                                <option value="comum">Usuário Comum</option>
+                                <option value="gr">Gestor de Relacionamento</option>
+                                <option value="admin">Administrador</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Senha Inicial</label>
+                            <input type="text" class="form-control" name="senha" required>
+                            <div class="form-text">
+                                O usuário será obrigado a alterar esta senha no primeiro login
+                            </div>
+                        </div>
+                        
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="senha_temporaria" id="senhaTemporaria{{ s.id }}" checked>
+                            <label class="form-check-label" for="senhaTemporaria{{ s.id }}">
+                                Exigir troca de senha no primeiro login
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Aprovar e Criar Usuário</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Rejeitar -->
+    <div class="modal fade" id="rejeitarModal{{ s.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{{ url_for('admin.rejeitar_solicitacao_registro', solicitacao_id=s.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Rejeitar Solicitação de Acesso</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p><strong>Nome:</strong> {{ s.nome }}</p>
+                        <p><strong>Usuário:</strong> {{ s.username }}</p>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Motivo da Rejeição</label>
+                            <textarea class="form-control" name="motivo" rows="3" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger">Rejeitar Solicitação</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    
+    <!-- Modais para Aprovar/Rejeitar Solicitações de Senha -->
+    {% for s in solicitacoes_pendentes %}
+    {% if s.tipo == 'senha' %}
+    <!-- Modal Aprovar Redefinição de Senha -->
+    <div class="modal fade" id="aprovarSenhaModal{{ s.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{{ url_for('admin.aprovar_solicitacao_senha', solicitacao_id=s.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Aprovar Solicitação de Redefinição de Senha</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p><strong>Usuário:</strong> {{ s.username }}</p>
+                        <p><strong>Email:</strong> {{ s.email }}</p>
+                        
+                        <div class="alert alert-info">
+                            <strong>Justificativa:</strong> {{ s.justificativa }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Nova Senha</label>
+                            <input type="text" class="form-control" name="senha" required>
+                            <div class="form-text">
+                                O usuário será obrigado a alterar esta senha no próximo login
+                            </div>
+                        </div>
+                        
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="senha_temporaria" id="senhaTemporariaSenha{{ s.id }}" checked>
+                            <label class="form-check-label" for="senhaTemporariaSenha{{ s.id }}">
+                                Exigir troca de senha no próximo login
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Aprovar e Redefinir Senha</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Rejeitar Redefinição de Senha -->
+    <div class="modal fade" id="rejeitarSenhaModal{{ s.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{{ url_for('admin.rejeitar_solicitacao_senha', solicitacao_id=s.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Rejeitar Solicitação de Redefinição de Senha</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p><strong>Usuário:</strong> {{ s.username }}</p>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Motivo da Rejeição</label>
+                            <textarea class="form-control" name="motivo" rows="3" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger">Rejeitar Solicitação</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Inicializar tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+            
+            // Gerar senha aleatória para o campo de senha inicial
+            var senhaInputs = document.querySelectorAll('input[name="senha"]');
+            senhaInputs.forEach(function(input) {
+                var senhaAleatoria = gerarSenhaAleatoria(10);
+                input.value = senhaAleatoria;
+            });
+        });
+        
+        // Função para gerar senha aleatória
+        function gerarSenhaAleatoria(tamanho) {
+            var caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+            var senha = '';
+            for (var i = 0; i < tamanho; i++) {
+                senha += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+            }
+            return senha;
+        }
+    </script>
+</body>
+</html>
