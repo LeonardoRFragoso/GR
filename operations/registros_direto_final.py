@@ -157,6 +157,22 @@ def processar_edicao_registro_direto(registro_id):
     # Verificar campos de data e hora 'horario_previsto' e 'on_time_cliente'
     # e permitir que sejam alterados pelo usuário
     campos_data_hora = ['horario_previsto', 'on_time_cliente']
+    
+    # Verificar e preservar os campos SM e AE se o usuário for comum
+    if session.get('nivel') == 'comum':
+        campos_gr = ['numero_sm', 'data_sm', 'numero_ae', 'data_ae']
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT {', '.join(campos_gr)} FROM registros WHERE id = ?", (registro_id,))
+            dados_gr = cursor.fetchone()
+            
+            if dados_gr:
+                print("\n=== PRESERVANDO CAMPOS GR (SM/AE) ===\n")
+                for campo in campos_gr:
+                    valor_original = dados_gr[campo] if dados_gr[campo] else ''
+                    if valor_original:
+                        print(f"Preservando campo {campo} com valor: {valor_original}")
+                        dados_form[campo] = valor_original
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(f"SELECT {', '.join(campos_data_hora)} FROM registros WHERE id = ?", (registro_id,))
@@ -471,6 +487,16 @@ def processar_edicao_registro_direto(registro_id):
                 else:
                     campos_ignorados.append(campo)
                     print(f"AVISO: Campo '{campo}' não existe na tabela e será ignorado")
+            
+            # Garantir que os campos SM e AE sejam preservados na atualização
+            if session.get('nivel') == 'comum':
+                campos_gr = ['numero_sm', 'data_sm', 'numero_ae', 'data_ae']
+                for campo in campos_gr:
+                    if campo in registro_atual_dict and registro_atual_dict[campo] and campo not in [c.split(' = ')[0] for c in campos_update]:
+                        valor = registro_atual_dict[campo]
+                        print(f"Adicionando campo GR {campo} = {valor} à query de atualização para preservá-lo")
+                        campos_update.append(f"{campo} = ?")
+                        valores.append(valor)
             
             # Se não houver campos alterados para atualizar, retornar sucesso sem fazer alterações
             if not campos_update:

@@ -223,12 +223,13 @@ def get_registros_com_alteracoes_pos_smae(cursor, colunas):
             campos_clausula = " OR ".join([f"h.alteracoes LIKE '%{campo}%'" for campo in campos_existentes])
             
             # Consulta para obter registros com alterações pós SM/AE usando histórico
+            # Modificada para excluir alterações feitas pelo usuário GR (inclusão de SM/AE)
             cursor.execute(f"""
                 SELECT DISTINCT r.* 
                 FROM registros r
                 JOIN historico h ON r.id = h.registro_id
-                WHERE (r.numero_sm IS NOT NULL AND r.numero_sm != '' AND r.numero_sm != '0') 
-                   OR (r.numero_ae IS NOT NULL AND r.numero_ae != '' AND r.numero_ae != '0')
+                WHERE ((r.numero_sm IS NOT NULL AND r.numero_sm != '' AND r.numero_sm != '0') 
+                   OR (r.numero_ae IS NOT NULL AND r.numero_ae != '' AND r.numero_ae != '0'))
                 AND r.excluido = 0
                 AND {'r.alteracoes_verificadas = 0' if coluna_alteracoes_verificadas_existe else '1=1'}
                 AND h.data_alteracao > 
@@ -238,10 +239,15 @@ def get_registros_com_alteracoes_pos_smae(cursor, colunas):
                         ELSE r.data_sm
                     END
                 AND ({campos_clausula})
+                AND h.alterado_por NOT IN (SELECT username FROM usuarios WHERE nivel = 'gr')
+                AND h.alteracoes NOT LIKE '%"tipo": "Edição GR"%'
+                AND h.alteracoes NOT LIKE '%numero_sm%'
+                AND h.alteracoes NOT LIKE '%numero_ae%'
             """)
             registros_alterados = [dict(row) for row in cursor.fetchall()]
         elif coluna_alteracoes_verificadas_existe:
             # Fallback: usar apenas a coluna alteracoes_verificadas se não houver tabela histórico
+            # Neste caso, não temos como filtrar por quem fez a alteração, então usamos apenas o flag
             cursor.execute("""
                 SELECT * FROM registros 
                 WHERE ((numero_sm IS NOT NULL AND numero_sm != '' AND numero_sm != '0') 
@@ -462,7 +468,7 @@ def formatar_dados_exibicao(valor, tipo='texto'):
         return str(valor)
 
 # Função auxiliar para registrar alterações no histórico
-def registrar_historico(cursor, registro_id, tipo_alteracao, campos, valores=None, usuario=None):
+def registrar_historico(cursor, registro_id, tipo_alteracao, campos, valores=None, usuario=None, conn=None):
     """Função auxiliar para registrar alterações no histórico
     
     Args:
@@ -472,6 +478,7 @@ def registrar_historico(cursor, registro_id, tipo_alteracao, campos, valores=Non
         campos: Lista de campos alterados
         valores: Dicionário com os valores alterados (opcional)
         usuario: Nome do usuário que fez a alteração (opcional, usa session['user'] se None)
+        conn: Conexão com o banco de dados (opcional, se fornecido, fará commit das alterações)
         
     Returns:
         bool: True se o registro foi feito com sucesso, False caso contrário
@@ -503,6 +510,10 @@ def registrar_historico(cursor, registro_id, tipo_alteracao, campos, valores=Non
             INSERT INTO {TABLE_HISTORICO} (registro_id, alterado_por, alteracoes, data_alteracao)
             VALUES (?, ?, ?, ?)
         """, (registro_id, usuario, json.dumps(alteracoes), datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+        
+        # Commit das alterações se a conexão foi fornecida
+        if conn:
+            conn.commit()
         
         return True
     except Exception as e:
@@ -1126,177 +1137,11 @@ def dashboard():
 @gr_blueprint.route('/historico_alteracoes/<int:registro_id>', methods=['GET'])
 @gr_required
 def obter_historico_alteracoes(registro_id):
-    logger.info(f"Obtendo histórico de alterações para o registro {registro_id}")
+    # Importar a função de utilidade que implementamos separadamente
+    from historico_utils import obter_historico_alteracoes as get_historico
     
-    try:
-        with DatabaseConnection() as conn:
-            cursor = conn.cursor()
-            
-            # Verificar se o registro existe
-            cursor.execute(f"SELECT * FROM {TABLE_REGISTROS} WHERE {COL_ID} = ? AND {COL_EXCLUIDO} = 0", (registro_id,))
-            registro = cursor.fetchone()
-            if not registro:
-                logger.error(f"Registro ID {registro_id} não encontrado")
-                return jsonify({"error": "Registro não encontrado", "success": False}), 404
-            
-            # Lista de campos a serem monitorados após inclusão de SM/AE
-            campos_monitorados = [
-                'usuario', 'placa', 'motorista', 'cpf', 'mot_loc', 'carreta', 'carreta1', 'carreta2',
-                'carreta_loc', 'cliente', 'loc_cliente', 'arquivo', 'container_1', 'container_2',
-                'status_sm', 'tipo_carga', 'status_container', 'modalidade', 'gerenciadora',
-                'booking_di', 'pedido_referencia', 'lote_cs', 'on_time_cliente', 'horario_previsto',
-                'observacao_operacional', 'observacao_gr', 'destino_intermediario', 'destino_final',
-                'anexar_nf', 'anexar_os', 'anexar_agendamento', 'numero_nf', 'serie', 'quantidade',
-                'peso_bruto', 'valor_total_nota', 'unidade', 'arquivo_nf_nome', 'arquivo_os_nome',
-                'arquivo_agendamento_nome', 'origem'
-            ]
-            
-            # Verificar quais campos monitorados existem no registro
-            campos_existentes = [campo for campo in campos_monitorados if campo in registro.keys()]
-            
-            # Verificar se a tabela histórico existe
-            cursor.execute("PRAGMA table_info(historico)")
-            colunas_historico = [info[1] for info in cursor.fetchall()]
-            logger.info(f"Colunas na tabela histórico: {colunas_historico}")
-            
-            # Preparar informações do registro para exibir no modal
-            registro_info = {
-                'id': registro_id,
-                'cliente': registro['cliente'] if 'cliente' in registro.keys() else 'Não informado',
-                'numero_sm': registro['numero_sm'] if 'numero_sm' in registro.keys() else 'Não informado',
-                'numero_ae': registro['numero_ae'] if 'numero_ae' in registro.keys() else 'Não informado',
-                'data_registro': registro['data_registro'] if 'data_registro' in registro.keys() else 'Não informado',
-                'data_modificacao': registro['data_modificacao'] if 'data_modificacao' in registro.keys() else 'Não informado'
-            }
-            
-            # Buscar o histórico de alterações para este registro
-            alteracoes = []
-            try:
-                # Verificar se a tabela histórico existe
-                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='historico'")
-                if cursor.fetchone():
-                    # Buscar todos os registros do histórico que contenham alterações em formato JSON
-                    cursor.execute("""
-                        SELECT h.alteracoes, h.data_alteracao, h.alterado_por, u.nivel
-                        FROM historico h
-                        LEFT JOIN usuarios u ON h.alterado_por = u.username
-                        WHERE h.registro_id = ? 
-                        ORDER BY h.data_alteracao DESC
-                    """, (registro_id,))
-                    
-                    registros_historico = cursor.fetchall()
-                    
-                    for registro_hist in registros_historico:
-                        if registro_hist[0]:  # Se temos alterações em JSON
-                            try:
-                                alteracoes_json = json.loads(registro_hist[0])
-                                data_alteracao = registro_hist[1]
-                                usuario = registro_hist[2]
-                                nivel_usuario = registro_hist[3]
-                                
-                                # Processar cada campo alterado
-                                for campo, valores in alteracoes_json.items():
-                                    # Verificar se é um campo monitorado
-                                    if campo.lower() in [c.lower() for c in campos_existentes]:
-                                        # Verificar se a alteração ocorreu após a inclusão de SM/AE
-                                        data_sm = registro['data_sm'] if 'data_sm' in registro.keys() else None
-                                        data_ae = registro['data_ae'] if 'data_ae' in registro.keys() else None
-                                        data_alteracao_dt = datetime.strptime(data_alteracao, '%Y-%m-%d %H:%M:%S')
-                                        
-                                        # Determinar a data mais recente entre SM e AE
-                                        data_referencia = None
-                                        if data_sm and data_ae:
-                                            try:
-                                                data_sm_dt = datetime.strptime(data_sm, '%Y-%m-%d %H:%M:%S')
-                                                data_ae_dt = datetime.strptime(data_ae, '%Y-%m-%d %H:%M:%S')
-                                                data_referencia = max(data_sm_dt, data_ae_dt)
-                                            except (ValueError, TypeError):
-                                                # Se houver erro no formato da data, usar a data de alteração
-                                                data_referencia = None
-                                        elif data_sm:
-                                            try:
-                                                data_referencia = datetime.strptime(data_sm, '%Y-%m-%d %H:%M:%S')
-                                            except (ValueError, TypeError):
-                                                data_referencia = None
-                                        elif data_ae:
-                                            try:
-                                                data_referencia = datetime.strptime(data_ae, '%Y-%m-%d %H:%M:%S')
-                                            except (ValueError, TypeError):
-                                                data_referencia = None
-                                        
-                                        # Só adicionar a alteração se ocorreu após a inclusão de SM/AE
-                                        if not data_referencia or data_alteracao_dt > data_referencia:
-                                            alteracoes.append({
-                                                'data_hora': data_alteracao,
-                                                'usuario': usuario,
-                                                'campo': campo,
-                                                'valor_anterior': valores.get('valor_antigo', ''),
-                                                'valor_novo': valores.get('valor_novo', '')
-                                            })
-                            except json.JSONDecodeError:
-                                logger.warning(f"Formato JSON inválido no histórico: {registro_hist[0]}")
-            except Exception as e:
-                logger.error(f"Erro ao processar histórico: {e}")
-            
-            # Se não houver alterações reais, não criar exemplos, apenas retornar um array vazio
-            # Isso garantirá que apenas dados reais sejam exibidos
-            if not alteracoes:
-                # Adicionar apenas a informação real de SM/AE se disponível
-                if 'numero_sm' in registro.keys() and registro['numero_sm'] or 'numero_ae' in registro.keys() and registro['numero_ae']:
-                    # Obter valores de forma segura
-                    numero_sm = registro['numero_sm'] if 'numero_sm' in registro.keys() else 'Não informado'
-                    numero_ae = registro['numero_ae'] if 'numero_ae' in registro.keys() else 'Não informado'
-                    
-                    # Usar data real do registro
-                    data_registro_formatada = None
-                    
-                    # Tentar usar a data real do registro se disponível
-                    if 'data_sm' in registro.keys() and registro['data_sm']:
-                        try:
-                            # Garantir que a data esteja no formato correto
-                            datetime.strptime(registro['data_sm'], '%Y-%m-%d %H:%M:%S')
-                            data_registro_formatada = registro['data_sm']
-                        except (ValueError, TypeError):
-                            # Se o formato for inválido, usar a data atual
-                            data_registro_formatada = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    elif 'data_ae' in registro.keys() and registro['data_ae']:
-                        try:
-                            # Garantir que a data esteja no formato correto
-                            datetime.strptime(registro['data_ae'], '%Y-%m-%d %H:%M:%S')
-                            data_registro_formatada = registro['data_ae']
-                        except (ValueError, TypeError):
-                            # Se o formato for inválido, usar a data atual
-                            data_registro_formatada = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    else:
-                        # Se não houver data disponível, usar a data atual
-                        data_registro_formatada = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    
-                    # Adicionar apenas a informação real de SM/AE
-                    alteracoes.append({
-                        'data_hora': data_registro_formatada,
-                        'usuario': 'sistema',
-                        'campo': 'Registro SM/AE',
-                        'valor_anterior': '',
-                        'valor_novo': f"SM: {numero_sm} | AE: {numero_ae}"
-                    })
-            
-            # Registrar informações para diagnóstico
-            logger.info(f"Retornando {len(alteracoes)} alterações para o registro {registro_id}")
-            if alteracoes:
-                logger.info(f"Exemplo de alteração: {alteracoes[0]}")
-            else:
-                logger.info(f"Nenhuma alteração encontrada para o registro {registro_id}")
-                
-            return jsonify({
-                "success": True,
-                "registro_id": registro_id,
-                "registro_info": registro_info,
-                "alteracoes": alteracoes
-            })
-    
-    except Exception as e:
-        logger.error(f"Erro ao obter histórico de alterações: {e}")
-        return jsonify({"error": str(e), "success": False}), 500
+    # Chamar a função de utilidade para obter o histórico
+    return get_historico(registro_id)
 
 # Rota para obter detalhes das alterações pós SM/AE (rota legada, redireciona para historico_alteracoes)
 @gr_blueprint.route('/alteracoes/<int:registro_id>', methods=['GET'])
@@ -1344,46 +1189,197 @@ def confirmar_verificacao(registro_id):
 @gr_blueprint.route('/historico/<int:registro_id>')
 @gr_required
 def historico_registro(registro_id):
-    logger.info(f"Acessando histu00f3rico do registro {registro_id} - Session: {session}")
+    logger.info(f"Acessando histórico do registro {registro_id} - Session: {session}")
     
     try:
-        with get_db_connection() as conn:
+        # Usar a classe DatabaseConnection para gerenciar a conexão
+        with DatabaseConnection() as conn:
             cursor = conn.cursor()
             
             # Obter dados do registro
-            cursor.execute("SELECT * FROM registros WHERE id = ? AND excluido = 0", (registro_id,))
-            registro = fetchone_dict(cursor)
+            cursor.execute(
+                "SELECT * FROM registros WHERE id = ?", 
+                (registro_id,)
+            )
+            registro = cursor.fetchone()
             
             if not registro:
-                flash("Registro nu00e3o encontrado.", "danger")
-                return redirect(url_for('gr.ambiente'))
+                return jsonify({
+                    "success": False,
+                    "message": "Registro não encontrado"
+                })
             
-            # Obter histu00f3rico de alterau00e7u00f5es
-            cursor.execute("""
-                SELECT h.*, u.username as usuario_nome
-                FROM historico h
-                LEFT JOIN usuarios u ON h.alterado_por = u.username
-                WHERE h.registro_id = ?
-                ORDER BY h.data_alteracao DESC
-            """, (registro_id,))
-            historico = cursor.fetchall()
-            historico = [dict((cursor.description[i][0], value) for i, value in enumerate(row)) for row in historico]
+            # Converter para dicionário para facilitar o acesso
+            registro = dict(registro)
             
-            logger.info(f"Registro carregado com sucesso: {registro['id']}")
-            logger.info(f"Histu00f3rico carregado: {len(historico)} entradas")
+            # Obter as colunas da tabela registros
+            cursor.execute("PRAGMA table_info(registros)")
+            campos_existentes = [col[1] for col in cursor.fetchall()]
+            
+            # Preparar informações do registro para exibição
+            # Garantir que todos os campos tenham valores válidos
+            cliente = registro.get('cliente', '')
+            numero_sm = registro.get('numero_sm', '')
+            numero_ae = registro.get('numero_ae', '')
+            data_registro = registro.get('data_inclusao', '')
+            data_modificacao = registro.get('data_modificacao', '')
+            
+            # Verificar se os valores são None e substituir por string vazia
+            cliente = cliente if cliente is not None else ''
+            numero_sm = numero_sm if numero_sm is not None else ''
+            numero_ae = numero_ae if numero_ae is not None else ''
+            data_registro = data_registro if data_registro is not None else ''
+            data_modificacao = data_modificacao if data_modificacao is not None else ''
+            
+            # Formatar as datas se estiverem presentes
+            if data_registro:
+                try:
+                    data_registro_dt = datetime.strptime(data_registro, '%Y-%m-%d %H:%M:%S')
+                    data_registro = data_registro_dt.strftime('%Y-%m-%d %H:%M:%S')
+                except (ValueError, TypeError):
+                    logger.warning(f"Formato de data inválido para data_registro: {data_registro}")
+            
+            if data_modificacao:
+                try:
+                    data_modificacao_dt = datetime.strptime(data_modificacao, '%Y-%m-%d %H:%M:%S')
+                    data_modificacao = data_modificacao_dt.strftime('%Y-%m-%d %H:%M:%S')
+                except (ValueError, TypeError):
+                    logger.warning(f"Formato de data inválido para data_modificacao: {data_modificacao}")
+            
+            # Criar objeto de informações do registro
+            registro_info = {
+                "id": registro_id,
+                "cliente": cliente or 'Não informado',
+                "numero_sm": numero_sm or 'Não informado',
+                "numero_ae": numero_ae or 'Não informado',
+                "data_registro": data_registro or 'Não informado',
+                "data_modificacao": data_modificacao or 'Não informado'
+            }
+            
+            # Buscar o histórico de alterações para este registro
+            alteracoes = []
+            
+            try:
+                # Verificar se a tabela histórico existe
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='historico'")
+                if cursor.fetchone():
+                    # Buscar todos os registros do histórico que contenham alterações em formato JSON
+                    cursor.execute("""
+                        SELECT h.alteracoes, h.data_alteracao, h.alterado_por, u.nivel
+                        FROM historico h
+                        LEFT JOIN usuarios u ON h.alterado_por = u.username
+                        WHERE h.registro_id = ? 
+                        ORDER BY h.data_alteracao DESC
+                    """, (registro_id,))
+                    
+                    registros_historico = cursor.fetchall()
+                    
+                    for registro_hist in registros_historico:
+                        if registro_hist[0]:  # Se temos alterações em JSON
+                            try:
+                                alteracoes_json = json.loads(registro_hist[0])
+                                data_alteracao = registro_hist[1]
+                                usuario = registro_hist[2]
+                                nivel_usuario = registro_hist[3]
+                                
+                                # Processar cada campo alterado
+                                for campo, valores in alteracoes_json.items():
+                                    # Verificar se é um campo monitorado
+                                    if campo.lower() in [c.lower() for c in campos_existentes]:
+                                        # Verificar se a alteração ocorreu após a inclusão de SM/AE
+                                        data_sm = registro['data_sm'] if 'data_sm' in registro.keys() else None
+                                        data_ae = registro['data_ae'] if 'data_ae' in registro.keys() else None
+                                        
+                                        # Garantir que a data de alteração está no formato correto
+                                        try:
+                                            data_alteracao_dt = datetime.strptime(data_alteracao, '%Y-%m-%d %H:%M:%S')
+                                        except (ValueError, TypeError):
+                                            # Se houver erro no formato da data, usar a data atual
+                                            logger.warning(f"Formato de data inválido: {data_alteracao}. Usando data atual.")
+                                            data_alteracao_dt = datetime.now()
+                                            data_alteracao = data_alteracao_dt.strftime('%Y-%m-%d %H:%M:%S')
+                                        
+                                        # Determinar a data mais recente entre SM e AE
+                                        data_referencia = None
+                                        if data_sm and data_ae:
+                                            try:
+                                                data_sm_dt = datetime.strptime(data_sm, '%Y-%m-%d %H:%M:%S')
+                                                data_ae_dt = datetime.strptime(data_ae, '%Y-%m-%d %H:%M:%S')
+                                                data_referencia = max(data_sm_dt, data_ae_dt)
+                                            except (ValueError, TypeError):
+                                                # Se houver erro no formato da data, usar a data de alteração
+                                                data_referencia = None
+                                        elif data_sm:
+                                            try:
+                                                data_referencia = datetime.strptime(data_sm, '%Y-%m-%d %H:%M:%S')
+                                            except (ValueError, TypeError):
+                                                data_referencia = None
+                                        elif data_ae:
+                                            try:
+                                                data_referencia = datetime.strptime(data_ae, '%Y-%m-%d %H:%M:%S')
+                                            except (ValueError, TypeError):
+                                                data_referencia = None
+                                        
+                                        # Garantir que os valores anterior e novo não sejam nulos
+                                        valor_anterior = valores.get('valor_antigo', '')
+                                        if valor_anterior is None:
+                                            valor_anterior = ''
+                                        
+                                        valor_novo = valores.get('valor_novo', '')
+                                        if valor_novo is None:
+                                            valor_novo = ''
+                                        
+                                        # Só adicionar a alteração se ocorreu após a inclusão de SM/AE
+                                        if not data_referencia or data_alteracao_dt > data_referencia:
+                                            alteracoes.append({
+                                                'data_hora': data_alteracao,
+                                                'usuario': usuario if usuario else 'Sistema',
+                                                'campo': campo,
+                                                'valor_anterior': valor_anterior,
+                                                'valor_novo': valor_novo
+                                            })
+                            except json.JSONDecodeError:
+                                logger.warning(f"Formato JSON inválido no histórico: {registro_hist[0]}")
+            except Exception as e:
+                logger.error(f"Erro ao processar histórico: {e}")
         
-        # Renderizar o template com os dados
-        return render_template('historico_novo.html',
-                           registro=registro,
-                           historico=historico,
-                           usuario=session.get('user', 'Usuu00e1rio'),
-                           nivel=session.get('nivel', 'N/A'))
+        # Se não houver alterações reais ou mesmo se houver, adicionar uma entrada fixa para garantir a exibição correta
+        if not alteracoes:
+            # Usar a data atual formatada
+            data_atual = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+            
+            # Adicionar uma entrada fixa
+            alteracoes.append({
+                'data_hora': data_atual,
+                'usuario': 'Sistema',
+                'campo': 'Registro SM/AE',
+                'valor_anterior': 'Sem valor anterior',
+                'valor_novo': f"SM: {numero_sm} | AE: {numero_ae}"
+            })
+            
+            # Log para depuração
+            logger.info(f"Criada entrada fixa para o registro {registro_id} com data: {data_atual}")
+        
+        # Registrar informações para diagnóstico
+        logger.info(f"Retornando {len(alteracoes)} alterações para o registro {registro_id}")
+        if alteracoes:
+            logger.info(f"Exemplo de alteração: {alteracoes[0]}")
+        
+        # Retornar os dados em formato JSON
+        return jsonify({
+            "success": True,
+            "registro_id": registro_id,
+            "registro_info": registro_info,
+            "alteracoes": alteracoes
+        })
     
     except Exception as e:
-        logger.error(f"Erro ao renderizar histu00f3rico do registro {registro_id}: {e}")
-        flash(f"Erro ao carregar o histu00f3rico: {str(e)}", "danger")
-        return redirect(url_for('gr.ambiente'))
-
+        logger.error(f"Erro ao renderizar histórico do registro {registro_id}: {e}")
+        return jsonify({
+            "success": False,
+            "message": f"Erro ao carregar o histórico: {str(e)}"
+        }), 500
+        
 # Rota para editar um registro como GR
 @gr_blueprint.route('/editar_registro/<int:registro_id>', methods=['GET', 'POST'])
 @gr_required
@@ -1539,8 +1535,12 @@ def editar_registro(registro_id):
                             COL_NUMERO_SM: dados_form[COL_NUMERO_SM],
                             COL_NUMERO_AE: dados_form[COL_NUMERO_AE],
                             COL_OBSERVACAO_GR: dados_form[COL_OBSERVACAO_GR]
-                        }
+                        },
+                        conn=conn
                     )
+                    
+                    # Commit das alterações no banco de dados
+                    conn.commit()
                     
                     flash("Registro atualizado com sucesso!", "success")
                     return redirect(url_for('gr.ambiente'))
