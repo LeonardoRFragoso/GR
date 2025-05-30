@@ -38,7 +38,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Configurações de sessão para segurança
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = False
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)  # Sessão expira em 30 minutos
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)  # Sessão expira em 30 minutos (mantido para compatibilidade)
 app.config['SESSION_USE_SIGNER'] = True  # Assinar cookies de sessão
 app.config['SESSION_COOKIE_SECURE'] = False  # Mudar para True em produção com HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevenir acesso via JavaScript

@@ -6,7 +6,7 @@ import json
 import sqlite3
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 import werkzeug.wrappers
 from models.database import get_db_connection
@@ -32,88 +32,197 @@ main_bp = Blueprint('main', __name__, url_prefix='/main')
 # FUNÇÕES AUXILIARES INTERNAS
 # ========================
 
-# Função para formatar datas no padrão brasileiro DD-MM-AAAA HH:MM:SS
+# Função para formatar datas no padrão brasileiro DD/MM/YYYY HH:MM:SS
 def formatar_data_br(valor):
     if not valor:
         return ""
     
-    # Substituir 'T' por espaço para formato ISO
-    valor = valor.replace('T', ' ')
-    
-    # Verificar se é uma data completa com hora
-    if ' ' in valor:
-        data_parte, hora_parte = valor.split(' ', 1)
-    else:
-        data_parte, hora_parte = valor, ''
-    
-    # Verificar se a data está no formato yyyy-mm-dd
-    if re.match(r'\d{4}-\d{2}-\d{2}', data_parte):
-        # Converter de yyyy-mm-dd para dd-mm-yyyy
-        ano, mes, dia = data_parte.split('-')
-        data_formatada = f"{dia}-{mes}-{ano}"
-    else:
-        data_formatada = data_parte
-    
-    # Formatar a hora para garantir que tenha segundos (HH:MM:SS)
-    if hora_parte:
-        # Se a hora já tem o formato completo HH:MM:SS, use-a diretamente
-        if re.match(r'\d{2}:\d{2}:\d{2}', hora_parte):
-            hora_formatada = hora_parte
-        # Se a hora tem apenas HH:MM, adicione os segundos
-        elif re.match(r'\d{2}:\d{2}', hora_parte):
-            hora_formatada = f"{hora_parte}:00"
+    try:
+        # Tentar converter para objeto datetime para garantir formato consistente
+        if isinstance(valor, str):
+            # Substituir 'T' por espaço para formato ISO
+            valor = valor.replace('T', ' ')
+            
+            # Tentar diferentes formatos de data
+            dt = None
+            formatos = [
+                '%Y-%m-%d %H:%M:%S',  # 2025-05-30 14:19:00
+                '%Y-%m-%d %H:%M',     # 2025-05-30 14:19
+                '%Y-%m-%dT%H:%M',     # 2025-05-30T14:19
+                '%Y-%m-%dT%H:%M:%S',  # 2025-05-30T14:19:00
+                '%d-%m-%Y %H:%M:%S',  # 30-05-2025 14:19:00
+                '%d-%m-%Y %H:%M',     # 30-05-2025 14:19
+                '%d/%m/%Y %H:%M:%S',  # 30/05/2025 14:19:00
+                '%d/%m/%Y %H:%M',     # 30/05/2025 14:19
+                '%H:%M:%S %d-%m-%Y',  # 14:19:00 30-05-2025
+                '%H:%M %d-%m-%Y',     # 14:19 30-05-2025
+                '%d-%m-%Y',           # 30-05-2025
+                '%Y-%m-%d',           # 2025-05-30
+                '%d/%m/%Y'            # 30/05/2025
+            ]
+            
+            for fmt in formatos:
+                try:
+                    dt = datetime.strptime(valor, fmt)
+                    break
+                except ValueError:
+                    continue
+            
+            if dt is None:
+                # Se não conseguir converter, retornar o valor original
+                return valor
+        elif isinstance(valor, datetime):
+            dt = valor
         else:
-            hora_formatada = hora_parte
+            # Se não for string nem datetime, retornar o valor original
+            return str(valor)
         
-        # Manter o formato HH:MM:SS DD-MM-AAAA
-        return f"{hora_formatada} {data_formatada}"
-    else:
-        return data_formatada
+        # Formatar no padrão DD/MM/YYYY HH:MM:SS
+        return dt.strftime('%d/%m/%Y %H:%M:%S')
+    
+    except Exception as e:
+        logging.error(f"Erro ao formatar data {valor}: {e}")
+        return str(valor)
 
 # Função para converter formato de data para o banco de dados
 def converter_formato_data(valor):
     if not valor:
         return ""
     
-    # Se o valor já está no formato HH:MM:SS DD-MM-AAAA, retorná-lo sem alterações
-    if re.match(r'\d{2}:\d{2}:\d{2} \d{2}-\d{2}-\d{4}', valor):
-        return valor
-    
-    # Substituir 'T' por espaço para formato ISO
-    valor = valor.replace('T', ' ')
-    
-    # Verificar se é uma data completa com hora
-    if ' ' in valor:
-        data_parte, hora_parte = valor.split(' ', 1)
-    else:
-        data_parte, hora_parte = valor, ''
-    
-    # Verificar se a data está no formato yyyy-mm-dd
-    if re.match(r'\d{4}-\d{2}-\d{2}', data_parte):
-        # Converter de yyyy-mm-dd para dd-mm-yyyy
-        ano, mes, dia = data_parte.split('-')
-        data_formatada = f"{dia}-{mes}-{ano}"
-    else:
-        data_formatada = data_parte
-    
-    # Formatar a hora para garantir que tenha segundos (HH:MM:SS)
-    if hora_parte:
-        # Se a hora já tem o formato completo HH:MM:SS, use-a diretamente
-        if re.match(r'\d{2}:\d{2}:\d{2}', hora_parte):
-            hora_formatada = hora_parte
-        # Se a hora tem apenas HH:MM, adicione os segundos
-        elif re.match(r'\d{2}:\d{2}', hora_parte):
-            hora_formatada = f"{hora_parte}:00"
+    try:
+        # Tentar converter para objeto datetime para garantir formato consistente
+        if isinstance(valor, str):
+            # Substituir 'T' por espaço para formato ISO
+            valor = valor.replace('T', ' ')
+            
+            # Tentar diferentes formatos de data
+            dt = None
+            formatos = [
+                '%Y-%m-%d %H:%M:%S',  # 2025-05-30 14:19:00
+                '%Y-%m-%d %H:%M',     # 2025-05-30 14:19
+                '%Y-%m-%dT%H:%M',     # 2025-05-30T14:19
+                '%Y-%m-%dT%H:%M:%S',  # 2025-05-30T14:19:00
+                '%d-%m-%Y %H:%M:%S',  # 30-05-2025 14:19:00
+                '%d-%m-%Y %H:%M',     # 30-05-2025 14:19
+                '%H:%M:%S %d-%m-%Y',  # 14:19:00 30-05-2025
+                '%H:%M %d-%m-%Y'      # 14:19 30-05-2025
+            ]
+            
+            for fmt in formatos:
+                try:
+                    dt = datetime.strptime(valor, fmt)
+                    break
+                except ValueError:
+                    continue
+            
+            if dt is None:
+                # Se não conseguir converter, tentar extrair partes da data e hora
+                # Este é um fallback para formatos não reconhecidos
+                try:
+                    # Tentar extrair partes da data e hora usando expressões regulares
+                    data_match = re.search(r'(\d{1,2})[/-](\d{1,2})[/-](\d{4}|\d{2})', valor)
+                    hora_match = re.search(r'(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?', valor)
+                    
+                    if data_match:
+                        dia, mes, ano = data_match.groups()
+                        dia = dia.zfill(2)
+                        mes = mes.zfill(2)
+                        if len(ano) == 2:
+                            ano = f"20{ano}"  # Assumir que anos de 2 dígitos são do século 21
+                        
+                        if hora_match:
+                            hora, minuto, segundo = hora_match.groups()
+                            hora = hora.zfill(2)
+                            minuto = minuto.zfill(2)
+                            segundo = segundo.zfill(2) if segundo else "00"
+                            return f"{dia}-{mes}-{ano} {hora}:{minuto}:{segundo}"
+                        else:
+                            return f"{dia}-{mes}-{ano} 00:00:00"
+                    elif hora_match:
+                        hora, minuto, segundo = hora_match.groups()
+                        hora = hora.zfill(2)
+                        minuto = minuto.zfill(2)
+                        segundo = segundo.zfill(2) if segundo else "00"
+                        # Se tiver apenas hora, usar a data atual
+                        hoje = datetime.now()
+                        return f"{hoje.day:02d}-{hoje.month:02d}-{hoje.year} {hora}:{minuto}:{segundo}"
+                except Exception:
+                    # Se falhar na extração, retornar o valor original
+                    return valor
+                
+                # Se não conseguir extrair, retornar o valor original
+                return valor
+        elif isinstance(valor, datetime):
+            dt = valor
         else:
-            hora_formatada = hora_parte
+            # Se não for string nem datetime, retornar o valor original
+            return str(valor)
         
-        # Manter o formato HH:MM:SS DD-MM-AAAA
-        return f"{hora_formatada} {data_formatada}"
-    else:
-        return data_formatada
+        # Formatar no padrão DD-MM-YYYY HH:MM:SS
+        return dt.strftime('%d-%m-%Y %H:%M:%S')
+    
+    except Exception as e:
+        logging.error(f"Erro ao converter formato de data {valor}: {e}")
+        return str(valor)
+
+# Função para formatar data no formato brasileiro com barras
+def formatar_data_br_barras(valor):
+    """
+    Formata uma data para o formato brasileiro DD/MM/YYYY HH:MM:SS
+    """
+    if not valor:
+        return ""
+    
+    try:
+        # Tentar converter para objeto datetime para garantir formato consistente
+        if isinstance(valor, str):
+            # Substituir 'T' por espaço para formato ISO
+            valor = valor.replace('T', ' ')
+            
+            # Tentar diferentes formatos de data
+            dt = None
+            formatos = [
+                '%d-%m-%Y %H:%M:%S',  # 30-05-2025 14:19:00 (formato padrão do banco)
+                '%Y-%m-%d %H:%M:%S',  # 2025-05-30 14:19:00
+                '%Y-%m-%d %H:%M',     # 2025-05-30 14:19
+                '%Y-%m-%dT%H:%M',     # 2025-05-30T14:19
+                '%Y-%m-%dT%H:%M:%S',  # 2025-05-30T14:19:00
+                '%d-%m-%Y %H:%M',     # 30-05-2025 14:19
+                '%d/%m/%Y %H:%M:%S',  # 30/05/2025 14:19:00
+                '%d/%m/%Y %H:%M',     # 30/05/2025 14:19
+                '%H:%M:%S %d-%m-%Y',  # 14:19:00 30-05-2025
+                '%H:%M %d-%m-%Y',     # 14:19 30-05-2025
+                '%d-%m-%Y',           # 30-05-2025
+                '%Y-%m-%d',           # 2025-05-30
+                '%d/%m/%Y'            # 30/05/2025
+            ]
+            
+            for fmt in formatos:
+                try:
+                    dt = datetime.strptime(valor, fmt)
+                    break
+                except ValueError:
+                    continue
+            
+            if dt is None:
+                # Se não conseguir converter, retornar o valor original
+                return valor
+        elif isinstance(valor, datetime):
+            dt = valor
+        else:
+            # Se não for string nem datetime, retornar o valor original
+            return str(valor)
+        
+        # Formatar no padrão DD/MM/YYYY HH:MM:SS para exibição
+        return dt.strftime('%d/%m/%Y %H:%M:%S')
+    
+    except Exception as e:
+        logging.error(f"Erro ao formatar data {valor}: {e}")
+        return str(valor)
 
 # Registrar o filtro para uso nos templates
 comum_bp.add_app_template_filter(formatar_data_br, 'formatar_data_br')
+comum_bp.add_app_template_filter(formatar_data_br_barras, 'formatar_data_br_barras')
 
 def log_admin_action(usuario, acao, detalhes):
     try:
@@ -617,65 +726,83 @@ def novo_registro():
             # Adicionar caminhos dos arquivos aos dados do formulário
             form_data.update(arquivos)
             
-            # Função para converter datas para o formato HH:MM:SS DD-MM-AAAA
+            # Função para converter datas para o formato DD-MM-YYYY HH:MM:SS
             def converter_formato_data(data_str):
+                """Converte uma string de data no formato do formulário para o formato do banco de dados"""
                 if not data_str:
-                    return ''
+                    return None
                 
                 try:
-                    # Substituir 'T' por espaço para formato padrão
-                    data_str = data_str.replace('T', ' ')
+                    # Tentar converter para objeto datetime para garantir formato consistente
+                    if isinstance(data_str, str):
+                        # Substituir 'T' por espaço para formato ISO
+                        data_str = data_str.replace('T', ' ')
+                        
+                        # Tentar diferentes formatos de data
+                        dt = None
+                        formatos = [
+                            '%Y-%m-%d %H:%M:%S',  # 2025-05-30 14:19:00
+                            '%Y-%m-%d %H:%M',     # 2025-05-30 14:19
+                            '%Y-%m-%dT%H:%M',     # 2025-05-30T14:19
+                            '%Y-%m-%dT%H:%M:%S',  # 2025-05-30T14:19:00
+                            '%d-%m-%Y %H:%M:%S',  # 30-05-2025 14:19:00
+                            '%d-%m-%Y %H:%M',     # 30-05-2025 14:19
+                            '%d/%m/%Y %H:%M:%S',  # 30/05/2025 14:19:00
+                            '%d/%m/%Y %H:%M',     # 30/05/2025 14:19
+                            '%H:%M:%S %d-%m-%Y',  # 14:19:00 30-05-2025
+                            '%H:%M %d-%m-%Y'      # 14:19 30-05-2025
+                        ]
+                        
+                        for fmt in formatos:
+                            try:
+                                dt = datetime.strptime(data_str, fmt)
+                                break
+                            except ValueError:
+                                continue
+                        
+                        if dt is None:
+                            # Se não conseguir converter, tentar extrair partes da data e hora
+                            try:
+                                # Verificar se a data está no formato ISO (YYYY-MM-DD HH:MM:SS)
+                                if re.match(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?', data_str):
+                                    partes = data_str.split(' ')
+                                    if len(partes) == 2:
+                                        data_parte, hora_parte = partes
+                                        ano, mes, dia = data_parte.split('-')
+                                        
+                                        partes_hora = hora_parte.split(':')
+                                        hora = partes_hora[0].zfill(2)
+                                        minuto = partes_hora[1].zfill(2)
+                                        segundo = partes_hora[2].zfill(2) if len(partes_hora) > 2 else '00'
+                                        
+                                        # Formatar no padrão DD-MM-YYYY HH:MM:SS
+                                        return f"{dia}-{mes}-{ano} {hora}:{minuto}:{segundo}"
+                            
+                                # Verificar se a data está no formato datetime-local (YYYY-MM-DDTHH:MM)
+                                elif re.match(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}', data_str):
+                                    data_parte, hora_parte = data_str.split('T')
+                                    ano, mes, dia = data_parte.split('-')
+                                    
+                                    partes_hora = hora_parte.split(':')
+                                    hora = partes_hora[0].zfill(2)
+                                    minuto = partes_hora[1].zfill(2)
+                                    segundo = partes_hora[2].zfill(2) if len(partes_hora) > 2 else '00'
+                                    
+                                    # Formatar no padrão DD-MM-YYYY HH:MM:SS
+                                    return f"{dia}-{mes}-{ano} {hora}:{minuto}:{segundo}"
+                            except Exception as e:
+                                print(f"Erro ao extrair partes da data {data_str}: {e}")
+                            
+                            # Se não conseguir extrair, retornar a string original
+                            return data_str
+                    elif isinstance(data_str, datetime):
+                        dt = data_str
+                    else:
+                        # Se não for string nem datetime, retornar o valor original
+                        return str(data_str)
                     
-                    # Verificar se a string tem formato válido
-                    if ' ' in data_str:  # Tem data e hora
-                        data_parte, hora_parte = data_str.split(' ', 1)
-                    else:  # Só tem data
-                        data_parte, hora_parte = data_str, '00:00:00'
-                    
-                    # Validar e formatar a parte da data
-                    if '-' in data_parte:  # Formato YYYY-MM-DD
-                        partes_data = data_parte.split('-')
-                        if len(partes_data) == 3:
-                            ano, mes, dia = partes_data
-                            # Verificar se o ano tem formato válido (4 dígitos)
-                            if not (1900 <= int(ano) <= 2100):
-                                ano = datetime.now().year
-                            # Garantir que mês e dia tenham 2 dígitos
-                            mes = mes.zfill(2)
-                            dia = dia.zfill(2)
-                            data_formatada = f"{dia}-{mes}-{ano}"
-                        else:
-                            # Formato inválido, usar data atual
-                            hoje = datetime.now()
-                            data_formatada = hoje.strftime("%d-%m-%Y")
-                    else:  # Formato desconhecido, usar data atual
-                        hoje = datetime.now()
-                        data_formatada = hoje.strftime("%d-%m-%Y")
-                    
-                    # Validar e formatar a parte da hora
-                    if ':' in hora_parte:  # Formato HH:MM ou HH:MM:SS
-                        partes_hora = hora_parte.split(':')
-                        if len(partes_hora) >= 2:
-                            hora, minuto = partes_hora[0:2]
-                            # Garantir que hora e minuto tenham 2 dígitos
-                            hora = hora.zfill(2)
-                            minuto = minuto.zfill(2)
-                            # Se não tiver segundos, adicionar :00
-                            if len(partes_hora) < 3:
-                                segundo = "00"
-                            else:
-                                segundo = partes_hora[2].zfill(2)
-                            hora_formatada = f"{hora}:{minuto}:{segundo}"
-                        else:
-                            # Formato inválido, usar hora atual
-                            agora = datetime.now()
-                            hora_formatada = agora.strftime("%H:%M:%S")
-                    else:  # Formato desconhecido, usar hora atual
-                        agora = datetime.now()
-                        hora_formatada = agora.strftime("%H:%M:%S")
-                    
-                    # Retornar no formato HH:MM:SS DD-MM-AAAA
-                    return f"{hora_formatada} {data_formatada}"
+                    # Formatar no padrão DD-MM-YYYY HH:MM:SS
+                    return dt.strftime('%d-%m-%Y %H:%M:%S')
                 
                 except Exception as e:
                     print(f"Erro ao converter formato de data: {e}")
@@ -787,17 +914,78 @@ def novo_registro():
                 if campo not in db_data or not db_data[campo]:
                     print(f"AVISO: Campo importante '{campo}' está faltando ou vazio")
             
-            # Verificar campos de data e hora para garantir formato correto
-            # Não precisamos converter novamente aqui, pois já foram convertidos anteriormente
+            # Verificar campos de data e hora e garantir que estejam no formato DD-MM-YYYY HH:MM:SS
             campos_data_hora = ['horario_previsto', 'on_time_cliente', 'data_sm', 'data_ae']
+            
+            # Processar campo oculto horario_previsto_formatado se existir
+            if 'horario_previsto_formatado' in request.form and request.form['horario_previsto_formatado']:
+                # Usar o valor já formatado do campo oculto
+                db_data['horario_previsto'] = request.form['horario_previsto_formatado']
+                print(f"Usando valor formatado do campo oculto: {db_data['horario_previsto']}")
+            
+            # Processar campos data_sm e data_ae se existirem
+            for campo in ['data_sm', 'data_ae']:
+                if campo in db_data and db_data[campo]:
+                    try:
+                        # Verificar o formato atual e converter para DD-MM-YYYY HH:MM:SS se necessário
+                        if re.match(r'\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}', db_data[campo]):
+                            # Converter de YYYY-MM-DD HH:MM:SS para DD-MM-YYYY HH:MM:SS
+                            data_obj = datetime.strptime(db_data[campo], '%Y-%m-%d %H:%M:%S')
+                            db_data[campo] = data_obj.strftime('%d-%m-%Y %H:%M:%S')
+                            print(f"Convertido {campo} para formato DD-MM-YYYY: {db_data[campo]}")
+                    except Exception as e:
+                        print(f"Erro ao processar {campo}: {e}")
+            
+            # Validar que o horário previsto seja posterior à data de registro
+            from operations.registros import validar_horario_previsto
+            
+            if 'horario_previsto' in db_data and db_data['horario_previsto']:
+                data_registro = datetime.now()  # Usar a data atual para novos registros
+                valido, mensagem = validar_horario_previsto(data_registro, db_data['horario_previsto'])
+                
+                if not valido:
+                    # Corrigir automaticamente: definir para 24 horas após o registro
+                    data_corrigida = data_registro + timedelta(hours=24)
+                    db_data['horario_previsto'] = data_corrigida.strftime('%d-%m-%Y %H:%M:%S')
+                    flash(f'Horário previsto ajustado automaticamente: {mensagem}', 'warning')
+            
             for campo in campos_data_hora:
                 if campo in db_data and db_data[campo]:
                     # Apenas registrar os valores para debug
                     print(f"Valor de '{campo}' já convertido: {db_data[campo]}")
                     
-                    # Garantir que o formato está correto (apenas verificar, não converter)
-                    if not re.match(r'\d{2}:\d{2}:\d{2} \d{2}-\d{2}-\d{4}', db_data[campo]):
-                        print(f"AVISO: Formato de data/hora para '{campo}' pode estar incorreto: {db_data[campo]}")
+                    # Garantir que o formato está correto (verificar e converter se necessário)
+                    if not re.match(r'\d{2}-\d{2}-\d{4} \d{2}:\d{2}:\d{2}', db_data[campo]):
+                        print(f"AVISO: Formato de data/hora para '{campo}' está incorreto: {db_data[campo]}")
+                        # Tentar converter para o formato padrão
+                        try:
+                            # Tentar converter para objeto datetime
+                            dt = None
+                            formatos = [
+                                '%Y-%m-%d %H:%M:%S',  # 2025-05-30 14:19:00
+                                '%Y-%m-%d %H:%M',     # 2025-05-30 14:19
+                                '%d-%m-%Y %H:%M:%S',  # 30-05-2025 14:19:00
+                                '%d-%m-%Y %H:%M',     # 30-05-2025 14:19
+                                '%d/%m/%Y %H:%M:%S',  # 30/05/2025 14:19:00
+                                '%d/%m/%Y %H:%M',     # 30/05/2025 14:19
+                                '%H:%M:%S %d-%m-%Y',  # 14:19:00 30-05-2025
+                                '%H:%M %d-%m-%Y'      # 14:19 30-05-2025
+                            ]
+                            
+                            for fmt in formatos:
+                                try:
+                                    dt = datetime.strptime(db_data[campo], fmt)
+                                    break
+                                except ValueError:
+                                    continue
+                            
+                            if dt is not None:
+                                # Converter para o formato padrão DD-MM-YYYY HH:MM:SS
+                                db_data[campo] = dt.strftime('%d-%m-%Y %H:%M:%S')
+                                print(f"Formato corrigido para '{campo}': {db_data[campo]}")
+                        except Exception as e:
+                            print(f"Erro ao tentar converter formato de '{campo}': {e}")
+                            # Manter o valor original se não conseguir converter
 
                         
             # Armazenar os valores originais de horario_previsto e on_time_cliente
@@ -812,7 +1000,8 @@ def novo_registro():
                     print(f"Campo '{campo}' com valor vazio convertido para NULL")
             
             # Adicionar campos de controle
-            db_data['data_registro'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            # Formatar data_registro no padrão DD-MM-YYYY HH:MM:SS
+            db_data['data_registro'] = datetime.now().strftime('%d-%m-%Y %H:%M:%S')
             db_data['usuario'] = session.get('user', 'sistema')
             db_data['excluido'] = 0
             
@@ -1442,7 +1631,7 @@ def editar_registro_comum(registro_id):
     print(f"\n===== ROTA editar_registro_comum CHAMADA PARA ID {registro_id} =====\n")
     print(f"Método da requisição: {request.method}")
     
-    # Verificar se há dados no formulário
+    # Se for POST, processar o formulário
     if request.method == 'POST':
         print("\n=== DADOS DO FORMULÁRIO RECEBIDOS ===\n")
         print(f"Form data: {request.form.to_dict()}")
@@ -1457,6 +1646,37 @@ def editar_registro_comum(registro_id):
                 file.seek(0)
             else:
                 print(f"Arquivo '{file_key}': Nenhum arquivo ou nome vazio")
+        
+        # Obter a data de registro do banco de dados para validação
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT data_registro FROM registros WHERE id = ?", (registro_id,))
+            resultado = cursor.fetchone()
+            
+            if resultado and resultado[0]:
+                data_registro = resultado[0]
+                
+                # Processar horário previsto para validação
+                if 'horario_previsto_formatado' in request.form and request.form['horario_previsto_formatado']:
+                    # Usar o valor já formatado do campo oculto
+                    horario_previsto = request.form['horario_previsto_formatado']
+                elif 'HORÁRIO PREVISTO DE INÍCIO' in request.form:
+                    horario_previsto_str = request.form['HORÁRIO PREVISTO DE INÍCIO']
+                    if horario_previsto_str:
+                        horario_previsto = converter_formato_data(horario_previsto_str)
+                    else:
+                        horario_previsto = None
+                else:
+                    horario_previsto = None
+                
+                # Validar que o horário previsto é posterior à data de registro
+                if horario_previsto:
+                    from operations.registros import validar_horario_previsto
+                    valido, mensagem = validar_horario_previsto(data_registro, horario_previsto)
+                    
+                    if not valido:
+                        flash(f'Atenção: {mensagem}', 'warning')
+                        # Não bloquear a edição, mas alertar o usuário
         
         # Usar a função de processamento direto consolidada para garantir que os dados sejam salvos
         try:
@@ -1482,7 +1702,7 @@ def editar_registro_comum(registro_id):
             flash(f"Erro ao processar a edição: {str(e)}", "error")
             return redirect(url_for('comum.dashboard_comum'))
     
-    # Se for GET, usar a função original para exibir o formulário
+    # Se for GET, exibir o formulário de edição
     try:
         from operations.registros import exibir_formulario_edicao
         return exibir_formulario_edicao(registro_id)

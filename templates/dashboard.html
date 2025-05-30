@@ -407,7 +407,7 @@
                     <!-- Colunas básicas sempre visíveis -->
                     <td class="text-center fw-medium text-primary">{{ r['id'] }}</td>
                     <td>{{ r['unidade'] if r['unidade'] is not none else '' }}</td>
-                    <td>{{ r['data_registro'] }}</td>
+                    <td>{{ r['data_registro']|formatar_data_br }}</td>
                     <td>{{ r['usuario'] }}</td>
                     
                     <!-- Colunas dinâmicas baseadas no nível de acesso -->
@@ -476,11 +476,11 @@
                     {% endif %}
                     
                     {% if 'horario_previsto' in colunas_visiveis %}
-                    <td>{{ r['horario_previsto'] if r['horario_previsto'] is not none else '' }}</td>
+                    <td>{{ r['horario_previsto']|formatar_data_br if r['horario_previsto'] is not none else '' }}</td>
                     {% endif %}
                     
                     {% if 'on_time_cliente' in colunas_visiveis %}
-                    <td>{{ r['on_time_cliente'] if r['on_time_cliente'] is not none else '' }}</td>
+                    <td>{{ r['on_time_cliente']|formatar_data_br if r['on_time_cliente'] is not none else '' }}</td>
                     {% endif %}
                     <td>
                         <div class="d-flex justify-content-center gap-1">

@@ -7,6 +7,8 @@
     <title>Ambiente GR - AutoSAT</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         body {
             background-color: #f8f9fa;
@@ -184,7 +186,7 @@
                 <!-- Métricas de Tempo -->
                 <div class="section-title">Métricas de Tempo</div>
                 <div class="row mb-4">
-                    <!-- 5. Dados AE (duração) -->
+                    <!-- Tempo Médio AE -->
                     <div class="col-md-3 mb-3">
                         <div class="kpi-card card h-100">
                             <div class="card-body">
@@ -200,7 +202,7 @@
                         </div>
                     </div>
                     
-                    <!-- 6. Dados SM (duração) -->
+                    <!-- Tempo Médio SM -->
                     <div class="col-md-3 mb-3">
                         <div class="kpi-card card h-100">
                             <div class="card-body">
@@ -220,7 +222,7 @@
                 <!-- Indicadores Principais -->
                 <div class="section-title">Indicadores Principais</div>
                 <div class="row mb-4">
-                    <!-- 1. Últimas alterações após inclusão de SM/AE -->
+                    <!-- Alterações pós SM/AE -->
                     <div class="col-md-3 mb-3">
                         <div class="kpi-card card h-100 {% if request.args.get('alteracoes_pos_smae') == 'true' %}border border-primary border-2{% endif %}" onclick="window.location.href='{% if request.args.get("alteracoes_pos_smae") == "true" %}{{ url_for("gr.ambiente") }}{% else %}{{ url_for("gr.ambiente") }}?alteracoes_pos_smae=true{% endif %}'" style="cursor: pointer;">
                             <div class="card-body">
@@ -240,7 +242,7 @@
                         </div>
                     </div>
                     
-                    <!-- 2. Sem container definido -->
+                    <!-- Sem container definido -->
                     <div class="col-md-3 mb-3">
                         <div class="kpi-card card h-100 {% if request.args.get('sem_container') == 'true' %}border border-warning border-2{% endif %}" onclick="window.location.href='{% if request.args.get("sem_container") == "true" %}{{ url_for("gr.ambiente") }}{% else %}{{ url_for("gr.ambiente") }}?sem_container=true{% endif %}'" style="cursor: pointer;">
                             <div class="card-body">
@@ -260,7 +262,7 @@
                         </div>
                     </div>
                     
-                    <!-- 3. Sem SM definido -->
+                    <!-- Sem SM definido -->
                     <div class="col-md-3 mb-3">
                         <div class="kpi-card card h-100 {% if request.args.get('sem_sm') == 'true' %}border border-danger border-2{% endif %}" onclick="window.location.href='{% if request.args.get("sem_sm") == "true" %}{{ url_for("gr.ambiente") }}{% else %}{{ url_for("gr.ambiente") }}?sem_sm=true{% endif %}'" style="cursor: pointer;">
                             <div class="card-body">
@@ -280,7 +282,7 @@
                         </div>
                     </div>
                     
-                    <!-- 4. Sem AE definido -->
+                    <!-- Sem AE definido -->
                     <div class="col-md-3 mb-3">
                         <div class="kpi-card card h-100 {% if request.args.get('sem_ae') == 'true' %}border border-info border-2{% endif %}" onclick="window.location.href='{% if request.args.get("sem_ae") == "true" %}{{ url_for("gr.ambiente") }}{% else %}{{ url_for("gr.ambiente") }}?sem_ae=true{% endif %}'" style="cursor: pointer;">
                             <div class="card-body">
@@ -302,7 +304,7 @@
                 </div>
                 
                 <div class="row mb-4">
-                    <!-- 5. Sem NF definido -->
+                    <!-- Sem NF definido -->
                     <div class="col-md-3 mb-3">
                         <div class="kpi-card card h-100 {% if request.args.get('sem_nf') == 'true' %}border border-success border-2{% endif %}" onclick="window.location.href='{% if request.args.get("sem_nf") == "true" %}{{ url_for("gr.ambiente") }}{% else %}{{ url_for("gr.ambiente") }}?sem_nf=true{% endif %}'" style="cursor: pointer;">
                             <div class="card-body">
@@ -322,7 +324,7 @@
                         </div>
                     </div>
                     
-                    <!-- 6. Sem OS definido -->
+                    <!-- Sem OS definido -->
                     <div class="col-md-3 mb-3">
                         <div class="kpi-card card h-100 {% if request.args.get('sem_os') == 'true' %}border border-secondary border-2{% endif %}" onclick="window.location.href='{% if request.args.get("sem_os") == "true" %}{{ url_for("gr.ambiente") }}{% else %}{{ url_for("gr.ambiente") }}?sem_os=true{% endif %}'" style="cursor: pointer;">
                             <div class="card-body">
@@ -373,9 +375,8 @@
                 </div>
                 {% endif %}
                 
-                <!-- Filtros da tabela - agora com formulário real -->
+                <!-- Filtros da tabela -->
                 <form id="filtroForm" action="{{ url_for('gr.ambiente') }}" method="get" class="d-flex flex-wrap mb-3">
-
                     <div class="form-check me-3">
                         <input class="form-check-input" type="checkbox" id="filterSemSM" name="sem_sm" value="true" {% if filtro_sem_sm %}checked{% endif %} onchange="document.getElementById('filtroForm').submit()">
                         <label class="form-check-label" for="filterSemSM">Sem SM</label>
@@ -398,9 +399,8 @@
                     {% endif %}
                 </form>
                 
-                <!-- Filtros de dados -->
-                {% if request.args.get('alteracoes_pos_smae') == 'true' and registros_alterados|length > 0 %}
                 <!-- Filtros adicionais para a tabela -->
+                {% if request.args.get('alteracoes_pos_smae') == 'true' and registros_alterados|length > 0 %}
                 <div class="card mb-3">
                     <div class="card-header bg-light">
                         <h6 class="mb-0"><i class="fas fa-filter me-2"></i> Filtros adicionais</h6>
@@ -439,16 +439,14 @@
                     </div>
                 </div>
                 
-                {% if request.args.get('alteracoes_pos_smae') == 'true' and registros_alterados|length > 0 %}
                 <!-- Alerta para registros com alterações -->
                 <div class="alert alert-info mb-4">
                     <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i> Registros com alterações após inclusão de SM/AE</h5>
                     <p>Os seguintes registros tiveram alterações em campos importantes após a inclusão de SM/AE. Verifique cada registro e confirme as alterações.</p>
                 </div>
                 {% endif %}
-                {% endif %}
                 
-                <!-- Tabela de Registros Unificada -->
+                <!-- Tabela de Registros -->
                 <div class="section-title">Registros</div>
                 
                 <!-- Legenda para indicadores visuais -->
@@ -461,6 +459,7 @@
                         <i class="fas fa-history text-info me-1"></i> Botão para visualizar alterações
                     </span>
                 </div>
+                
                 <div class="table-responsive">
                     <table class="table table-hover align-middle bg-white rounded overflow-hidden">
                         <thead>
@@ -509,9 +508,9 @@
                                 <td>{{ r['numero_ae'] if r['numero_ae'] is not none else '' }}</td>
                                 <td>
                                     <div class="d-flex justify-content-center gap-1">
-                                        <!-- Botão de Ver Alterações (destacado quando tem alterações) -->
+                                        <!-- Botão de Ver Alterações -->
                                         {% if r.get('tem_alteracoes_pos_smae', False) or registro_id in registros_alterados_ids %}
-                                        <button onclick="mostrarAlteracoes({{ r['id'] }})" class="btn btn-sm {% if filtro_alteracoes_pos_smae %}btn-primary{% else %}btn-outline-info{% endif %} p-1" title="Ver Alterações">
+                                        <button data-action="mostrar-alteracoes" data-registro-id="{{ r['id'] }}" onclick="mostrarAlteracoes({{ r['id'] }})" class="btn btn-sm {% if filtro_alteracoes_pos_smae %}btn-primary{% else %}btn-outline-info{% endif %} p-1" title="Ver Alterações">
                                             <i class="fas fa-history"></i>
                                         </button>
                                         {% endif %}
@@ -521,12 +520,12 @@
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         
-                                        <!-- Botão de Editar (apenas campos GR) -->
+                                        <!-- Botão de Editar -->
                                         <a href="{{ url_for('gr.editar_registro', registro_id=r['id']) }}" class="btn btn-sm btn-outline-warning p-1" title="Editar Dados GR">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         
-                                        <!-- Downloads de anexos (compactados em um dropdown) -->
+                                        <!-- Downloads de anexos -->
                                         {% if r.get('anexar_nf') or r.get('anexar_os') or r.get('anexar_agendamento') %}
                                         <div class="dropdown d-inline-block">
                                             <button class="btn btn-sm btn-outline-secondary p-1 dropdown-toggle" type="button" id="dropdownAnexos{{ r['id'] }}" data-bs-toggle="dropdown" aria-expanded="false" title="Anexos">
@@ -546,16 +545,16 @@
                                         </div>
                                         {% endif %}
                                         
-                                        <!-- Botão de marcar como verificado (apenas quando filtro de alterações está ativo) -->
+                                        <!-- Botão de marcar como verificado -->
                                         {% if filtro_alteracoes_pos_smae and r.get('alteracoes_verificadas') == 0 %}
                                         <button onclick="confirmarVerificacao({{ r['id'] }})" class="btn btn-sm btn-outline-success p-1" title="Marcar como verificado">
                                             <i class="fas fa-check"></i>
                                         </button>
                                         {% endif %}
                                         
-                                        <!-- Botu00e3o de Exclusu00e3o apenas para Admin -->
+                                        <!-- Botão de Exclusão apenas para Admin -->
                                         {% if nivel == 'admin' %}
-                                            <form action="{{ url_for('comum.delete_registro', registro_id=r['id']) }}" method="post" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir este registro? Esta au00e7u00e3o nu00e3o pode ser desfeita.');">
+                                            <form action="{{ url_for('comum.delete_registro', registro_id=r['id']) }}" method="post" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.');">
                                                 <button type="submit" class="btn btn-sm btn-outline-danger p-1" title="Excluir">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
@@ -647,8 +646,6 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
     <!-- Modal para mostrar alterações -->
     <div class="modal fade" id="alteracoesModal" tabindex="-1" aria-labelledby="alteracoesModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -728,6 +725,44 @@
     </div>
     
     <script>
+        // Verificar se o Bootstrap está disponível quando a página carrega
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Página carregada. Verificando Bootstrap...');
+            
+            // Verificar se o Bootstrap está disponível
+            if (typeof bootstrap === 'undefined') {
+                console.error('Bootstrap não está disponível na inicialização.');
+            } else {
+                console.log('Bootstrap já está disponível.');
+            }
+            
+            // Configurar os botões de alterações
+            configurarBotoesAlteracoes();
+            
+            // Iniciar a atualização automática dos contadores
+            atualizarContadores();
+            
+            // Configurar atualização a cada 30 segundos
+            setInterval(atualizarContadores, 30000);
+        });
+        
+        // Função para configurar os botões de alterações
+        function configurarBotoesAlteracoes() {
+            const botoes = document.querySelectorAll('[data-action="mostrar-alteracoes"]');
+            console.log(`Encontrados ${botoes.length} botões para configurar`);
+            
+            botoes.forEach(botao => {
+                const registroId = botao.getAttribute('data-registro-id');
+                console.log(`Configurando botão para registro ID: ${registroId}`);
+                
+                botao.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    console.log(`Botão clicado para registro ID: ${registroId}`);
+                    mostrarAlteracoes(registroId);
+                });
+            });
+        }
+        
         // Função para atualizar os contadores automaticamente
         function atualizarContadores() {
             fetch('/gr/api/contadores')
@@ -745,12 +780,10 @@
                                 element.textContent = data.sem_sm;
                             } else if (cardTitle.includes('Sem AE')) {
                                 element.textContent = data.sem_ae;
-                            } else if (cardTitle.includes('Pendentes')) {
-                                element.textContent = data.registros_pendentes;
-                            } else if (cardTitle.includes('Em Andamento')) {
-                                element.textContent = data.registros_andamento;
-                            } else if (cardTitle.includes('Concluídos')) {
-                                element.textContent = data.registros_concluidos;
+                            } else if (cardTitle.includes('Sem NF')) {
+                                element.textContent = data.sem_nf;
+                            } else if (cardTitle.includes('Sem OS')) {
+                                element.textContent = data.sem_os;
                             }
                         });
                     }
@@ -760,175 +793,193 @@
 
         // Função para mostrar o modal com as alterações
         function mostrarAlteracoes(registroId) {
-            // Resetar o modal
-            document.getElementById('alteracoesTableBody').innerHTML = '';
-            document.getElementById('alteracoesContent').classList.add('d-none');
-            document.getElementById('alteracoesLoading').classList.remove('d-none');
-            document.getElementById('semAlteracoes').classList.add('d-none');
-            document.getElementById('alteracoesInfo').classList.add('d-none');
-            document.getElementById('tabelaAlteracoes').classList.remove('d-none');
-            document.getElementById('mensagemAlteracoes').classList.add('d-none');
+            console.log('Função mostrarAlteracoes chamada com ID:', registroId);
+            
+            // Limpar o conteúdo anterior
+            $('#alteracoesTableBody').empty();
+            $('#alteracoesContent').hide();
+            $('#alteracoesLoading').show();
+            $('#mensagemAlteracoes').hide();
+            $('#semAlteracoes').hide();
+            $('#alteracoesInfo').hide();
             
             // Configurar o formulário de confirmação
-            document.getElementById('formConfirmarVerificacao').action = `/gr/confirmar_verificacao/${registroId}`;
+            $('#formConfirmarVerificacao').attr('action', `/gr/confirmar_verificacao/${registroId}`);
             
-            // Mostrar o modal
-            var modal = new bootstrap.Modal(document.getElementById('alteracoesModal'));
-            modal.show();
-            
-            // Carregar as alterações via AJAX
-            fetch(`/gr/alteracoes/${registroId}`)
-                .then(response => response.json())
-                .then(data => {
-                    // Esconder o indicador de carregamento
-                    document.getElementById('alteracoesLoading').classList.add('d-none');
-                    document.getElementById('alteracoesContent').classList.remove('d-none');
-                    
-                    // Preencher as informações do registro
-                    if (data.registro_info) {
-                        // Definir valores padrão para campos vazios
-                        const formatarValor = (valor) => valor && valor !== 'N/A' ? valor : 'Não informado';
-                        
-                        document.getElementById('registro-id').textContent = data.registro_info.id || '';
-                        document.getElementById('registro-cliente').textContent = formatarValor(data.registro_info.cliente);
-                        document.getElementById('registro-data').textContent = formatarValor(data.registro_info.data_registro);
-                        document.getElementById('registro-sm').textContent = formatarValor(data.registro_info.numero_sm);
-                        document.getElementById('registro-ae').textContent = formatarValor(data.registro_info.numero_ae);
-                        
-                        // Destacar a data de modificação se estiver presente
-                        const dataModificacao = document.getElementById('registro-modificacao');
-                        if (data.registro_info.data_modificacao && data.registro_info.data_modificacao !== 'N/A') {
-                            dataModificacao.textContent = data.registro_info.data_modificacao;
-                            dataModificacao.classList.add('fw-bold');
-                        } else {
-                            dataModificacao.textContent = 'Não informado';
-                            dataModificacao.classList.remove('fw-bold');
-                        }
-                    }
-                    
-                    // Verificar se há alterações para exibir
-                    if (data.alteracoes && data.alteracoes.length > 0) {
-                        // Mostrar a mensagem com o número de alterações
-                        document.getElementById('mensagemAlteracoes').classList.remove('d-none');
-                        document.getElementById('total-alteracoes').textContent = data.alteracoes.length;
-                        
-                        // Mostrar o alerta de informação para alterações
-                        document.getElementById('alteracoesInfo').classList.remove('d-none');
-                        
-                        // Preencher a tabela com as alterações
-                        const tbody = document.getElementById('alteracoesTableBody');
-                        
-                        // Contar alterações reais (onde valor original é diferente do valor alterado)
-                        let alteracoesReais = 0;
-                        
-                        data.alteracoes.forEach(alteracao => {
-                            // Verificar se há diferença entre os valores
-                            if (alteracao.valor_antigo !== alteracao.valor_novo) {
-                                alteracoesReais++;
-                                
-                                const tr = document.createElement('tr');
-                                
-                                // Formatar o nome do campo para exibição
-                                let nomeCampo = alteracao.campo;
-                                switch(alteracao.campo) {
-                                    case 'cliente': nomeCampo = 'Cliente'; break;
-                                    case 'container_1': nomeCampo = 'Container 1'; break;
-                                    case 'container_2': nomeCampo = 'Container 2'; break;
-                                    case 'lote_cs': nomeCampo = 'Lote CS'; break;
-                                    case 'status_container': nomeCampo = 'Status Container'; break;
-                                    case 'destino_intermediario': nomeCampo = 'Destino Intermediário'; break;
-                                    case 'destino_final': nomeCampo = 'Destino Final'; break;
-                                    case 'motorista': nomeCampo = 'Motorista'; break;
-                                    case 'cpf': nomeCampo = 'CPF Motorista'; break;
-                                    case 'placa': nomeCampo = 'Cavalo'; break;
-                                    case 'carreta': case 'carreta1': nomeCampo = 'Carreta 1'; break;
-                                    case 'carreta2': nomeCampo = 'Carreta 2'; break;
-                                    case 'horario_previsto': nomeCampo = 'Horário Previsto de Início'; break;
-                                    case 'on_time_cliente': nomeCampo = 'On Time (Cliente)'; break;
-                                    case 'anexar_nf': nomeCampo = 'Anexo NF'; break;
-                                    case 'anexar_os': nomeCampo = 'Anexo OS'; break;
-                                    case 'anexar_agendamento': nomeCampo = 'Anexo Agendamento'; break;
-                                }
-                                
-                                // Formatar valores para exibição
-                                const valorOriginal = alteracao.valor_antigo || '<em>Vazio</em>';
-                                const valorAlterado = alteracao.valor_novo || '<em>Vazio</em>';
-                                
-                                tr.innerHTML = `
-                                    <td><strong>${nomeCampo}</strong></td>
-                                    <td>${valorOriginal}</td>
-                                    <td class="bg-light-yellow">${valorAlterado}</td>
-                                    <td>${alteracao.data_alteracao}</td>
-                                    <td>${alteracao.usuario}</td>
-                                `;
-                                
-                                tbody.appendChild(tr);
-                            }
-                        });
-                        
-                        // Atualizar o número de alterações reais
-                        document.getElementById('total-alteracoes').textContent = alteracoesReais;
-                        
-                        // Se não houver alterações reais, mostrar mensagem
-                        if (alteracoesReais === 0) {
-                            document.getElementById('semAlteracoes').classList.remove('d-none');
-                            document.getElementById('tabelaAlteracoes').classList.add('d-none');
-                            document.getElementById('mensagemAlteracoes').classList.add('d-none');
-                        }
-                    } else {
-                        // Mostrar mensagem de que não há alterações
-                        document.getElementById('semAlteracoes').classList.remove('d-none');
-                        document.getElementById('tabelaAlteracoes').classList.add('d-none');
-                        document.getElementById('mensagemAlteracoes').classList.add('d-none');
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro ao carregar alterações:', error);
-                    document.getElementById('alteracoesLoading').classList.add('d-none');
-                    document.getElementById('alteracoesContent').classList.remove('d-none');
-                    document.getElementById('semAlteracoes').classList.remove('d-none');
-                    document.getElementById('semAlteracoes').innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i> Erro ao carregar alterações: ${error.message}`;
-                    document.getElementById('tabelaAlteracoes').classList.add('d-none');
-                    document.getElementById('mensagemAlteracoes').classList.add('d-none');
-                });
-        }
-    </script>
-    
-    <script>
-        // Script para os filtros da tabela
-        document.addEventListener('DOMContentLoaded', function() {
-            const filters = {
-                pendentes: document.getElementById('filterPendentes'),
-                semSM: document.getElementById('filterSemSM'),
-                semAE: document.getElementById('filterSemAE'),
-                semContainer: document.getElementById('filterSemContainer')
-            };
-            
-            // Lógica para adicionar filtragem (simulada neste exemplo)
-            for (const key in filters) {
-                if (filters[key]) {
-                    filters[key].addEventListener('change', function() {
-                        console.log(`Filtro ${key} alterado para: ${this.checked}`);
-                        // Aqui seria implementada a lógica real de filtragem
-                    });
+            // Abrir o modal
+            try {
+                console.log('Tentando abrir o modal...');
+                var modalElement = document.getElementById('alteracoesModal');
+                
+                if (typeof bootstrap !== 'undefined') {
+                    var modal = new bootstrap.Modal(modalElement);
+                    modal.show();
+                    console.log('Modal aberto com Bootstrap 5');
+                } else {
+                    $('#alteracoesModal').modal('show');
+                    console.log('Modal aberto com jQuery fallback');
+                }
+            } catch (error) {
+                console.error('Erro ao abrir o modal:', error);
+                
+                // Fallback manual
+                var modalElement = document.getElementById('alteracoesModal');
+                if (modalElement) {
+                    modalElement.style.display = 'block';
+                    modalElement.classList.add('show');
+                    document.body.classList.add('modal-open');
+                    console.log('Modal aberto manualmente');
                 }
             }
             
-            // Iniciar a atualização automática dos contadores
-            // Atualizar imediatamente na carga da página
-            atualizarContadores();
-            
-            // Configurar atualização a cada 30 segundos
-            setInterval(atualizarContadores, 30000);
-        });
+            // Carregar as alterações via AJAX - usando a URL correta
+            $.ajax({
+                url: `/gr/historico_alteracoes/${registroId}`,
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    console.log('Dados recebidos do histórico:', data);
+                    
+                    // Esconder o indicador de carregamento
+                    $('#alteracoesLoading').hide();
+                    $('#alteracoesContent').show();
+                    
+                    // Preencher as informações do registro
+                    if (data.registro_info) {
+                        const formatarValor = (valor) => valor && valor !== 'N/A' && valor !== null && valor !== undefined ? valor : 'Não informado';
+                        
+                        $('#registro-id').text(data.registro_info.id || registroId);
+                        $('#registro-cliente').text(formatarValor(data.registro_info.cliente));
+                        $('#registro-sm').text(formatarValor(data.registro_info.numero_sm));
+                        $('#registro-ae').text(formatarValor(data.registro_info.numero_ae));
+                        $('#registro-data').text(formatarValor(data.registro_info.data_registro));
+                        $('#registro-modificacao').text(formatarValor(data.registro_info.data_modificacao));
+                    }
+                    
+                    // Verificar se há alterações para exibir
+                    if (data.success && data.alteracoes && data.alteracoes.length > 0) {
+                        console.log(`Processando ${data.alteracoes.length} alterações`);
+                        
+                        // Mostrar mensagem de alterações encontradas
+                        $('#total-alteracoes').text(data.alteracoes.length);
+                        $('#mensagemAlteracoes').show();
+                        $('#alteracoesInfo').show();
+                        
+                        // Ordenar as alterações por data (mais recentes primeiro)
+                        data.alteracoes.sort((a, b) => {
+                            return new Date(b.data_hora || b.data_alteracao || 0) - new Date(a.data_hora || a.data_alteracao || 0);
+                        });
+                        
+                        // Preencher a tabela com as alterações
+                        const tbody = $('#alteracoesTableBody');
+                        
+                        data.alteracoes.forEach(function(alteracao) {
+                            console.log('Processando alteração:', alteracao);
+                            
+                            // Formatar o nome do campo para exibição
+                            let nomeCampo = alteracao.campo || 'Campo não identificado';
+                            
+                            // Mapear nomes de campos para exibição
+                            const mapeamentoCampos = {
+                                'cliente': 'Cliente',
+                                'container_1': 'Container 1',
+                                'container_2': 'Container 2',
+                                'lote_cs': 'Lote CS',
+                                'status_container': 'Status Container',
+                                'destino_intermediario': 'Destino Intermediário',
+                                'destino_final': 'Destino Final',
+                                'motorista': 'Motorista',
+                                'cpf': 'CPF Motorista',
+                                'placa': 'Cavalo',
+                                'carreta': 'Carreta 1',
+                                'carreta1': 'Carreta 1',
+                                'carreta2': 'Carreta 2',
+                                'horario_previsto': 'Horário Previsto de Início',
+                                'on_time_cliente': 'On Time (Cliente)',
+                                'anexar_nf': 'Anexo NF',
+                                'anexar_os': 'Anexo OS',
+                                'anexar_agendamento': 'Anexo Agendamento',
+                                'numero_sm': 'Número SM',
+                                'numero_ae': 'Número AE',
+                                'observacao_gr': 'Observação GR',
+                                'data_registro': 'Data de Registro',
+                                'status_sm': 'Status SM'
+                            };
+                            
+                            nomeCampo = mapeamentoCampos[alteracao.campo] || nomeCampo;
+                            
+                            // Formatar valores para exibição
+                            let valorOriginal = alteracao.valor_anterior || alteracao.valor_antigo || '<em>Vazio</em>';
+                            let valorAlterado = alteracao.valor_novo || '<em>Vazio</em>';
+                            
+                            // Tratar valores null/undefined
+                            if (valorOriginal === null || valorOriginal === undefined || valorOriginal === 'None') {
+                                valorOriginal = '<em>Vazio</em>';
+                            }
+                            if (valorAlterado === null || valorAlterado === undefined || valorAlterado === 'None') {
+                                valorAlterado = '<em>Vazio</em>';
+                            }
+                            
+                            // Formatar data e hora da alteração
+                            let dataHoraAlteracao = alteracao.data_hora || alteracao.data_alteracao || 'Data não informada';
+                            
+                            // Formatar data se necessário
+                            if (dataHoraAlteracao && dataHoraAlteracao !== 'Data não informada') {
+                                try {
+                                    // Se a data está no formato ISO ou similar, converter para DD/MM/YYYY HH:MM:SS
+                                    if (dataHoraAlteracao.match(/^\d{4}-\d{2}-\d{2}/) || dataHoraAlteracao.match(/^\d{2}-\d{2}-\d{4}/)) {
+                                        const dataObj = new Date(dataHoraAlteracao.replace(' ', 'T'));
+                                        if (!isNaN(dataObj.getTime())) {
+                                            const dia = String(dataObj.getDate()).padStart(2, '0');
+                                            const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
+                                            const ano = dataObj.getFullYear();
+                                            const hora = String(dataObj.getHours()).padStart(2, '0');
+                                            const minuto = String(dataObj.getMinutes()).padStart(2, '0');
+                                            const segundo = String(dataObj.getSeconds()).padStart(2, '0');
+                                            dataHoraAlteracao = `${dia}/${mes}/${ano} ${hora}:${minuto}:${segundo}`;
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.warn('Erro ao formatar data da alteração:', e);
+                                }
+                            }
+                            
+                            // Destacar se os valores são diferentes
+                            const valoresDiferentes = valorOriginal !== valorAlterado;
+                            
+                            // Criar linha da tabela
+                            const row = $('<tr>');
+                            row.append($('<td>').html(`<strong>${nomeCampo}</strong>`));
+                            row.append($('<td>').html(valorOriginal));
+                            row.append($('<td>').html(valorAlterado).addClass(valoresDiferentes ? 'bg-light-yellow' : ''));
+                            row.append($('<td>').text(dataHoraAlteracao));
+                            row.append($('<td>').text(alteracao.usuario || 'Sistema'));
+                            
+                            tbody.append(row);
+                        });
+                    } else {
+                        console.log('Nenhuma alteração encontrada ou erro no processamento');
+                        $('#semAlteracoes').show();
+                        $('#alteracoesTableBody').html('<tr><td colspan="5" class="text-center">Não foram encontradas alterações após a inclusão de SM/AE.</td></tr>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Erro ao carregar alterações:', error);
+                    console.error('Status:', status);
+                    console.error('Response:', xhr.responseText);
+                    
+                    $('#alteracoesLoading').hide();
+                    $('#alteracoesContent').show();
+                    $('#alteracoesTableBody').html(`<tr><td colspan="5" class="text-center text-danger"><i class="fas fa-exclamation-triangle me-2"></i> Erro ao carregar alterações: ${error}</td></tr>`);
+                }
+            });
+        }
         
-        // Função para confirmar verificação de alterações usando AJAX
+        // Função para confirmar verificação de alterações
         function confirmarVerificacao(registroId) {
             if (confirm('As alterações neste registro já foram verificadas?')) {
-                // Obter o token CSRF
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                 
-                // Enviar requisição AJAX para marcar como verificado
                 fetch(`/gr/marcar_alteracoes_verificadas/${registroId}`, {
                     method: 'POST',
                     headers: {
@@ -951,20 +1002,17 @@
                         // Remover a linha da tabela ou atualizar o estilo
                         const row = document.querySelector(`tr[data-registro-id="${registroId}"]`);
                         if (row) {
-                            if (document.getElementById('filtro_alteracoes_pos_smae').checked) {
-                                // Se o filtro estiver ativo, ocultar a linha
+                            if (new URLSearchParams(window.location.search).get('alteracoes_pos_smae') === 'true') {
                                 row.style.display = 'none';
                             } else {
-                                // Remover destaque e botão de confirmação
                                 row.classList.remove('alteracao-pos-smae');
                                 const btnConfirmar = row.querySelector('button[onclick^="confirmarVerificacao"]');
                                 if (btnConfirmar) btnConfirmar.remove();
                             }
                         }
                         
-                        // Mostrar mensagem de sucesso após um pequeno delay para garantir que o modal foi fechado
+                        // Mostrar mensagem de sucesso
                         setTimeout(() => {
-                            // Criar alerta de sucesso
                             const alertDiv = document.createElement('div');
                             alertDiv.className = 'alert alert-success alert-dismissible fade show';
                             alertDiv.innerHTML = `
@@ -973,20 +1021,17 @@
                             `;
                             document.querySelector('.container-fluid').prepend(alertDiv);
                             
-                            // Auto-fechar o alerta após 3 segundos
                             setTimeout(() => {
                                 const bsAlert = new bootstrap.Alert(alertDiv);
                                 bsAlert.close();
                             }, 3000);
                         }, 500);
+                    } else {
+                        alert(`Erro ao marcar alterações como verificadas: ${data.error || 'Erro desconhecido'}`);
                     }
                     
                     // Atualizar os contadores
                     atualizarContadores();
-                } else {
-                    // Mostrar mensagem de erro
-                    alert(`Erro ao marcar alterações como verificadas: ${data.error || 'Erro desconhecido'}`);
-                }
                 })
                 .catch(error => {
                     console.error('Erro:', error);
@@ -995,363 +1040,22 @@
             }
         }
         
-        // Função para atualizar os contadores após a confirmação de verificação no modal
-        document.addEventListener('DOMContentLoaded', function() {
-            const formConfirmarVerificacao = document.getElementById('formConfirmarVerificacao');
-            if (formConfirmarVerificacao) {
-                formConfirmarVerificacao.addEventListener('submit', function() {
-                    // Atualizar os contadores após o envio do formulário
-                    setTimeout(atualizarContadores, 1000);
-                });
-            }
-        });
+        // Funções auxiliares para filtros de tabela
+        function filtrarTabela() {
+            // Implementar filtros da tabela
+            console.log('Filtrar tabela chamada');
+        }
         
-        // Função para mostrar as alterações feitas em um registro
-        function mostrarAlteracoes(registroId) {
-            // Criar modal para exibir as alterações
-            const modalId = `alteracoesModal${registroId}`;
-            
-            // Verificar se o modal já existe
-            let modal = document.getElementById(modalId);
-            if (modal) {
-                // Se o modal já existe, apenas exibi-lo
-                const bsModal = new bootstrap.Modal(modal);
-                bsModal.show();
-                return;
-            }
-            
-            // Criar o modal dinamicamente
-            modal = document.createElement('div');
-            modal.id = modalId;
-            modal.className = 'modal fade';
-            modal.tabIndex = -1;
-            modal.setAttribute('aria-labelledby', `${modalId}Label`);
-            modal.setAttribute('aria-hidden', 'true');
-            
-            // Estrutura básica do modal (será exibido enquanto carrega)
-            modal.innerHTML = `
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="${modalId}Label">Histórico de Alterações - Registro #${registroId}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="text-center">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Carregando...</span>
-                                </div>
-                                <p class="mt-2">Carregando histórico de alterações...</p>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                            <button type="button" class="btn btn-success btn-lg" onclick="confirmarVerificacao(${registroId})">
-                                <i class="fas fa-check-circle me-2"></i>Confirmar Verificação
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Adicionar o modal ao corpo do documento e exibi-lo
-            document.body.appendChild(modal);
-            const bsModal = new bootstrap.Modal(modal);
-            bsModal.show();
-            
-            // Configurar evento para remover o modal do DOM quando for fechado
-            modal.addEventListener('hidden.bs.modal', function () {
-                document.body.removeChild(modal);
-            });
-            
-            // Buscar as alterações do registro via AJAX
-            fetch(`/gr/historico_alteracoes/${registroId}`)
-                .then(response => response.json())
-                .then(data => {
-                    // Depuração - exibir os dados retornados no console
-                    console.log('Dados retornados pela API:', data);
-                    console.log('Alterações:', data.alteracoes);
-                    
-                    // Verificar se temos informações do registro
-                    if (!data.registro_info) {
-                        console.error('Informações do registro não encontradas');
-                        data.registro_info = {
-                            id: registroId,
-                            cliente: 'Não informado',
-                            numero_sm: 'Não informado',
-                            numero_ae: 'Não informado',
-                            data_registro: 'Não informado',
-                            data_modificacao: 'Não informado'
-                        };
-                    }
-                    
-                    // Verificar se temos alterações
-                    if (!data.alteracoes || !Array.isArray(data.alteracoes)) {
-                        console.error('Lista de alterações inválida');
-                        data.alteracoes = [];
-                    }
-                    
-                    // Verificar cada alteração para garantir que todos os campos estejam presentes
-                    data.alteracoes.forEach((alteracao, index) => {
-                        if (!alteracao.data_hora) {
-                            console.warn(`Alteração ${index} sem data_hora. Usando valor padrão.`);
-                            alteracao.data_hora = 'Não informado';
-                        }
-                        if (!alteracao.usuario) {
-                            console.warn(`Alteração ${index} sem usuário. Usando valor padrão.`);
-                            alteracao.usuario = 'Sistema';
-                        }
-                        if (!alteracao.campo) {
-                            console.warn(`Alteração ${index} sem campo. Usando valor padrão.`);
-                            alteracao.campo = 'Desconhecido';
-                        }
-                        if (!alteracao.valor_anterior && alteracao.valor_anterior !== '') {
-                            console.warn(`Alteração ${index} sem valor_anterior. Usando valor padrão.`);
-                            alteracao.valor_anterior = '';
-                        }
-                        if (!alteracao.valor_novo && alteracao.valor_novo !== '') {
-                            console.warn(`Alteração ${index} sem valor_novo. Usando valor padrão.`);
-                            alteracao.valor_novo = '';
-                        }
-                    });
-                    
-                    if (data.success) {
-                        // Criar o conteúdo do modal com as alterações
-                        let alteracoesHtml = '<div class="card mb-3">';
-                        alteracoesHtml += '<div class="card-header bg-primary text-white">Informações do Registro</div>';
-                        alteracoesHtml += '<div class="card-body">';
-                        
-                        // Seção de informações do registro
-                        alteracoesHtml += '<div class="row">';
-                        alteracoesHtml += `<div class="col-md-6"><strong>ID:</strong> ${registroId}</div>`;
-                        alteracoesHtml += `<div class="col-md-6"><strong>Número SM:</strong> ${data.registro_info?.numero_sm || 'Não informado'}</div>`;
-                        alteracoesHtml += '</div>';
-                        alteracoesHtml += '<div class="row mt-2">';
-                        alteracoesHtml += `<div class="col-md-6"><strong>Cliente:</strong> ${data.registro_info?.cliente || 'Não informado'}</div>`;
-                        alteracoesHtml += `<div class="col-md-6"><strong>Número AE:</strong> ${data.registro_info?.numero_ae || 'Não informado'}</div>`;
-                        alteracoesHtml += '</div>';
-                        alteracoesHtml += '<div class="row mt-2">';
-                        
-                        // Formatar data de registro para exibição
-                        let dataRegistro = data.registro_info?.data_registro || 'Não informado';
-                        if (dataRegistro && dataRegistro !== 'Não informado') {
-                            try {
-                                // Tentar formatar a data para DD/MM/YYYY HH:MM:SS
-                                const dataObj = new Date(dataRegistro.replace(' ', 'T'));
-                                if (!isNaN(dataObj.getTime())) {
-                                    const dia = String(dataObj.getDate()).padStart(2, '0');
-                                    const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
-                                    const ano = dataObj.getFullYear();
-                                    const hora = String(dataObj.getHours()).padStart(2, '0');
-                                    const minuto = String(dataObj.getMinutes()).padStart(2, '0');
-                                    const segundo = String(dataObj.getSeconds()).padStart(2, '0');
-                                    dataRegistro = `${dia}/${mes}/${ano} ${hora}:${minuto}:${segundo}`;
-                                }
-                            } catch (e) {
-                                console.error('Erro ao formatar data de registro:', e);
-                        }
-                        if (registroInfo.placa) {
-                            alteracoesHtml += `<div class="col-md-6"><strong>Placa:</strong> ${registroInfo.placa}</div>`;
-                        }
-                        if (registroInfo.container_1) {
-                            alteracoesHtml += `<div class="col-md-6"><strong>Container:</strong> ${registroInfo.container_1}</div>`;
-                        }
-                        if (registroInfo.tipo_carga) {
-                            alteracoesHtml += `<div class="col-md-6"><strong>Tipo de Carga:</strong> ${registroInfo.tipo_carga}</div>`;
-                        }
-                        if (registroInfo.modalidade) {
-                            alteracoesHtml += `<div class="col-md-6"><strong>Modalidade:</strong> ${registroInfo.modalidade}</div>`;
-                        }
-                    }
-                    
-                    alteracoesHtml += '</div></div>';
-                    
-                    // Adicionar tabela de alterações
-                    alteracoesHtml += '<h5 class="mt-3 mb-2">Histórico de Alterações</h5>';
-                    alteracoesHtml += '<div class="table-responsive">';
-                    alteracoesHtml += '<table class="table table-striped table-bordered">';
-                    alteracoesHtml += '<thead class="table-dark"><tr><th>Data da alteração</th><th>Usuário</th><th>Campo alterado</th><th>Valor original</th><th>Novo valor</th></tr></thead>';
-                    alteracoesHtml += '<tbody>';
-                    
-                    // Processar cada alteração
-                    data.alteracoes.forEach(alteracao => {
-                        // Verificar se temos campos alterados
-                        if (alteracao.campos_alterados && alteracao.campos_alterados.length > 0) {
-                            // Processar cada campo alterado
-                            alteracao.campos_alterados.forEach(campoAlterado => {
-                                // Formatar o nome do campo para exibição
-                                let campoExibir = campoAlterado.campo;
-                                // Substituir underscores por espaços e capitalizar
-                                campoExibir = campoExibir.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                                
-                                // Formatar os valores para exibição
-                                let valorAnteriorExibir = campoAlterado.valor_antigo || '';
-                                let valorNovoExibir = campoAlterado.valor_novo || '';
-                                
-                                // Tratar valores especiais
-                                if (valorAnteriorExibir === 'None') valorAnteriorExibir = 'Vazio';
-                                if (valorNovoExibir === 'None') valorNovoExibir = 'Vazio';
-                                
-                                // Verificar se os valores são muito longos e adicionar quebra de linha
-                                if (valorAnteriorExibir.length > 50) {
-                                    valorAnteriorExibir = `<div style="max-width: 300px; word-wrap: break-word;">${valorAnteriorExibir}</div>`;
-                                }
-                                
-                                if (valorNovoExibir.length > 50) {
-                                    valorNovoExibir = `<div style="max-width: 300px; word-wrap: break-word;">${valorNovoExibir}</div>`;
-                                }
-                                
-                                // Formatar data e hora para exibição
-                                let dataHoraExibir = alteracao.data_hora || '';
-                                
-                                // Verificar se a data é válida e não é 'undefined'
-                                if (!dataHoraExibir || dataHoraExibir === 'undefined' || dataHoraExibir === undefined) {
-                                    console.log('Data de alteração inválida, usando fallback:', dataHoraExibir);
-                                    
-                                    // Usar a data de registro do próprio registro
-                                    dataHoraExibir = data.registro_info?.data_registro || '';
-                                    console.log('Usando data de registro como fallback:', dataHoraExibir);
-                                }
-                                
-                                // Garantir que a data esteja formatada corretamente
-                                try {
-                                    // Verificar se a data está no formato ISO (YYYY-MM-DD HH:MM:SS)
-                                    if (dataHoraExibir && dataHoraExibir.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)) {
-                                        // Converter para o formato brasileiro (DD/MM/YYYY HH:MM:SS)
-                                        const dataObj = new Date(dataHoraExibir.replace(' ', 'T'));
-                                        if (!isNaN(dataObj.getTime())) {
-                                            const dia = String(dataObj.getDate()).padStart(2, '0');
-                                            const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
-                                            const ano = dataObj.getFullYear();
-                                            const hora = String(dataObj.getHours()).padStart(2, '0');
-                                            const minuto = String(dataObj.getMinutes()).padStart(2, '0');
-                                            const segundo = String(dataObj.getSeconds()).padStart(2, '0');
-                                            dataHoraExibir = `${dia}/${mes}/${ano} ${hora}:${minuto}:${segundo}`;
-                                            console.log('Data formatada com sucesso:', dataHoraExibir);
-                                        }
-                                    } else if (!dataHoraExibir || dataHoraExibir === 'undefined') {
-                                        // Se ainda for inválida, usar a data atual como último recurso
-                                        const agora = new Date();
-                                        dataHoraExibir = `${String(agora.getDate()).padStart(2, '0')}/${String(agora.getMonth() + 1).padStart(2, '0')}/${agora.getFullYear()} ${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}:${String(agora.getSeconds()).padStart(2, '0')}`;
-                                        console.log('Usando data atual como último recurso:', dataHoraExibir);
-                                    }
-                                } catch (e) {
-                                    console.error('Erro ao formatar data:', e);
-                                    // Se falhar, usar a data atual
-                                    const agora = new Date();
-                                    dataHoraExibir = `${String(agora.getDate()).padStart(2, '0')}/${String(agora.getMonth() + 1).padStart(2, '0')}/${agora.getFullYear()} ${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}:${String(agora.getSeconds()).padStart(2, '0')}`;
-                                }
-                                
-                                // Garantir que o valor anterior nunca seja vazio
-                                if (!valorAnteriorExibir || valorAnteriorExibir === '') {
-                                    valorAnteriorExibir = 'Vazio';
-                                }
-                                
-                                // Usar valores da API ou valores padrão
-                                const usuarioExibir = alteracao.usuario || 'Sistema';
-                                
-                                // Adicionar linha na tabela
-                                alteracoesHtml += '<tr>';
-                                alteracoesHtml += `<td>${dataHoraExibir}</td>`;
-                                alteracoesHtml += `<td>${usuarioExibir}</td>`;
-                                alteracoesHtml += `<td>${campoExibir}</td>`;
-                                alteracoesHtml += `<td>${valorAnteriorExibir}</td>`;
-                                alteracoesHtml += `<td class="text-warning fw-bold">${valorNovoExibir}</td>`;
-                                alteracoesHtml += '</tr>';
-                            });
-                        } else if (alteracao.erro) {
-                            // Exibir erro se houver
-                            alteracoesHtml += '<tr>';
-                            alteracoesHtml += `<td colspan="5" class="text-danger">${alteracao.erro}</td>`;
-                            alteracoesHtml += '</tr>';
-                        } else {
-                            // Caso não tenha campos alterados
-                            alteracoesHtml += '<tr>';
-                            alteracoesHtml += `<td>${alteracao.data_hora || 'Não informado'}</td>`;
-                            alteracoesHtml += `<td>${alteracao.usuario || 'Sistema'}</td>`;
-                            alteracoesHtml += '<td colspan="3">Nenhum campo alterado</td>';
-                            alteracoesHtml += '</tr>';
-                            alteracoesHtml += '<li>O registro não foi alterado após a inclusão de SM/AE</li>';
-                            alteracoesHtml += '<li>As alterações ocorreram antes da implementação do sistema de histórico</li>';
-                            alteracoesHtml += '<li>O registro foi marcado para verificação por outro motivo</li>';
-                            alteracoesHtml += '</ul>';
-                            alteracoesHtml += '<p>Após revisar as informações do registro, você pode marcar como verificado usando o botão abaixo.</p>';
-                            alteracoesHtml += '</div>';
-                        }
-                        
-                        // Atualizar o conteúdo do modal
-                        const modalBody = modal.querySelector('.modal-body');
-                        if (modalBody) {
-                            modalBody.innerHTML = alteracoesHtml;
-                        }
-                    } else {
-                        // Em caso de erro, mostrar um formulário simplificado
-                        const modalBody = modal.querySelector('.modal-body');
-                        if (modalBody) {
-                            modalBody.innerHTML = `
-                                <div class="alert alert-warning">
-                                    <h5><i class="fas fa-exclamation-triangle me-2"></i>Atenção</h5>
-                                    <p>Não foi possível carregar o histórico detalhado de alterações.</p>
-                                    <p>Este registro foi marcado para verificação por ter sido <strong>alterado após a inclusão de SM/AE</strong>.</p>
-                                    <p>Você pode confirmar a verificação das alterações usando o botão abaixo.</p>
-                                </div>
-                            `;
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro:', error);
-                        // Em caso de erro, mostrar um formulário com informações reais do registro
-                        const modalBody = modal.querySelector('.modal-body');
-                        if (modalBody) {
-                            // Formatar datas para exibição
-                            const dataAtual = new Date();
-                            const dataFormatada = `${String(dataAtual.getDate()).padStart(2, '0')}/${String(dataAtual.getMonth() + 1).padStart(2, '0')}/${dataAtual.getFullYear()} ${String(dataAtual.getHours()).padStart(2, '0')}:${String(dataAtual.getMinutes()).padStart(2, '0')}:${String(dataAtual.getSeconds()).padStart(2, '0')}`;
-                            
-                            // Adicionar uma mensagem informativa
-                            let alteracoesHtml = '<div class="alert alert-info mb-3">';
-                            alteracoesHtml += '<h5><i class="fas fa-info-circle me-2"></i>Informações do Registro</h5>';
-                            alteracoesHtml += '<p>Este registro foi marcado para verificação por ter sido <strong>alterado após a inclusão de SM/AE</strong>.</p>';
-                            alteracoesHtml += '<p>Não foi possível carregar o histórico detalhado de alterações, mas abaixo estão as informações disponíveis.</p>';
-                            alteracoesHtml += '</div>';
-                            
-                            // Adicionar informações do registro (mesmo com erro)
-                            alteracoesHtml += '<div class="card mb-3">';
-                            alteracoesHtml += '<div class="card-header bg-primary text-white">Informações do Registro</div>';
-                            alteracoesHtml += '<div class="card-body">';
-                            alteracoesHtml += '<div class="row">';
-                            alteracoesHtml += `<div class="col-md-6"><strong>ID:</strong> ${registroId}</div>`;
-                            alteracoesHtml += `<div class="col-md-6"><strong>Data/Hora:</strong> ${dataFormatada}</div>`;
-                            alteracoesHtml += '</div>';
-                            alteracoesHtml += '</div>';
-                            alteracoesHtml += '</div>';
-                            
-                            // Tabela de alterações com exemplos genéricos
-                            alteracoesHtml += '<div class="table-responsive"><table class="table table-sm table-striped">';
-                            alteracoesHtml += '<thead><tr><th style="width: 15%">Data/Hora</th><th style="width: 12%">Usuário</th><th style="width: 18%">Campo</th><th style="width: 27%">Valor Anterior</th><th style="width: 28%">Novo Valor</th></tr></thead><tbody>';
-                            
-                            // Exemplo 1 - SM/AE
-                            alteracoesHtml += `<tr>
-                                <td>${dataFormatada}</td>
-                                <td>sistema</td>
-                                <td><strong>Registro SM/AE</strong></td>
-                                <td class="text-muted">Vazio</td>
-                                <td class="text-warning fw-bold">SM: 222222 | AE: 222222222</td>
-                            </tr>`;
-                            
-                            // Exemplo 2 - Campos comuns que podem ter sido alterados
-                            alteracoesHtml += `<tr>
-                                <td>${dataFormatada}</td>
-                                <td>operador</td>
-                                <td><strong>Dados do Registro</strong></td>
-                                <td class="text-muted">Valores originais</td>
-                                <td class="text-warning fw-bold">Valores atualizados após SM/AE</td>
-                            </tr>`;
-                            
-                            alteracoesHtml += '</tbody></table></div>';
-                            
-                            modalBody.innerHTML = alteracoesHtml;
-                        }              });
+        function limparFiltrosTabela() {
+            document.getElementById('filtroCliente').value = '';
+            document.getElementById('filtroMotorista').value = '';
+            document.getElementById('filtroContainer').value = '';
+            filtrarTabela();
+        }
+        
+        function exportarTabela() {
+            // Implementar exportação da tabela
+            console.log('Exportar tabela chamada');
         }
     </script>
 </body>

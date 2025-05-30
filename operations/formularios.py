@@ -82,7 +82,8 @@ def processar_formulario():
             dados_db[mapeamento_campos[campo_form]] = valor
     
     # Adicionar campos extras
-    dados_db['data_registro'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # Formatar data_registro no padrão DD-MM-YYYY HH:MM:SS
+    dados_db['data_registro'] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
     dados_db['usuario'] = usuario
     
     # Se arquivo foi processado, adicionar ao dicionário de dados

@@ -7,7 +7,7 @@ import sqlite3
 from models.database import get_db_connection
 
 # Tempo em segundos para considerar uma sessão inativa
-SESSION_TIMEOUT = 300  # 5 minutos
+SESSION_TIMEOUT = 900  # 15 minutos
 
 def generate_device_id():
     """Gera um ID único para o dispositivo baseado em informações do navegador"""

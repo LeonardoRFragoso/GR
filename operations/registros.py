@@ -1,5 +1,5 @@
 from flask import render_template, request, redirect, url_for, flash, session, jsonify
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 import logging
 import sqlite3
@@ -324,10 +324,22 @@ def processar_edicao_registro(registro_id):
                         # Registrar a data atual quando SM ou AE é adicionado/alterado
                         if campo_db == 'numero_sm' and valor.strip():
                             data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            # Garantir que data_atual esteja no formato DD-MM-YYYY HH:MM:SS
+                            if isinstance(data_atual, str):
+                                if '-' in data_atual and data_atual[4] == '-':
+                                    # Converter de YYYY-MM-DD para DD-MM-YYYY
+                                    data_obj = datetime.strptime(data_atual, '%Y-%m-%d %H:%M:%S')
+                                    data_atual = data_obj.strftime('%d-%m-%Y %H:%M:%S')
                             dados_form['data_sm'] = data_atual
                             print(f"Registrando data_sm = {data_atual} para SM = {valor}")
                         elif campo_db == 'numero_ae' and valor.strip():
                             data_atual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            # Garantir que data_atual esteja no formato DD-MM-YYYY HH:MM:SS
+                            if isinstance(data_atual, str):
+                                if '-' in data_atual and data_atual[4] == '-':
+                                    # Converter de YYYY-MM-DD para DD-MM-YYYY
+                                    data_obj = datetime.strptime(data_atual, '%Y-%m-%d %H:%M:%S')
+                                    data_atual = data_obj.strftime('%d-%m-%Y %H:%M:%S')
                             dados_form['data_ae'] = data_atual
                             print(f"Registrando data_ae = {data_atual} para AE = {valor}")
                     
@@ -434,8 +446,22 @@ def processar_edicao_registro(registro_id):
             # Função para calcular SLA em horas entre duas datas
             def calcular_sla(data_reg_str):
                 try:
-                    data_reg = datetime.strptime(data_reg_str, "%Y-%m-%d %H:%M:%S")
-                    data_sm = datetime.strptime(dados_form['data_sm'], "%Y-%m-%d %H:%M:%S")
+                    # Detectar formato da data_registro
+                    if '-' in data_reg_str and data_reg_str[2] == '-':
+                        # Formato DD-MM-YYYY
+                        data_reg = datetime.strptime(data_reg_str, "%d-%m-%Y %H:%M:%S")
+                    else:
+                        # Formato YYYY-MM-DD
+                        data_reg = datetime.strptime(data_reg_str, "%Y-%m-%d %H:%M:%S")
+                    
+                    # Detectar formato da data_sm
+                    if '-' in dados_form['data_sm'] and dados_form['data_sm'][2] == '-':
+                        # Formato DD-MM-YYYY
+                        data_sm = datetime.strptime(dados_form['data_sm'], "%d-%m-%Y %H:%M:%S")
+                    else:
+                        # Formato YYYY-MM-DD
+                        data_sm = datetime.strptime(dados_form['data_sm'], "%Y-%m-%d %H:%M:%S")
+                    
                     delta = data_sm - data_reg
                     horas = delta.total_seconds() / 3600
                     return round(horas, 2)
@@ -450,8 +476,22 @@ def processar_edicao_registro(registro_id):
         # Calcular SLA AE se temos data_ae e data_sm
         if 'data_ae' in dados_form and dados_form['data_ae'] and 'data_sm' in dados_form and dados_form['data_sm']:
             try:
-                data_sm = datetime.strptime(dados_form['data_sm'], "%Y-%m-%d %H:%M:%S")
-                data_ae = datetime.strptime(dados_form['data_ae'], "%Y-%m-%d %H:%M:%S")
+                # Detectar formato da data_sm
+                if '-' in dados_form['data_sm'] and dados_form['data_sm'][2] == '-':
+                    # Formato DD-MM-YYYY
+                    data_sm = datetime.strptime(dados_form['data_sm'], "%d-%m-%Y %H:%M:%S")
+                else:
+                    # Formato YYYY-MM-DD
+                    data_sm = datetime.strptime(dados_form['data_sm'], "%Y-%m-%d %H:%M:%S")
+                
+                # Detectar formato da data_ae
+                if '-' in dados_form['data_ae'] and dados_form['data_ae'][2] == '-':
+                    # Formato DD-MM-YYYY
+                    data_ae = datetime.strptime(dados_form['data_ae'], "%d-%m-%Y %H:%M:%S")
+                else:
+                    # Formato YYYY-MM-DD
+                    data_ae = datetime.strptime(dados_form['data_ae'], "%Y-%m-%d %H:%M:%S")
+                
                 delta = data_ae - data_sm
                 horas = delta.total_seconds() / 3600
                 dados_form['sla_ae'] = str(round(horas, 2))
@@ -1065,24 +1105,45 @@ def exibir_formulario_edicao(registro_id):
                 # Converter datas para o formato esperado pelo input datetime-local
                 if db_campo in ['horario_previsto', 'on_time_cliente'] and valor:
                     try:
-                        # Verificar se o valor está no formato 'HH:MM:SS DD-MM-YYYY'
+                        # Verificar se o valor está no formato 'DD-MM-YYYY HH:MM:SS' ou 'HH:MM:SS DD-MM-YYYY'
                         if isinstance(valor, str) and ' ' in valor:
-                            # Extrair partes da data
-                            hora_parte = valor.split(' ')[0]  # HH:MM:SS
-                            data_parte = valor.split(' ')[1]  # DD-MM-YYYY
+                            # Determinar o formato da data
+                            partes = valor.split(' ')
                             
-                            # Separar componentes
-                            hora, minuto, segundo = hora_parte.split(':') if ':' in hora_parte else (hora_parte, '00', '00')
-                            dia, mes, ano = data_parte.split('-') if '-' in data_parte else ('01', '01', '2025')
+                            # Verificar se o formato é 'DD-MM-YYYY HH:MM:SS'
+                            if '-' in partes[0] and ':' in partes[1]:
+                                data_parte = partes[0]  # DD-MM-YYYY
+                                hora_parte = partes[1]  # HH:MM:SS
+                                
+                                # Separar componentes
+                                dia, mes, ano = data_parte.split('-')
+                                hora, minuto, segundo = hora_parte.split(':') if len(hora_parte.split(':')) >= 3 else (hora_parte.split(':')[0], hora_parte.split(':')[1], '00')
+                            
+                            # Verificar se o formato é 'HH:MM:SS DD-MM-YYYY'
+                            elif ':' in partes[0] and '-' in partes[1]:
+                                hora_parte = partes[0]  # HH:MM:SS
+                                data_parte = partes[1]  # DD-MM-YYYY
+                                
+                                # Separar componentes
+                                hora, minuto, segundo = hora_parte.split(':') if len(hora_parte.split(':')) >= 3 else (hora_parte.split(':')[0], hora_parte.split(':')[1], '00')
+                                dia, mes, ano = data_parte.split('-')
+                            else:
+                                # Formato não reconhecido, usar valores padrão
+                                print(f"Formato de data não reconhecido: {valor}")
+                                form_registro[form_campo] = valor
+                                form_registro[f"{form_campo}_original"] = valor
+                                continue
                             
                             # Formatar para YYYY-MM-DDTHH:MM (formato aceito pelo input datetime-local)
                             valor_formatado = f"{ano}-{mes.zfill(2)}-{dia.zfill(2)}T{hora.zfill(2)}:{minuto.zfill(2)}"
                             form_registro[form_campo] = valor_formatado
                             
-                            # Armazenar o valor original para referência
+                            # Armazenar o valor original para referência - garantir que o formato seja DD/MM/YYYY HH:MM:SS para exibição
+                            valor_original_formatado = f"{dia}/{mes}/{ano} {hora}:{minuto}:{segundo}"
                             form_registro[f"{form_campo}_original"] = valor
                             
                             print(f"  - {db_campo} -> {form_campo}: {valor} (formatado para {valor_formatado})")
+                            print(f"  - {db_campo} -> {form_campo}_original: {valor} (original preservado)")
                         else:
                             form_registro[form_campo] = valor
                             form_registro[f"{form_campo}_original"] = valor
@@ -1091,10 +1152,22 @@ def exibir_formulario_edicao(registro_id):
                         print(f"Erro ao formatar data {valor}: {str(e)}")
                         form_registro[form_campo] = valor
                         form_registro[f"{form_campo}_original"] = valor
+                
+                # Tratamento especial para o campo observacao_operacional
+                elif db_campo == 'observacao_operacional':
+                    form_registro[form_campo] = valor
+                    # Armazenar o valor original para referência
+                    form_registro[f"{form_campo}_original"] = valor
+                    print(f"  - {db_campo} -> {form_campo}: {valor} (original preservado)")
                 else:
                     # Para outros campos, usar o valor como está
                     form_registro[form_campo] = valor
                     print(f"  - {db_campo} -> {form_campo}: {valor}")
+                    
+                    # Para campos específicos, também armazenar o valor original
+                    if db_campo in ['observacao_gr']:
+                        form_registro[f"{form_campo}_original"] = valor
+                        print(f"  - {db_campo} -> {form_campo}_original: {valor} (original preservado)")
         
         # Adicionar o ID do registro para referência
         form_registro['id'] = registro_id
@@ -1103,6 +1176,13 @@ def exibir_formulario_edicao(registro_id):
         # Isso é importante para garantir que o template não tente acessar campos que não existem
         for form_campo in set(campo_mapping_form_new.values()) - set(form_registro.keys()):
             form_registro[form_campo] = ''
+            
+        # Garantir que os campos _original existam para os campos importantes
+        campos_importantes = ['HORÁRIO PREVISTO DE INÍCIO', 'ON TIME (CLIENTE)', 'OBSERVACAO OPERACIONAL', 'OBSERVAÇÃO DE GR']
+        for campo in campos_importantes:
+            if campo in form_registro and f"{campo}_original" not in form_registro:
+                form_registro[f"{campo}_original"] = form_registro[campo]
+                print(f"  - Adicionado campo {campo}_original com valor: {form_registro[campo]}")
         
         # Adicionar informações de anexos
         if registro.get('anexar_nf'):
@@ -1121,6 +1201,15 @@ def exibir_formulario_edicao(registro_id):
         for campo, valor in form_registro.items():
             print(f"  - {campo}: {valor}")
         
+        # Adicionar log para verificar os valores dos campos importantes
+        campos_verificar = ['HORÁRIO PREVISTO DE INÍCIO', 'HORÁRIO PREVISTO DE INÍCIO_original', 
+                           'ON TIME (CLIENTE)', 'ON TIME (CLIENTE)_original',
+                           'OBSERVACAO OPERACIONAL', 'OBSERVACAO OPERACIONAL_original',
+                           'OBSERVAÇÃO DE GR', 'OBSERVAÇÃO DE GR_original']
+        print("\nVerificando valores dos campos importantes:")
+        for campo in campos_verificar:
+            print(f"  - {campo}: {form_registro.get(campo, 'NÃO ENCONTRADO')}")
+            
         return render_template(
             'form_edit.html',
             usuario=usuario,
@@ -1191,3 +1280,85 @@ def mapear_db_para_campo(coluna_db):
     """
     from access_control import mapear_db_para_campo as mapear
     return mapear(coluna_db)
+
+
+def validar_horario_previsto(data_registro, horario_previsto):
+    """
+    Valida que o horário previsto seja posterior à data de registro
+    
+    Args:
+        data_registro: Data e hora de registro (string ou datetime)
+        horario_previsto: Horário previsto (string ou datetime)
+        
+    Returns:
+        Tuple (bool, str): (True, None) se válido, (False, mensagem_erro) se inválido
+    """
+    if not horario_previsto:
+        return False, "Horário previsto não pode estar vazio"
+        
+    if not data_registro:
+        return False, "Data de registro não pode estar vazia"
+        
+    # Converter para objetos datetime se forem strings
+    if isinstance(data_registro, str):
+        try:
+            # Tentar diferentes formatos de data
+            for fmt in [
+                '%Y-%m-%d %H:%M:%S',  # 2025-05-30 14:19:00
+                '%Y-%m-%d %H:%M',     # 2025-05-30 14:19
+                '%Y-%m-%dT%H:%M',     # 2025-05-30T14:19
+                '%Y-%m-%dT%H:%M:%S',  # 2025-05-30T14:19:00
+                '%d-%m-%Y %H:%M:%S',  # 30-05-2025 14:19:00
+                '%d-%m-%Y %H:%M',     # 30-05-2025 14:19
+                '%d/%m/%Y %H:%M:%S',  # 30/05/2025 14:19:00
+                '%d/%m/%Y %H:%M',     # 30/05/2025 14:19
+                '%H:%M:%S %d-%m-%Y',  # 14:19:00 30-05-2025
+                '%H:%M %d-%m-%Y'      # 14:19 30-05-2025
+            ]:
+                try:
+                    data_registro = datetime.strptime(data_registro, fmt)
+                    break
+                except ValueError:
+                    continue
+            else:  # Se nenhum formato funcionar
+                return False, f"Formato de data de registro inválido: {data_registro}"
+        except Exception as e:
+            return False, f"Erro ao converter data de registro: {e}"
+    
+    if isinstance(horario_previsto, str):
+        try:
+            # Tentar diferentes formatos de data
+            for fmt in [
+                '%Y-%m-%d %H:%M:%S',  # 2025-05-30 14:19:00
+                '%Y-%m-%d %H:%M',     # 2025-05-30 14:19
+                '%Y-%m-%dT%H:%M',     # 2025-05-30T14:19
+                '%Y-%m-%dT%H:%M:%S',  # 2025-05-30T14:19:00
+                '%d-%m-%Y %H:%M:%S',  # 30-05-2025 14:19:00
+                '%d-%m-%Y %H:%M',     # 30-05-2025 14:19
+                '%d/%m/%Y %H:%M:%S',  # 30/05/2025 14:19:00
+                '%d/%m/%Y %H:%M',     # 30/05/2025 14:19
+                '%H:%M:%S %d-%m-%Y',  # 14:19:00 30-05-2025
+                '%H:%M %d-%m-%Y'      # 14:19 30-05-2025
+            ]:
+                try:
+                    horario_previsto = datetime.strptime(horario_previsto, fmt)
+                    break
+                except ValueError:
+                    continue
+            else:  # Se nenhum formato funcionar
+                return False, f"Formato de horário previsto inválido: {horario_previsto}"
+        except Exception as e:
+            return False, f"Erro ao converter horário previsto: {e}"
+    
+    # Verificar se o horário previsto é posterior à data de registro
+    if horario_previsto <= data_registro:
+        # Definir um valor padrão: data de registro + 24 horas
+        horario_previsto_corrigido = data_registro.replace()
+        horario_previsto_corrigido = horario_previsto_corrigido.replace(hour=data_registro.hour, minute=data_registro.minute, second=data_registro.second)
+        horario_previsto_corrigido = horario_previsto_corrigido + timedelta(hours=24)
+        
+        # Formatar no padrão DD-MM-YYYY HH:MM:SS
+        sugestao_formatada = horario_previsto_corrigido.strftime('%d-%m-%Y %H:%M:%S')
+        return False, f"O horário previsto deve ser posterior à data de registro. Sugestão: {sugestao_formatada}"
+    
+    return True, None

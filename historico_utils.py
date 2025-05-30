@@ -191,35 +191,33 @@ def obter_historico_alteracoes(registro_id):
                 logger.error(f"Erro ao processar data de SM/AE: {e}")
         
         for alteracao in alteracoes:
-            # Verificar se o usuário não é GR e se a alteração foi feita após a inclusão de SM/AE
+            # Processar todas as alterações, independentemente do usuário ou do momento
             usuario = alteracao.get('usuario', '').lower()
-            if data_sm_ae and alteracao.get('data_hora', '') > data_sm_ae and usuario not in ['gr', 'admin']:
-                # Processar cada campo alterado dentro da alteração
-                for campo_alterado in alteracao.get('campos_alterados', []):
-                    # Ignorar alterações nos campos numero_sm e numero_ae
-                    campo = campo_alterado.get('campo', '')
-                    if campo in ['numero_sm', 'numero_ae']:
-                        continue
-                    
-                    campos_alterados_encontrados = True
-                    
-                    # Garantir que os valores não sejam None
-                    valor_antigo = campo_alterado.get('valor_antigo', '')
-                    if valor_antigo is None or valor_antigo == '':
-                        valor_antigo = 'Vazio'
-                    
-                    valor_novo = campo_alterado.get('valor_novo', '')
-                    if valor_novo is None or valor_novo == '':
-                        valor_novo = 'Vazio'
-                    
-                    # Adicionar a alteração formatada
-                    alteracoes_formatadas.append({
-                        'campo': campo,
-                        'valor_antigo': valor_antigo,
-                        'valor_novo': valor_novo,
-                        'data_alteracao': alteracao.get('data_hora', ''),
-                        'usuario': alteracao.get('usuario', 'Sistema')
-                    })
+            
+            # Processar cada campo alterado dentro da alteração
+            for campo_alterado in alteracao.get('campos_alterados', []):
+                campo = campo_alterado.get('campo', '')
+                # Não ignorar nenhum campo, para garantir que todas as alterações sejam exibidas
+                
+                campos_alterados_encontrados = True
+                
+                # Garantir que os valores não sejam None
+                valor_antigo = campo_alterado.get('valor_antigo', '')
+                if valor_antigo is None or valor_antigo == '':
+                    valor_antigo = 'Vazio'
+                
+                valor_novo = campo_alterado.get('valor_novo', '')
+                if valor_novo is None or valor_novo == '':
+                    valor_novo = 'Vazio'
+                
+                # Adicionar a alteração formatada
+                alteracoes_formatadas.append({
+                    'campo': campo,
+                    'valor_antigo': valor_antigo,
+                    'valor_novo': valor_novo,
+                    'data_alteracao': alteracao.get('data_hora', ''),
+                    'usuario': alteracao.get('usuario', 'Sistema')
+                })
         
         # Se não encontrou campos alterados, criar alterações para os campos do tipo 'Edição GR'
         if not campos_alterados_encontrados:

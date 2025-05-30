@@ -1137,8 +1137,145 @@ def dashboard():
 @gr_blueprint.route('/historico_alteracoes/<int:registro_id>', methods=['GET'])
 @gr_required
 def obter_historico_alteracoes(registro_id):
-    # Importar a função de utilidade que implementamos separadamente
-    from historico_utils import obter_historico_alteracoes as get_historico
+    logger.info(f"Obtendo histórico de alterações para registro {registro_id}")
+    
+    try:
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            
+            # Obter dados do registro
+            cursor.execute(f"SELECT * FROM {TABLE_REGISTROS} WHERE {COL_ID} = ? AND {COL_EXCLUIDO} = 0", (registro_id,))
+            row = cursor.fetchone()
+            
+            if not row:
+                return jsonify({
+                    "success": False,
+                    "message": "Registro não encontrado"
+                }), 404
+            
+            # Converter para dicionário
+            registro = dict(row)
+            
+            # Preparar informações do registro
+            registro_info = {
+                "id": registro_id,
+                "cliente": registro.get('cliente', 'Não informado') or 'Não informado',
+                "numero_sm": registro.get('numero_sm', 'Não informado') or 'Não informado',
+                "numero_ae": registro.get('numero_ae', 'Não informado') or 'Não informado',
+                "data_registro": registro.get('data_registro', 'Não informado') or 'Não informado',
+                "data_modificacao": registro.get('data_modificacao', 'Não informado') or 'Não informado'
+            }
+            
+            # Buscar alterações no histórico
+            alteracoes = []
+            
+            try:
+                # Verificar se a tabela histórico existe
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='historico'")
+                if cursor.fetchone():
+                    # Buscar registros do histórico
+                    cursor.execute("""
+                        SELECT h.alteracoes, h.data_alteracao, h.alterado_por
+                        FROM historico h
+                        WHERE h.registro_id = ? 
+                        ORDER BY h.data_alteracao DESC
+                    """, (registro_id,))
+                    
+                    registros_historico = cursor.fetchall()
+                    logger.info(f"Encontrados {len(registros_historico)} registros no histórico")
+                    
+                    for registro_hist in registros_historico:
+                        alteracoes_json = registro_hist[0]
+                        data_alteracao = registro_hist[1]
+                        usuario = registro_hist[2] or 'Sistema'
+                        
+                        if alteracoes_json:
+                            try:
+                                alteracoes_data = json.loads(alteracoes_json)
+                                logger.info(f"Processando alteração: {alteracoes_data}")
+                                
+                                # Verificar diferentes formatos de alterações
+                                if isinstance(alteracoes_data, dict):
+                                    # Formato 1: {campo: {valor_antigo: x, valor_novo: y}}
+                                    for campo, valores in alteracoes_data.items():
+                                        if isinstance(valores, dict) and 'valor_antigo' in valores:
+                                            alteracoes.append({
+                                                'campo': campo,
+                                                'valor_anterior': valores.get('valor_antigo', ''),
+                                                'valor_novo': valores.get('valor_novo', ''),
+                                                'data_hora': data_alteracao,
+                                                'usuario': usuario
+                                            })
+                                        elif campo in ['tipo', 'campos', 'usuario', 'valores']:
+                                            # Formato 2: alteração estruturada com tipo, campos, etc.
+                                            if campo == 'valores' and isinstance(valores, dict):
+                                                for sub_campo, valor in valores.items():
+                                                    alteracoes.append({
+                                                        'campo': sub_campo,
+                                                        'valor_anterior': 'Valor anterior não disponível',
+                                                        'valor_novo': str(valor),
+                                                        'data_hora': data_alteracao,
+                                                        'usuario': usuario
+                                                    })
+                                        else:
+                                            # Outros formatos de campo direto
+                                            alteracoes.append({
+                                                'campo': campo,
+                                                'valor_anterior': '',
+                                                'valor_novo': str(valores),
+                                                'data_hora': data_alteracao,
+                                                'usuario': usuario
+                                            })
+                                
+                            except json.JSONDecodeError as e:
+                                logger.warning(f"Erro ao decodificar JSON do histórico: {e}")
+                                # Adicionar como texto bruto se não conseguir decodificar
+                                alteracoes.append({
+                                    'campo': 'Alteração não estruturada',
+                                    'valor_anterior': '',
+                                    'valor_novo': alteracoes_json,
+                                    'data_hora': data_alteracao,
+                                    'usuario': usuario
+                                })
+                
+                # Se não houver alterações específicas, adicionar uma entrada genérica
+                if not alteracoes:
+                    data_atual = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    alteracoes.append({
+                        'campo': 'Registro de SM/AE',
+                        'valor_anterior': 'Vazio',
+                        'valor_novo': f"SM: {registro_info['numero_sm']} | AE: {registro_info['numero_ae']}",
+                        'data_hora': data_atual,
+                        'usuario': 'Sistema'
+                    })
+                
+            except Exception as e:
+                logger.error(f"Erro ao processar histórico: {e}")
+                # Em caso de erro, adicionar entrada básica
+                data_atual = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                alteracoes = [{
+                    'campo': 'Erro ao carregar histórico',
+                    'valor_anterior': '',
+                    'valor_novo': f"Erro: {str(e)}",
+                    'data_hora': data_atual,
+                    'usuario': 'Sistema'
+                }]
+            
+            logger.info(f"Retornando {len(alteracoes)} alterações formatadas para o registro {registro_id}")
+            
+            # Retornar resposta estruturada
+            return jsonify({
+                "success": True,
+                "registro_info": registro_info,
+                "alteracoes": alteracoes
+            })
+    
+    except Exception as e:
+        logger.error(f"Erro geral ao obter histórico de alterações: {e}")
+        return jsonify({
+            "success": False,
+            "message": f"Erro ao carregar histórico: {str(e)}"
+        }), 500
     
     # Chamar a função de utilidade para obter o histórico
     return get_historico(registro_id)
@@ -1768,7 +1905,6 @@ def marcar_alteracoes_verificadas(registro_id):
             flash(f"Erro ao marcar alterações como verificadas: {str(e)}", "danger")
             return redirect(url_for('gr.ambiente', alteracoes_pos_smae='true'))
 
-# Esta função foi removida por estar duplicada. A versão atualizada é obter_historico_alteracoes
 
 # Rota para a página de sucesso com redirecionamento automático
 @gr_blueprint.route('/sucesso')

@@ -325,6 +325,8 @@
       word-break: break-all;
     }
   </style>
+  <!-- Script de validação do horário previsto -->
+  <script src="{{ url_for('static', filename='js/validacao_horario_previsto.js') }}"></script>
 </head>
 <body>
 <nav class="navbar">
@@ -629,6 +631,10 @@
               <span class="data-type-hint">{{ tipos['HORÁRIO PREVISTO DE INÍCIO']|default('Data/Hora') }}</span>
             </label>
             <input type="datetime-local" name="HORÁRIO PREVISTO DE INÍCIO" class="form-control datetime-input" data-original-format="dd/mm/yyyy hh:mm" value="{% if registro and 'HORÁRIO PREVISTO DE INÍCIO' in registro %}{{ registro['HORÁRIO PREVISTO DE INÍCIO'] }}{% endif %}">
+            {% if registro and 'HORÁRIO PREVISTO DE INÍCIO_original' in registro and registro['HORÁRIO PREVISTO DE INÍCIO_original'] %}
+            <div class="mt-1 small text-muted">Valor atual: {{ registro['HORÁRIO PREVISTO DE INÍCIO_original'] }}</div>
+            <input type="hidden" name="HORÁRIO PREVISTO DE INÍCIO_original" value="{{ registro['HORÁRIO PREVISTO DE INÍCIO_original'] }}">
+            {% endif %}
           </div>
           
           <!-- ON TIME (CLIENTE) -->
@@ -638,6 +644,10 @@
               <span class="data-type-hint">{{ tipos['ON TIME (CLIENTE)']|default('Data/Hora') }}</span>
             </label>
             <input type="datetime-local" name="ON TIME (CLIENTE)" class="form-control datetime-input" data-original-format="dd/mm/yyyy hh:mm" value="{% if registro and 'ON TIME (CLIENTE)' in registro %}{{ registro['ON TIME (CLIENTE)'] }}{% endif %}">
+            {% if registro and 'ON TIME (CLIENTE)_original' in registro and registro['ON TIME (CLIENTE)_original'] %}
+            <div class="mt-1 small text-muted">Valor atual: {{ registro['ON TIME (CLIENTE)_original'] }}</div>
+            <input type="hidden" name="ON TIME (CLIENTE)_original" value="{{ registro['ON TIME (CLIENTE)_original'] }}">
+            {% endif %}
           </div>
         </div>
       </div>
@@ -732,6 +742,10 @@
           <div class="observation-card">
             <label class="form-label">Observação Operacional</label>
             <textarea name="OBSERVACAO OPERACIONAL" class="form-control" rows="4">{% if registro and 'OBSERVACAO OPERACIONAL' in registro %}{{ registro['OBSERVACAO OPERACIONAL'] }}{% endif %}</textarea>
+            {% if registro and 'OBSERVACAO OPERACIONAL_original' in registro and registro['OBSERVACAO OPERACIONAL_original'] %}
+            <div class="mt-1 small text-muted">Valor atual: {{ registro['OBSERVACAO OPERACIONAL_original'] }}</div>
+            <input type="hidden" name="OBSERVACAO OPERACIONAL_original" value="{{ registro['OBSERVACAO OPERACIONAL_original'] }}">
+            {% endif %}
           </div>
           
           {% if mostrar_campos_gr %}

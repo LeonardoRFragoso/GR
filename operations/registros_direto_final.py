@@ -5,7 +5,8 @@ import json
 import time
 import logging
 import sys
-from datetime import datetime
+import traceback
+from datetime import datetime, timedelta
 from models.historico import Historico
 from access_control import mapear_db_para_campo
 
@@ -200,7 +201,7 @@ def processar_edicao_registro_direto(registro_id):
                     # O usuário preencheu o campo, usar o valor do formulário
                     try:
                         # Converter o valor do formulário para o formato do banco
-                        from datetime import datetime
+                        # datetime already imported at the top level
                         
                         # Verificar se o valor está no formato datetime-local (YYYY-MM-DDTHH:MM)
                         if 'T' in valor_form:
@@ -241,17 +242,6 @@ def processar_edicao_registro_direto(registro_id):
                                     dados_form[campo] = valor_form_original
                             else:
                                 # Usar o valor original como está
-                                dados_form[campo] = valor_form_original
-                        else:
-                            # Tentar outros formatos conhecidos
-                            try:
-                                # Formato DD/MM/AAAA HH:MM
-                                dt_form = datetime.strptime(valor_form, '%d/%m/%Y %H:%M')
-                                novo_valor = dt_form.strftime('%H:%M:%S %d-%m-%Y')
-                                print(f"  - Valor convertido do formulário (formato alternativo): {novo_valor}")
-                                dados_form[campo] = novo_valor
-                            except ValueError:
-                                # Se não conseguir converter, usar o valor como está
                                 print(f"  - Usando valor do formulário sem conversão: {valor_form}")
                                 dados_form[campo] = valor_form
                     except Exception as e:
@@ -261,10 +251,18 @@ def processar_edicao_registro_direto(registro_id):
                             print(f"  - Usando valor original do formulário: {valor_form_original}")
                             # Tentar converter para o formato do banco
                             try:
-                                # Formato DD/MM/AAAA HH:MM
-                                dt_form = datetime.strptime(valor_form_original, '%d/%m/%Y %H:%M')
-                                novo_valor = dt_form.strftime('%H:%M:%S %d-%m-%Y')
-                                dados_form[campo] = novo_valor
+                                # Try multiple formats
+                                for fmt in ['%d/%m/%Y %H:%M', '%d-%m-%Y %H:%M', '%Y-%m-%d %H:%M']:
+                                    try:
+                                        dt_form = datetime.strptime(valor_form_original, fmt)
+                                        novo_valor = dt_form.strftime('%d-%m-%Y %H:%M:%S')
+                                        dados_form[campo] = novo_valor
+                                        break
+                                    except ValueError:
+                                        continue
+                                else:
+                                    # If no format worked, use the original value
+                                    dados_form[campo] = valor_form_original
                             except ValueError:
                                 # Se não conseguir converter, usar o valor como está
                                 dados_form[campo] = valor_form_original
@@ -277,12 +275,21 @@ def processar_edicao_registro_direto(registro_id):
                     print(f"  - Usando valor original do formulário: {valor_form_original}")
                     # Tentar converter para o formato do banco
                     try:
-                        from datetime import datetime
-                        # Formato DD/MM/AAAA HH:MM
-                        dt_form = datetime.strptime(valor_form_original, '%d/%m/%Y %H:%M')
-                        novo_valor = dt_form.strftime('%H:%M:%S %d-%m-%Y')
-                        dados_form[campo] = novo_valor
-                    except ValueError:
+                        # datetime already imported at the top level
+                        # Try multiple formats
+                        for fmt in ['%d/%m/%Y %H:%M', '%d-%m-%Y %H:%M', '%Y-%m-%d %H:%M']:
+                            try:
+                                dt_form = datetime.strptime(valor_form_original, fmt)
+                                novo_valor = dt_form.strftime('%d-%m-%Y %H:%M:%S')
+                                dados_form[campo] = novo_valor
+                                break
+                            except ValueError:
+                                continue
+                        else:
+                            # If no format worked, use the original value
+                            dados_form[campo] = valor_form_original
+                    except Exception as e:
+                        print(f"Erro ao processar data {valor_form_original}: {e}")
                         # Se não conseguir converter, usar o valor como está
                         dados_form[campo] = valor_form_original
                 else:
