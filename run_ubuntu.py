@@ -40,7 +40,7 @@ is_linux = platform.system().lower() == 'linux'
 
 # Configurando para porta 8520 no Ubuntu
 HOST = '0.0.0.0'  # Aceita conexões de qualquer IP
-PORT = 8520     # Porta padrão para o ambiente Ubuntu
+PORT = 8521     # Porta padrão para o ambiente Ubuntu
 DEBUG = False   # Desativar modo debug em produção
 
 # Garantir que o diretório de uploads existe
