@@ -96,7 +96,7 @@ CAMPO_MAPPING = {
     'anexar_nf': 'ANEXAR NF',
     'anexar_os': 'ANEXAR OS',
     'anexar_agendamento': 'ANEXAR AGENDAMENTO',
-    'observacao_operacional': 'OBSERVACAO OPERACIONAL',
+    'observacao_operacional': 'OBSERVAÇÃO OPERACIONAL',
     'observacao_gr': 'OBSERVAÇÃO DE GR',
     'numero_sm': 'NUMERO SM',
     'numero_ae': 'NÚMERO AE',
