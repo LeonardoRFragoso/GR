@@ -24,7 +24,7 @@ class Registro:
         try:
             # Garantir que dados tem a data atual
             if 'data_registro' not in dados:
-                dados['data_registro'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                dados['data_registro'] = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
             
             # Garantir que o usuário está no registro
             dados['usuario'] = usuario
@@ -121,7 +121,7 @@ class Registro:
                 cursor.execute(query, values)
                 
                 # Registrar as alterações no histórico
-                data_alteracao = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                data_alteracao = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
                 alteracoes_json = json.dumps(alteracoes, ensure_ascii=False)
                 
                 cursor.execute("""
@@ -160,7 +160,7 @@ class Registro:
             if not registro:
                 return False
                 
-            data_exclusao = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            data_exclusao = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
                 
             with get_db_connection() as conn:
                 cursor = conn.cursor()

@@ -19,7 +19,7 @@ from utils.file_utils import save_uploaded_file, allowed_file
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-def processar_edicao_registro_direto(registro_id):
+def processar_edicao_registro_direto(registro_id, custom_request=None):
     """
     Versão consolidada e otimizada para processar a edição de um registro diretamente
     com detecção adequada de alterações em campos importantes.
@@ -33,14 +33,19 @@ def processar_edicao_registro_direto(registro_id):
     
     Args:
         registro_id: ID do registro a ser editado
+        custom_request: Objeto request personalizado (opcional)
         
     Returns:
         True se a edição foi bem-sucedida, False caso contrário
     """
     print(f"\n\n=== PROCESSANDO EDIÇÃO DIRETA PARA REGISTRO {registro_id} ===")
     
+    # Usar o objeto request personalizado se fornecido, caso contrário usar o request global
+    req = custom_request if custom_request else request
+    print(f"Usando {'request personalizado' if custom_request else 'request global'}")
+    
     # Se não for POST, retornar para exibir o formulário
-    if request.method != 'POST':
+    if req.method != 'POST':
         print("Método não é POST, retornando None")
         return None
     
@@ -76,6 +81,8 @@ def processar_edicao_registro_direto(registro_id):
         'DT CRIACAO SM': 'data_sm',
         'STATUS SM': 'status_sm',
         'OBSERVACAO OPERACIONAL': 'observacao_operacional',
+        'OBSERVACAO OPERACIONAL ': 'observacao_operacional',  # Com espaço no final
+        'OBSERVAÇÃO OPERACIONAL': 'observacao_operacional',  # Com acento
         'OBSERVAÇÃO DE GR': 'observacao_gr',
         'ANEXAR NF': 'anexar_nf',
         'ANEXAR OS': 'anexar_os',
@@ -85,16 +92,16 @@ def processar_edicao_registro_direto(registro_id):
     # Coletar todos os dados do formulário e mapê-los para as colunas do banco de dados
     dados_form = {}
     print("\n=== DADOS DO FORMULÁRIO ===\n")
-    print(f"Total de campos no formulário: {len(request.form)}")
+    print(f"Total de campos no formulário: {len(req.form)}")
     
     # Primeiro, imprimir todos os campos do formulário para depuração
     print("Campos recebidos no formulário:")
-    for campo, valor in request.form.items():
+    for campo, valor in req.form.items():
         if campo != 'csrf_token':
             print(f"  - {campo}: {valor[:30]}{'...' if len(valor) > 30 else ''}")
     
     # Processar os campos usando o mapeamento direto
-    for campo_form, valor in request.form.items():
+    for campo_form, valor in req.form.items():
         # Ignorar o token CSRF e outros campos especiais
         if campo_form not in ['csrf_token']:
             # Verificar se o campo existe no mapeamento
@@ -113,6 +120,13 @@ def processar_edicao_registro_direto(registro_id):
             # Adicionar ao dicionário de dados
             dados_form[campo_db] = valor.strip() if valor else ''
             print(f"Mapeado campo '{campo_form}' para '{campo_db}' com valor: {valor[:30]}{'...' if len(valor) > 30 else ''}")
+            
+            # Se for o campo DATA, garantir que seja mapeado para data_registro
+            if campo_form == 'DATA':
+                print(f"Campo DATA encontrado com valor: {valor}")
+                dados_form['data_registro'] = valor.strip() if valor else ''
+                print(f"Mapeado explicitamente DATA para data_registro com valor: {dados_form['data_registro']}")
+    
     
     # Processar explicitamente os campos da seção "Dados da Operação"
     campos_operacao = {
@@ -128,8 +142,8 @@ def processar_edicao_registro_direto(registro_id):
     
     print("\n=== PROCESSANDO CAMPOS DA SEÇÃO 'DADOS DA OPERAÇÃO' ===\n")
     for campo_form, campo_db in campos_operacao.items():
-        if campo_form in request.form and request.form[campo_form].strip():
-            valor = request.form[campo_form].strip()
+        if campo_form in req.form and req.form[campo_form].strip():
+            valor = req.form[campo_form].strip()
             
             # Remover pontos, traços e espaços do CPF do motorista
             if campo_form == 'CPF MOTORISTA':
@@ -495,15 +509,34 @@ def processar_edicao_registro_direto(registro_id):
                     campos_ignorados.append(campo)
                     print(f"AVISO: Campo '{campo}' não existe na tabela e será ignorado")
             
-            # Garantir que os campos SM e AE sejam preservados na atualização
+            # Garantir que os campos importantes sejam preservados na atualização
             if session.get('nivel') == 'comum':
-                campos_gr = ['numero_sm', 'data_sm', 'numero_ae', 'data_ae']
-                for campo in campos_gr:
-                    if campo in registro_atual_dict and registro_atual_dict[campo] and campo not in [c.split(' = ')[0] for c in campos_update]:
+                # Lista de campos críticos que devem ser preservados durante a edição por usuários comuns
+                campos_preservar = [
+                    'numero_sm', 'data_sm', 'numero_ae', 'data_ae', 'data_registro',
+                    'origem', 'observacao_operacional', 'sla_sm', 'sla_ae', 'status_sm'
+                ]
+                
+                print("\n=== PRESERVANDO CAMPOS CRÍTICOS ===\n")
+                for campo in campos_preservar:
+                    # Verificar se o campo existe no registro atual e não está na lista de campos a atualizar
+                    if campo in registro_atual_dict and campo not in [c.split(' = ')[0] for c in campos_update]:
+                        # Obter o valor do campo, ou um espaço em branco se for None ou vazio
                         valor = registro_atual_dict[campo]
-                        print(f"Adicionando campo GR {campo} = {valor} à query de atualização para preservá-lo")
-                        campos_update.append(f"{campo} = ?")
-                        valores.append(valor)
+                        
+                        # Para 'origem' e 'observacao_operacional', sempre preservar, mesmo se for None ou vazio
+                        if campo in ['origem', 'observacao_operacional']:
+                            # Se for None ou vazio, usar um espaço em branco para evitar campos em amarelo
+                            if valor in [None, '']:
+                                valor = ' '
+                            print(f"Preservando campo crítico {campo} = {valor}")
+                            campos_update.append(f"{campo} = ?")
+                            valores.append(valor)
+                        # Para outros campos, só preservar se tiverem valor
+                        elif valor:  
+                            print(f"Preservando campo {campo} = {valor}")
+                            campos_update.append(f"{campo} = ?")
+                            valores.append(valor)
             
             # Se não houver campos alterados para atualizar, retornar sucesso sem fazer alterações
             if not campos_update:

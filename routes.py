@@ -1646,15 +1646,52 @@ def editar_registro_comum(registro_id):
                 file.seek(0)
             else:
                 print(f"Arquivo '{file_key}': Nenhum arquivo ou nome vazio")
+                
+        # Criar uma cópia do form data para modificação
+        form_data = request.form.to_dict()
         
-        # Obter a data de registro do banco de dados para validação
+        # Obter a data de registro e outros campos importantes do banco de dados
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT data_registro FROM registros WHERE id = ?", (registro_id,))
+            cursor.execute("SELECT data_registro, origem, observacao_operacional FROM registros WHERE id = ?", (registro_id,))
             resultado = cursor.fetchone()
             
-            if resultado and resultado[0]:
-                data_registro = resultado[0]
+            if resultado:
+                # Garantir que todos os campos importantes sejam preservados
+                if resultado[0]:  # data_registro
+                    data_registro = resultado[0]
+                    form_data['DATA'] = data_registro
+                    print(f"Adicionando data_registro ao formulário: {data_registro}")
+                
+                # Adicionar ORIGEM ao formulário, mesmo que seja None ou vazio
+                origem_valor = resultado[1] if resultado[1] not in [None, ''] else ' '
+                form_data['ORIGEM'] = origem_valor
+                print(f"Adicionando ORIGEM ao formulário: {origem_valor}")
+                
+                # Adicionar Observação Operacional ao formulário, mesmo que seja None ou vazio
+                obs_op_valor = resultado[2] if resultado[2] not in [None, ''] else ' '
+                # Adicionar tanto com quanto sem acento para garantir compatibilidade
+                form_data['OBSERVAÇÃO OPERACIONAL'] = obs_op_valor
+                form_data['OBSERVACAO OPERACIONAL'] = obs_op_valor
+                form_data['OBSERVACAO OPERACIONAL '] = obs_op_valor
+                print(f"Adicionando OBSERVAÇÃO OPERACIONAL ao formulário: {obs_op_valor}")
+                    
+                # Verificar se há campos com espaços extras no formulário e normalizá-los
+                campos_normalizados = {}
+                for campo, valor in list(form_data.items()):
+                    campo_normalizado = campo.strip()
+                    if campo != campo_normalizado and campo_normalizado not in form_data:
+                        campos_normalizados[campo_normalizado] = valor
+                        print(f"Normalizando campo '{campo}' para '{campo_normalizado}'")
+                
+                # Adicionar campos normalizados ao form_data
+                form_data.update(campos_normalizados)
+                    
+                # Imprimir o form_data atualizado para depuração
+                print("\n=== FORM DATA ATUALIZADO ===\n")
+                for campo, valor in form_data.items():
+                    print(f"  - {campo}: {valor[:30] if isinstance(valor, str) else valor}{'...' if isinstance(valor, str) and len(valor) > 30 else ''}")
+
                 
                 # Processar horário previsto para validação
                 if 'horario_previsto_formatado' in request.form and request.form['horario_previsto_formatado']:
@@ -1683,8 +1720,20 @@ def editar_registro_comum(registro_id):
             # Importar a função de processamento direto consolidada
             from operations.registros_direto_final import processar_edicao_registro_direto
             
-            # Processar a edição diretamente com a função consolidada
-            resultado = processar_edicao_registro_direto(registro_id)
+            # Criar uma nova RequestProxy para substituir request.form com nosso form_data modificado
+            from werkzeug.datastructures import ImmutableMultiDict
+            from types import SimpleNamespace
+            
+            # Criar uma cópia do objeto request original
+            request_proxy = SimpleNamespace()
+            request_proxy.files = request.files
+            request_proxy.method = request.method
+            
+            # Substituir o form com nosso form_data modificado que inclui a data_registro
+            request_proxy.form = ImmutableMultiDict(form_data.items())
+            
+            # Processar a edição diretamente com a função consolidada, passando o request_proxy
+            resultado = processar_edicao_registro_direto(registro_id, request_proxy)
             
             if resultado is True:
                 print("Edição direta bem-sucedida - Redirecionando para dashboard")

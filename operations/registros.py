@@ -906,8 +906,10 @@ def exibir_formulario_edicao(registro_id):
     
     # Garantir que os campos problemáticos sejam carregados corretamente
     for campo_db, campo_form in campos_problematicos.items():
-        if campo_db in registro and registro[campo_db] and campo_form not in registro_completo:
-            valor = registro[campo_db]
+        # Verificar se o campo existe no registro, independentemente de ter valor ou não
+        if campo_db in registro:
+            # Obter o valor do campo, ou um espaço em branco se for None ou vazio
+            valor = registro[campo_db] if registro[campo_db] not in [None, ''] else ' '
             print(f"  - Adicionando campo problemático: {campo_db} -> {campo_form}: {valor}")
             
             # Garantir que os campos de data e hora sejam exibidos corretamente
@@ -917,7 +919,7 @@ def exibir_formulario_edicao(registro_id):
                 print(f"    - Usando valor original para o campo {campo_form}: {valor}")
                 
                 # Se o valor estiver vazio, usar um valor padrão para evitar campos em branco
-                if not valor:
+                if not valor or valor == ' ':
                     agora = datetime.now()
                     valor = agora.strftime('%H:%M:%S %d-%m-%Y')
                     print(f"    - Usando valor padrão: {valor}")
@@ -1091,7 +1093,7 @@ def exibir_formulario_edicao(registro_id):
             'anexar_nf': 'ANEXAR NF',
             'anexar_os': 'ANEXAR OS',
             'anexar_agendamento': 'ANEXAR AGENDAMENTO',
-            'observacao_operacional': 'OBSERVACAO OPERACIONAL',
+            'observacao_operacional': 'OBSERVAÇÃO OPERACIONAL',
             'observacao_gr': 'OBSERVAÇÃO DE GR',
             'origem': 'ORIGEM'
         }
@@ -1099,7 +1101,9 @@ def exibir_formulario_edicao(registro_id):
         # Preencher o dicionário form_registro com os valores do banco
         print("\nMapeando campos para form_new.html:")
         for db_campo, valor in registro.items():
-            if db_campo in campo_mapping_form_new and valor is not None:
+            if db_campo in campo_mapping_form_new:
+                # Garantir que o valor nunca seja None, usar espaço em branco se for None
+                valor = valor if valor is not None else ' '
                 form_campo = campo_mapping_form_new[db_campo]
                 
                 # Converter datas para o formato esperado pelo input datetime-local
@@ -1156,9 +1160,19 @@ def exibir_formulario_edicao(registro_id):
                 # Tratamento especial para o campo observacao_operacional
                 elif db_campo == 'observacao_operacional':
                     form_registro[form_campo] = valor
-                    # Armazenar o valor original para referência
                     form_registro[f"{form_campo}_original"] = valor
+                    form_registro['OBSERVAÇÃO OPERACIONAL'] = valor
+                    form_registro['OBSERVAÇÃO OPERACIONAL_original'] = valor
                     print(f"  - {db_campo} -> {form_campo}: {valor} (original preservado)")
+                    print(f"  - {db_campo} -> OBSERVAÇÃO OPERACIONAL: {valor} (original preservado)")
+                # Tratamento especial para o campo origem
+                elif db_campo == 'origem':
+                    form_registro[form_campo] = valor
+                    form_registro[f"{form_campo}_original"] = valor
+                    form_registro['ORIGEM'] = valor
+                    form_registro['ORIGEM_original'] = valor
+                    print(f"  - {db_campo} -> {form_campo}: {valor} (original preservado)")
+                    print(f"  - {db_campo} -> ORIGEM: {valor} (original preservado)")
                 else:
                     # Para outros campos, usar o valor como está
                     form_registro[form_campo] = valor
@@ -1174,13 +1188,20 @@ def exibir_formulario_edicao(registro_id):
         
         # Adicionar campos vazios para os campos que não estão no registro
         # Isso é importante para garantir que o template não tente acessar campos que não existem
+        # Usar um espaço em branco em vez de string vazia para evitar campos destacados em amarelo
         for form_campo in set(campo_mapping_form_new.values()) - set(form_registro.keys()):
-            form_registro[form_campo] = ''
+            form_registro[form_campo] = ' '
             
         # Garantir que os campos _original existam para os campos importantes
-        campos_importantes = ['HORÁRIO PREVISTO DE INÍCIO', 'ON TIME (CLIENTE)', 'OBSERVACAO OPERACIONAL', 'OBSERVAÇÃO DE GR']
+        campos_importantes = ['HORÁRIO PREVISTO DE INÍCIO', 'ON TIME (CLIENTE)', 'OBSERVAÇÃO OPERACIONAL', 'OBSERVAÇÃO DE GR', 'ORIGEM']
         for campo in campos_importantes:
-            if campo in form_registro and f"{campo}_original" not in form_registro:
+            # Garantir que o campo principal existe e não é vazio
+            if campo not in form_registro or form_registro[campo] in [None, '']:
+                form_registro[campo] = ' '
+                print(f"  - Adicionado campo {campo} com valor espaço em branco")
+                
+            # Garantir que o campo _original existe
+            if f"{campo}_original" not in form_registro:
                 form_registro[f"{campo}_original"] = form_registro[campo]
                 print(f"  - Adicionado campo {campo}_original com valor: {form_registro[campo]}")
         
