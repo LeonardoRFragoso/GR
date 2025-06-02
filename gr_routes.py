@@ -625,7 +625,7 @@ def registrar_historico(cursor, registro_id, tipo_alteracao, campos, valores=Non
         cursor.execute(f"""
             INSERT INTO {TABLE_HISTORICO} (registro_id, alterado_por, alteracoes, data_alteracao)
             VALUES (?, ?, ?, ?)
-        """, (registro_id, usuario, json.dumps(alteracoes), datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+        """, (registro_id, usuario, json.dumps(alteracoes), datetime.now().strftime('%d-%m-%Y %H:%M:%S')))
         
         # Commit das alterações se a conexão foi fornecida
         if conn:
@@ -1838,7 +1838,7 @@ def historico_registro(registro_id):
             cliente = registro.get('cliente', '')
             numero_sm = registro.get('numero_sm', '')
             numero_ae = registro.get('numero_ae', '')
-            data_registro = registro.get('data_inclusao', '')
+            data_registro = registro.get('data_registro', '')
             data_modificacao = registro.get('data_modificacao', '')
             
             # Verificar se os valores são None e substituir por string vazia
@@ -1851,16 +1851,44 @@ def historico_registro(registro_id):
             # Formatar as datas se estiverem presentes
             if data_registro:
                 try:
-                    data_registro_dt = datetime.strptime(data_registro, '%Y-%m-%d %H:%M:%S')
-                    data_registro = data_registro_dt.strftime('%Y-%m-%d %H:%M:%S')
-                except (ValueError, TypeError):
+                    # Tentar diferentes formatos de data para data_registro
+                    formatos = ['%d-%m-%Y %H:%M:%S', '%Y-%m-%d %H:%M:%S']
+                    data_registro_dt = None
+                    
+                    for formato in formatos:
+                        try:
+                            data_registro_dt = datetime.strptime(data_registro, formato)
+                            break
+                        except ValueError:
+                            continue
+                    
+                    if data_registro_dt:
+                        # Converter para o formato padrão do projeto (DD-MM-YYYY HH:MM:SS)
+                        data_registro = data_registro_dt.strftime('%d-%m-%Y %H:%M:%S')
+                    else:
+                        logger.warning(f"Não foi possível converter data_registro: {data_registro}")
+                except (TypeError):
                     logger.warning(f"Formato de data inválido para data_registro: {data_registro}")
             
             if data_modificacao:
                 try:
-                    data_modificacao_dt = datetime.strptime(data_modificacao, '%Y-%m-%d %H:%M:%S')
-                    data_modificacao = data_modificacao_dt.strftime('%Y-%m-%d %H:%M:%S')
-                except (ValueError, TypeError):
+                    # Tentar diferentes formatos de data para data_modificacao
+                    formatos = ['%d-%m-%Y %H:%M:%S', '%Y-%m-%d %H:%M:%S']
+                    data_modificacao_dt = None
+                    
+                    for formato in formatos:
+                        try:
+                            data_modificacao_dt = datetime.strptime(data_modificacao, formato)
+                            break
+                        except ValueError:
+                            continue
+                    
+                    if data_modificacao_dt:
+                        # Converter para o formato padrão do projeto (DD-MM-YYYY HH:MM:SS)
+                        data_modificacao = data_modificacao_dt.strftime('%d-%m-%Y %H:%M:%S')
+                    else:
+                        logger.warning(f"Não foi possível converter data_modificacao: {data_modificacao}")
+                except (TypeError):
                     logger.warning(f"Formato de data inválido para data_modificacao: {data_modificacao}")
             
             # Criar objeto de informações do registro
@@ -2162,8 +2190,8 @@ def editar_registro(registro_id):
                     sm_atual = registro_db.get(COL_NUMERO_SM, '')
                     ae_atual = registro_db.get(COL_NUMERO_AE, '')
                     
-                    # Registrar a data e hora atual
-                    data_hora_atual = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    # Registrar a data e hora atual no formato padrão do projeto
+                    data_hora_atual = datetime.now().strftime('%d-%m-%Y %H:%M:%S')
                     
                     # Verificar se houve alteração no SM
                     sm_alterado = dados_form[COL_NUMERO_SM] != sm_atual
@@ -2521,4 +2549,3 @@ def api_contadores():
     except Exception as e:
         logger.error(f"Erro ao obter contadores: {e}")
         return jsonify({'error': str(e)}), 500
-

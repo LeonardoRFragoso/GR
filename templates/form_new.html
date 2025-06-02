@@ -355,6 +355,13 @@
               </label>
               <input type="text" name="ORIGEM" class="form-control"
                      value="{% if registro and registro['ORIGEM'] %}{{ registro['ORIGEM'] }}{% endif %}">
+              {% if registro and registro['ORIGEM_original'] %}
+              <div class="mt-1 small text-muted">
+                Valor atual: {{ registro['ORIGEM_original'] }}
+              </div>
+              <input type="hidden" name="ORIGEM_original"
+                     value="{{ registro['ORIGEM_original'] }}">
+              {% endif %}
             </div>
 
             <!-- DESTINO INTERMEDIÁRIO -->

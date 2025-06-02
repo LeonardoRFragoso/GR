@@ -575,7 +575,7 @@
                             {% set eh_registro_alterado = r.get('tem_alteracoes_pos_smae', False) or registro_id in registros_alterados_ids %}
                             <tr data-registro-id="{{ r['id'] }}" class="{% if eh_registro_alterado %}alteracao-pos-smae{% endif %}">
                                 <td class="text-center fw-medium text-primary">{{ r['id'] }}</td>
-                                <td>{{ r['data_registro'] }}</td>
+                                <td>{{ r['data_registro'] or '-' }}</td>
                                 {% if filtro_alteracoes_pos_smae and tem_alteracoes %}
                                 <td class="text-danger fw-medium">{{ r['data_modificacao'] }}</td>
                                 {% else %}
