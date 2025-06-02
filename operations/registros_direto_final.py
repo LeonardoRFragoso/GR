@@ -80,9 +80,7 @@ def processar_edicao_registro_direto(registro_id, custom_request=None):
         'NUMERO SM': 'numero_sm',
         'DT CRIACAO SM': 'data_sm',
         'STATUS SM': 'status_sm',
-        'OBSERVACAO OPERACIONAL': 'observacao_operacional',
-        'OBSERVACAO OPERACIONAL ': 'observacao_operacional',  # Com espaço no final
-        'OBSERVAÇÃO OPERACIONAL': 'observacao_operacional',  # Com acento
+        'observacao_operacional': 'observacao_operacional',
         'OBSERVAÇÃO DE GR': 'observacao_gr',
         'ANEXAR NF': 'anexar_nf',
         'ANEXAR OS': 'anexar_os',
@@ -99,6 +97,11 @@ def processar_edicao_registro_direto(registro_id, custom_request=None):
     for campo, valor in req.form.items():
         if campo != 'csrf_token':
             print(f"  - {campo}: {valor[:30]}{'...' if len(valor) > 30 else ''}")
+            
+    # Log específico para o campo Observação Operacional
+    print("\n=== VERIFICAÇÃO DO CAMPO observacao_operacional NO FORMULÁRIO ===\n")
+    print(f"observacao_operacional: {req.form.get('observacao_operacional', '(não encontrado)')}")
+    print("=== FIM DA VERIFICAÇÃO ===\n")
     
     # Processar os campos usando o mapeamento direto
     for campo_form, valor in req.form.items():
@@ -149,7 +152,18 @@ def processar_edicao_registro_direto(registro_id, custom_request=None):
             if campo_form == 'CPF MOTORISTA':
                 valor_original = valor
                 valor = valor.replace('.', '').replace('-', '').replace(' ', '')
-                print(f"CPF do motorista formatado: {valor_original} -> {valor}")
+                
+                # Garantir que o CPF tenha exatamente 11 dígitos
+                if valor.isdigit():
+                    # Se tiver mais de 11 dígitos, truncar para 11
+                    if len(valor) > 11:
+                        valor = valor[:11]
+                    # Se tiver menos de 11 dígitos, adicionar zeros à esquerda
+                    elif len(valor) < 11:
+                        valor = valor.zfill(11)  # Adiciona zeros à esquerda se necessário para completar 11 dígitos
+                    # Se já tiver exatamente 11 dígitos, manter como está
+                
+                print(f"CPF do motorista formatado: {valor_original} -> {valor} (com exatamente 11 dígitos garantidos)")
                 
             dados_form[campo_db] = valor
             print(f"Campo da seção 'Dados da Operação' processado: {campo_form} -> {campo_db}: {valor}")
@@ -445,6 +459,18 @@ def processar_edicao_registro_direto(registro_id, custom_request=None):
             # Verificar se algum campo importante foi alterado
             campos_alterados = False
             alteracoes = {}
+            
+            # Log específico para o campo observacao_operacional antes da detecção de alterações
+            print("\n=== VERIFICAÇÃO DO CAMPO observacao_operacional ANTES DA DETECÇÃO DE ALTERAÇÕES ===\n")
+            print(f"Valor no banco de dados: '{registro_atual_dict.get('observacao_operacional', '(não encontrado)')}'") 
+            print(f"Valor no formulário: '{dados_form.get('observacao_operacional', '(não encontrado)')}'") 
+            print("=== FIM DA VERIFICAÇÃO ===\n")
+            
+            # Garantir que o campo observacao_operacional exista nos dados do formulário
+            if 'observacao_operacional' not in dados_form:
+                print("Campo observacao_operacional não encontrado nos dados do formulário, inicializando com string vazia")
+                dados_form['observacao_operacional'] = ''
+            
             for campo in campos_importantes:
                 if campo in dados_form and campo in registro_atual_dict:
                     valor_novo = str(dados_form[campo]) if dados_form[campo] is not None else ''
@@ -456,6 +482,11 @@ def processar_edicao_registro_direto(registro_id, custom_request=None):
                             'valor_antigo': valor_antigo,
                             'valor_novo': valor_novo
                         }
+                        
+                    # Log específico para o campo observacao_operacional
+                    if campo == 'observacao_operacional':
+                        print(f"Comparação do campo observacao_operacional: valor_antigo='{valor_antigo}', valor_novo='{valor_novo}', alterado={valor_novo != valor_antigo}")
+
             
             # Verificar explicitamente os campos da seção "Dados da Operação"
             campos_operacao_db = ['motorista', 'cpf', 'placa', 'carreta1', 'carreta2', 'tipo_carga', 'horario_previsto', 'on_time_cliente']

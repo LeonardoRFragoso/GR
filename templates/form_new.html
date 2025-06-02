@@ -619,13 +619,13 @@
           <div class="observations-container">
             <div class="observation-card">
               <label class="form-label">Observação Operacional</label>
-              <textarea name="OBSERVAÇÃO OPERACIONAL" class="form-control" rows="4">{% if registro and registro['OBSERVAÇÃO OPERACIONAL'] %}{{ registro['OBSERVAÇÃO OPERACIONAL'] }}{% endif %}</textarea>
-              {% if registro and registro['OBSERVAÇÃO OPERACIONAL_original'] %}
+              <textarea name="observacao_operacional" class="form-control" rows="4">{{ registro['observacao_operacional']|default('') }}</textarea>
+              {% if registro and registro['observacao_operacional_original'] %}
               <div class="mt-1 small text-muted">
-                Valor atual: {{ registro['OBSERVAÇÃO OPERACIONAL_original'] }}
+                Valor atual: {{ registro['observacao_operacional_original'] }}
               </div>
-              <input type="hidden" name="OBSERVAÇÃO OPERACIONAL_original"
-                     value="{{ registro['OBSERVAÇÃO OPERACIONAL_original'] }}">
+              <input type="hidden" name="observacao_operacional_original"
+                     value="{{ registro['observacao_operacional_original'] }}">
               {% endif %}
             </div>
 
@@ -951,6 +951,20 @@
       if (motoristaSelect && cpfInput) {
         let cpf = motoristaSelect.options[motoristaSelect.selectedIndex].getAttribute('data-cpf') || '';
         cpf = cpf.replace(/[.\-\s]/g, '');
+        
+        // Garantir que o CPF tenha exatamente 11 dígitos
+        if (cpf && /^\d+$/.test(cpf)) {
+          // Se tiver mais de 11 dígitos, truncar para 11
+          if (cpf.length > 11) {
+            cpf = cpf.substring(0, 11);
+          } 
+          // Se tiver menos de 11 dígitos, adicionar zeros à esquerda
+          else if (cpf.length < 11) {
+            cpf = cpf.padStart(11, '0');
+          }
+          // Se já tiver exatamente 11 dígitos, manter como está
+        }
+        
         cpfInput.value = cpf;
         console.log('CPF atualizado:', cpf);
       }

@@ -424,7 +424,16 @@
                     {% endif %}
                     
                     {% if 'cpf' in colunas_visiveis %}
-                    <td>{{ r['cpf'] if r['cpf'] is not none else '' }}</td>
+                    <td>{% if r['cpf'] and r['cpf']|string|replace('.', '')|replace('-', '')|replace(' ', '')|string|regex_match('^\d+$') %}
+                      {% set cpf_limpo = r['cpf']|default('')|replace('.', '')|replace('-', '')|replace(' ', '')|string %}
+                      {% if cpf_limpo|length > 11 %}
+                        {{ cpf_limpo[:11] }}
+                      {% else %}
+                        {{ cpf_limpo|zfill(11) }}
+                      {% endif %}
+                    {% else %}
+                      {{ r['cpf']|default('') }}
+                    {% endif %}</td>
                     {% endif %}
                     
                     {% if 'container_1' in colunas_visiveis %}

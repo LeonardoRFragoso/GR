@@ -62,7 +62,7 @@ def processar_formulario():
         'LOTE CS': 'lote_cs',
         'ON TIME (CLIENTE)': 'on_time_cliente',
         'HORÁRIO PREVISTO DE INÍCIO': 'horario_previsto',
-        'OBSERVACAO OPERACIONAL': 'observacao_operacional',
+        'observacao_operacional': 'observacao_operacional',
         'OBSERVAÇÃO DE GR': 'observacao_gr',
         'DESTINO INTERMEDIÁRIO': 'destino_intermediario',
         'DESTINO FINAL': 'destino_final',

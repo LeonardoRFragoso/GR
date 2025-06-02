@@ -866,9 +866,20 @@ def novo_registro():
             if 'CPF MOTORISTA' in form_data and form_data['CPF MOTORISTA']:
                 # Remover pontos, traços e espaços do CPF
                 cpf_limpo = form_data['CPF MOTORISTA'].replace('.', '').replace('-', '').replace(' ', '')
+                
+                # Garantir que o CPF tenha exatamente 11 dígitos
+                if cpf_limpo.isdigit():
+                    # Se tiver mais de 11 dígitos, truncar para 11
+                    if len(cpf_limpo) > 11:
+                        cpf_limpo = cpf_limpo[:11]
+                    # Se tiver menos de 11 dígitos, adicionar zeros à esquerda
+                    elif len(cpf_limpo) < 11:
+                        cpf_limpo = cpf_limpo.zfill(11)  # Adiciona zeros à esquerda se necessário para completar 11 dígitos
+                    # Se já tiver exatamente 11 dígitos, manter como está
+                
                 db_data['cpf'] = cpf_limpo
                 print(f"Campo CPF MOTORISTA definido explicitamente: {form_data['CPF MOTORISTA']} -> {cpf_limpo} (cpf)")
-                print(f"CPF formatado removendo pontos, traços e espaços")
+                print(f"CPF formatado removendo pontos, traços e espaços e garantindo exatamente 11 dígitos")
             
             # Verificar campos CARRETA 1 e CARRETA 2
             if 'CARRETA 1' in form_data and form_data['CARRETA 1']:
@@ -900,7 +911,7 @@ def novo_registro():
             
             # Garantir que campos importantes estão presentes
             # Adicionar campos de observação
-            db_data['observacao_operacional'] = form_data.get('OBSERVACAO OPERACIONAL', '')
+            db_data['observacao_operacional'] = form_data.get('observacao_operacional', '')
             db_data['observacao_gr'] = form_data.get('OBSERVAÇÃO DE GR', '')
             
             # Garantir que o campo unidade está presente
@@ -1131,7 +1142,7 @@ def novo_registro():
                         'arquivo_nf_nome': 'arquivo_nf_nome',
                         'arquivo_os_nome': 'arquivo_os_nome',
                         'arquivo_agendamento_nome': 'arquivo_agendamento_nome',
-                        'observacao_operacional': 'OBSERVACAO OPERACIONAL',
+                        'observacao_operacional': 'observacao_operacional',
                         'observacao_gr': 'OBSERVAÇÃO DE GR'
                     }
                     
@@ -1670,11 +1681,9 @@ def editar_registro_comum(registro_id):
                 
                 # Adicionar Observação Operacional ao formulário, mesmo que seja None ou vazio
                 obs_op_valor = resultado[2] if resultado[2] not in [None, ''] else ' '
-                # Adicionar tanto com quanto sem acento para garantir compatibilidade
-                form_data['OBSERVAÇÃO OPERACIONAL'] = obs_op_valor
-                form_data['OBSERVACAO OPERACIONAL'] = obs_op_valor
-                form_data['OBSERVACAO OPERACIONAL '] = obs_op_valor
-                print(f"Adicionando OBSERVAÇÃO OPERACIONAL ao formulário: {obs_op_valor}")
+                # Usar apenas o nome padronizado observacao_operacional
+                form_data['observacao_operacional'] = obs_op_valor
+                print(f"Adicionando observacao_operacional ao formulário: {obs_op_valor}")
                     
                 # Verificar se há campos com espaços extras no formulário e normalizá-los
                 campos_normalizados = {}

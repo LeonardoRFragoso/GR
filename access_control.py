@@ -10,21 +10,21 @@ CAMPOS_POR_NIVEL = {
         'CONTAINER 1', 'CONTAINER 2', 'TIPO DE CARGA', 'STATUS CONTAINER', 'MODALIDADE',
         'DESTINO INTERMEDIÁRIO', 'DESTINO FINAL', 'HORÁRIO PREVISTO DE INÍCIO', 'ON TIME (CLIENTE)',
         'PEDIDO/REFERÊNCIA', 'BOOKING / DI', 'LOTE CS', 'Nº NF', 'SÉRIE', 'QUANTIDADE', 
-        'PESO BRUTO', 'VALOR TOTAL DA NOTA', 'OBSERVACAO OPERACIONAL',
+        'PESO BRUTO', 'VALOR TOTAL DA NOTA', 'observacao_operacional',
         'OBSERVAÇÃO DE GR', 'NUMERO SM', 'NÚMERO AE', 'DATA SM', 'DATA AE', 'STATUS SM',
         'SLA SM', 'SLA AE', 'GERENCIADORA', 'ANEXAR NF', 'ANEXAR OS', 'ANEXAR AGENDAMENTO'
     ],
     'gr': [
         'CLIENTE', 'PEDIDO/REFERÊNCIA', 'BOOKING / DI', 'CONTAINER 1', 'CONTAINER 2', 
         'LOTE CS', 'ORIGEM', 'DESTINO INTERMEDIÁRIO', 'DESTINO FINAL', 'ON TIME (CLIENTE)', 
-        'HORÁRIO PREVISTO DE INÍCIO', 'OBSERVACAO OPERACIONAL', 'NUMERO SM', 'NÚMERO AE',
+        'HORÁRIO PREVISTO DE INÍCIO', 'observacao_operacional', 'NUMERO SM', 'NÚMERO AE',
         'STATUS CONTAINER', 'MODALIDADE', 'MOTORISTA', 'CPF MOTORISTA', 'CAVALO 1', 'CARRETA 1', 'CARRETA 2',
         'TIPO DE CARGA', 'DATA AE', 'DATA SM', 'OBSERVAÇÃO DE GR', 'SLA SM', 'SLA AE', 'STATUS SM', 'GERENCIADORA'
     ],
     'comum': [
         'CLIENTE', 'PEDIDO/REFERÊNCIA', 'BOOKING / DI', 'CONTAINER 1', 'CONTAINER 2', 
         'LOTE CS', 'ORIGEM', 'DESTINO INTERMEDIÁRIO', 'DESTINO FINAL', 'ON TIME (CLIENTE)', 
-        'HORÁRIO PREVISTO DE INÍCIO', 'OBSERVACAO OPERACIONAL', 'NUMERO SM', 'NÚMERO AE',
+        'HORÁRIO PREVISTO DE INÍCIO', 'observacao_operacional', 'NUMERO SM', 'NÚMERO AE',
         'STATUS CONTAINER', 'MODALIDADE'
     ]
 }
@@ -42,7 +42,7 @@ CAMPOS_SOMENTE_LEITURA = {
     'gr': [
         'CLIENTE', 'PEDIDO/REFERÊNCIA', 'BOOKING / DI', 'CONTAINER 1', 'CONTAINER 2', 
         'LOTE CS', 'ORIGEM', 'DESTINO INTERMEDIÁRIO', 'DESTINO FINAL', 'ON TIME (CLIENTE)', 
-        'HORÁRIO PREVISTO DE INÍCIO', 'OBSERVACAO OPERACIONAL', 'MOTORISTA', 'CPF MOTORISTA',
+        'HORÁRIO PREVISTO DE INÍCIO', 'observacao_operacional', 'MOTORISTA', 'CPF MOTORISTA',
         'STATUS CONTAINER', 'TIPO DE CARGA', 'MODALIDADE', 'Nº NF', 'SÉRIE', 'QUANTIDADE',
         'PESO BRUTO', 'VALOR TOTAL DA NOTA', 'ANEXAR NF', 'ANEXAR OS', 'ANEXAR AGENDAMENTO'
     ],
@@ -96,7 +96,7 @@ CAMPO_MAPPING = {
     'anexar_nf': 'ANEXAR NF',
     'anexar_os': 'ANEXAR OS',
     'anexar_agendamento': 'ANEXAR AGENDAMENTO',
-    'observacao_operacional': 'OBSERVAÇÃO OPERACIONAL',
+    'observacao_operacional': 'observacao_operacional',
     'observacao_gr': 'OBSERVAÇÃO DE GR',
     'numero_sm': 'NUMERO SM',
     'numero_ae': 'NÚMERO AE',
@@ -154,7 +154,7 @@ CAMPOS_SECAO = {
         'CONTAINER 1', 'CONTAINER 2', 'STATUS CONTAINER', 'MODALIDADE',
         'ORIGEM', 'DESTINO INTERMEDIÁRIO', 'DESTINO FINAL', 'LOTE CS'
     ],
-    'observacoes': ['OBSERVAÇÃO OPERACIONAL'],
+    'observacoes': ['observacao_operacional'],
     'documentos': ['ANEXAR NF', 'ANEXAR OS', 'ANEXAR AGENDAMENTO'],
     'gr': [
         'NUMERO SM', 'DATA SM', 'STATUS SM', 'NÚMERO AE', 'DATA AE', 
@@ -244,3 +244,4 @@ def get_secoes_visiveis(nivel):
         Lista de seções visíveis
     """
     return SECOES_VISIVEIS.get(nivel, SECOES_VISIVEIS['comum'])
+

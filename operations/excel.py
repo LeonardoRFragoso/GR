@@ -43,7 +43,7 @@ class ExcelProcessor:
             'DESTINO FINAL': 'text',
             'ON TIME (CLIENTE)': 'datetime',
             'HORÁRIO PREVISTO DE INÍCIO': 'datetime',
-            'OBSERVACAO OPERACIONAL': 'text',
+            'observacao_operacional': 'text',
             'NÚMERO AE': 'text',
             'DT CRIACAO AE': 'date',
             'NUMERO SM': 'text',
@@ -193,8 +193,18 @@ class ExcelProcessor:
                         # Remover pontos, traços e espaços do CPF
                         cpf = cpf.replace('.', '').replace('-', '').replace(' ', '')
                         
-                        if motorista and cpf:
-                            motorista_cpf_map[motorista] = cpf
+                        # Garantir que o CPF tenha exatamente 11 dígitos
+                        if cpf.isdigit():
+                            # Se tiver mais de 11 dígitos, truncar para 11
+                            if len(cpf) > 11:
+                                cpf = cpf[:11]
+                            # Se tiver menos de 11 dígitos, adicionar zeros à esquerda
+                            elif len(cpf) < 11:
+                                cpf = cpf.zfill(11)  # Adiciona zeros à esquerda se necessário para completar 11 dígitos
+                            # Se já tiver exatamente 11 dígitos, manter como está
+                            
+                            if motorista and cpf:
+                                motorista_cpf_map[motorista] = cpf
                     
                     self.MOTORISTA_CPF_MAP = motorista_cpf_map
                     print(f"Mapeamento MOTORISTA -> CPF criado com {len(motorista_cpf_map)} entradas")
@@ -233,7 +243,7 @@ class ExcelProcessor:
         campos_digitaveis = [
             'CLIENTE', 'PEDIDO/REFERÊNCIA', 'BOOKING / DI', 'CONTAINER 1', 'CONTAINER 2', 
             'LOTE CS', 'ORIGEM', 'DESTINO INTERMEDIÁRIO', 'DESTINO FINAL', 'ON TIME (CLIENTE)', 
-            'HORÁRIO PREVISTO DE INÍCIO', 'OBSERVACAO OPERACIONAL', 'NÚMERO AE', 
+            'HORÁRIO PREVISTO DE INÍCIO', 'observacao_operacional', 'NÚMERO AE', 
             'DT CRIACAO AE', 'NUMERO SM', 'DT CRIACAO SM', 'OBSERVAÇÃO DE GR'
         ]
         
@@ -264,7 +274,7 @@ class ExcelProcessor:
             'DESTINO FINAL': 'text',
             'ON TIME (CLIENTE)': 'datetime',
             'HORÁRIO PREVISTO DE INÍCIO': 'datetime',
-            'OBSERVACAO OPERACIONAL': 'text',
+            'observacao_operacional': 'text',
             'NÚMERO AE': 'text',
             'DT CRIACAO AE': 'date',
             'NUMERO SM': 'text',
@@ -305,7 +315,7 @@ class ExcelProcessor:
             'DESTINO FINAL': 'DESTINO FINAL',
             'ON TIME (CLIENTE)': 'ON TIME (CLIENTE)',
             'HORÁRIO PREVISTO DE INÍCIO': 'HORÁRIO PREVISTO DE INÍCIO',
-            'OBSERVACAO OPERACIONAL': 'OBSERVACAO OPERACIONAL ',
+            'observacao_operacional': 'observacao_operacional',
             'NÚMERO AE': 'NÚMERO AE',
             'DT CRIACAO AE': 'DT CRIACAO AE',
             'NUMERO SM': 'NUMERO SM',
@@ -325,3 +335,4 @@ class ExcelProcessor:
 
 # Criar uma instância da classe ExcelProcessor para ser importada por outros módulos
 excel_processor = ExcelProcessor()
+

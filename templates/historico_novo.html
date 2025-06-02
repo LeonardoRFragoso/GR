@@ -297,7 +297,16 @@
           <!-- CPF Motorista -->
           <div class="form-item">
             <label class="form-label">CPF MOTORISTA</label>
-            <input type="text" class="form-control" value="{{ registro.cpf }}" disabled>
+            <input type="text" class="form-control" value="{% if registro.cpf and registro.cpf|string|replace('.', '')|replace('-', '')|replace(' ', '')|string|regex_match('^\d+$') %}
+              {% set cpf_limpo = registro.cpf|default('')|replace('.', '')|replace('-', '')|replace(' ', '')|string %}
+              {% if cpf_limpo|length > 11 %}
+                {{ cpf_limpo[:11] }}
+              {% else %}
+                {{ cpf_limpo|zfill(11) }}
+              {% endif %}
+            {% else %}
+              {{ registro.cpf|default('') }}
+            {% endif %}" disabled>
           </div>
           
           <!-- Cavalo 1 -->

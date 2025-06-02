@@ -250,8 +250,23 @@ def processar_edicao_registro(registro_id):
                     valor = converter_formato_data(valor)
                     print(f"Convertendo formato de data para {campo_db}: '{valor}'")
                 
+                # Processar CPF do motorista para garantir exatamente 11 dígitos
+                if campo_db == 'cpf' and valor:
+                    valor_original = valor
+                    valor = valor.replace('.', '').replace('-', '').replace(' ', '')
+                    if valor.isdigit():
+                        # Se tiver mais de 11 dígitos, truncar para 11
+                        if len(valor) > 11:
+                            valor = valor[:11]
+                        # Se tiver menos de 11 dígitos, adicionar zeros à esquerda
+                        elif len(valor) < 11:
+                            valor = valor.zfill(11)  # Adiciona zeros à esquerda se necessário para completar 11 dígitos
+                        # Se já tiver exatamente 11 dígitos, manter como está
+                    print(f"CPF do motorista formatado: {valor_original} -> {valor} (com exatamente 11 dígitos garantidos)")
+                
                 dados_form[campo_db] = valor
                 print(f"Campo {campo} -> {campo_db} = '{valor}'")
+
             else:
                 print(f"Aviso: Campo {campo} não tem mapeamento para o banco de dados")
     
@@ -857,6 +872,8 @@ def exibir_formulario_edicao(registro_id):
         'horario_previsto': 'HORÁRIO PREVISTO DE INÍCIO',
         'on_time_cliente': 'ON TIME (CLIENTE)',
         'data_registro': 'DATA',
+        # Observações
+        'observacao_operacional': 'observacao_operacional',
         # Anexos - NF
         'anexar_nf': 'ANEXAR NF',
         'arquivo_nf_nome': 'arquivo_nf_nome',
@@ -1093,7 +1110,7 @@ def exibir_formulario_edicao(registro_id):
             'anexar_nf': 'ANEXAR NF',
             'anexar_os': 'ANEXAR OS',
             'anexar_agendamento': 'ANEXAR AGENDAMENTO',
-            'observacao_operacional': 'OBSERVAÇÃO OPERACIONAL',
+            'observacao_operacional': 'observacao_operacional',
             'observacao_gr': 'OBSERVAÇÃO DE GR',
             'origem': 'ORIGEM'
         }
@@ -1159,12 +1176,9 @@ def exibir_formulario_edicao(registro_id):
                 
                 # Tratamento especial para o campo observacao_operacional
                 elif db_campo == 'observacao_operacional':
-                    form_registro[form_campo] = valor
-                    form_registro[f"{form_campo}_original"] = valor
-                    form_registro['OBSERVAÇÃO OPERACIONAL'] = valor
-                    form_registro['OBSERVAÇÃO OPERACIONAL_original'] = valor
-                    print(f"  - {db_campo} -> {form_campo}: {valor} (original preservado)")
-                    print(f"  - {db_campo} -> OBSERVAÇÃO OPERACIONAL: {valor} (original preservado)")
+                    form_registro['observacao_operacional'] = valor
+                    form_registro['observacao_operacional_original'] = valor
+                    print(f"  - {db_campo} -> observacao_operacional: {valor} (original preservado)")
                 # Tratamento especial para o campo origem
                 elif db_campo == 'origem':
                     form_registro[form_campo] = valor
@@ -1193,7 +1207,7 @@ def exibir_formulario_edicao(registro_id):
             form_registro[form_campo] = ' '
             
         # Garantir que os campos _original existam para os campos importantes
-        campos_importantes = ['HORÁRIO PREVISTO DE INÍCIO', 'ON TIME (CLIENTE)', 'OBSERVAÇÃO OPERACIONAL', 'OBSERVAÇÃO DE GR', 'ORIGEM']
+        campos_importantes = ['HORÁRIO PREVISTO DE INÍCIO', 'ON TIME (CLIENTE)', 'observacao_operacional', 'OBSERVAÇÃO DE GR', 'ORIGEM']
         for campo in campos_importantes:
             # Garantir que o campo principal existe e não é vazio
             if campo not in form_registro or form_registro[campo] in [None, '']:
@@ -1204,6 +1218,21 @@ def exibir_formulario_edicao(registro_id):
             if f"{campo}_original" not in form_registro:
                 form_registro[f"{campo}_original"] = form_registro[campo]
                 print(f"  - Adicionado campo {campo}_original com valor: {form_registro[campo]}")
+        
+        # Log específico para o campo observacao_operacional
+        print("\n=== VERIFICAÇÃO ESPECÍFICA DO CAMPO observacao_operacional ===\n")
+        print(f"Valor no banco de dados: {registro.get('observacao_operacional', '(não encontrado)')}")
+        print(f"Valor no form_registro['observacao_operacional']: {form_registro.get('observacao_operacional', '(não encontrado)')}")
+        
+        # Garantir explicitamente que o campo observacao_operacional existe e tem um valor
+        if 'observacao_operacional' not in form_registro or not form_registro['observacao_operacional'] or form_registro['observacao_operacional'] == ' ':
+            form_registro['observacao_operacional'] = ''
+            form_registro['observacao_operacional_original'] = ''
+            print("Inicializado campo observacao_operacional com string vazia")
+        
+        # Verificar novamente após a inicialização
+        print(f"Valor final no form_registro['observacao_operacional']: {form_registro.get('observacao_operacional', '(não encontrado)')}")
+        print("=== FIM DA VERIFICAÇÃO ESPECÍFICA ===")
         
         # Adicionar informações de anexos
         if registro.get('anexar_nf'):
@@ -1225,7 +1254,7 @@ def exibir_formulario_edicao(registro_id):
         # Adicionar log para verificar os valores dos campos importantes
         campos_verificar = ['HORÁRIO PREVISTO DE INÍCIO', 'HORÁRIO PREVISTO DE INÍCIO_original', 
                            'ON TIME (CLIENTE)', 'ON TIME (CLIENTE)_original',
-                           'OBSERVACAO OPERACIONAL', 'OBSERVACAO OPERACIONAL_original',
+                           'observacao_operacional', 'observacao_operacional_original',
                            'OBSERVAÇÃO DE GR', 'OBSERVAÇÃO DE GR_original']
         print("\nVerificando valores dos campos importantes:")
         for campo in campos_verificar:
