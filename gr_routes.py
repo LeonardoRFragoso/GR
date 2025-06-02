@@ -2146,14 +2146,34 @@ def editar_registro(registro_id):
             form_registro = {'id': registro_id}
             
             # Preencher o dicionário form_registro com os valores do banco
+            logger.debug(f"Campos importantes no registro_db: placa={registro_db.get('placa')}, data_registro={registro_db.get('data_registro')}")
+            logger.debug(f"Todos os campos no registro_db: {list(registro_db.keys())}")
+            
             for db_campo, valor in registro_db.items():
                 form_campo = mapear_db_para_campo(db_campo)
+                logger.debug(f"Mapeamento: {db_campo} -> {form_campo} = {valor}")
+                
                 if form_campo and valor is not None:
                     form_registro[form_campo] = valor
+                    if db_campo in ['placa', 'data_registro']:
+                        logger.info(f"Campo importante mapeado: {db_campo} -> {form_campo} = {valor}")
                 else:
                     # Se não houver mapeamento, usar o nome original do campo
                     form_registro[db_campo] = valor
+                    if db_campo in ['placa', 'data_registro']:
+                        logger.info(f"Campo importante sem mapeamento: {db_campo} = {valor}")
             
+            # Garantir que o campo CAVALO seja preenchido a partir da placa
+            if 'placa' in registro_db and registro_db['placa'] is not None:
+                form_registro['CAVALO'] = registro_db['placa']  # Versão maiúscula para compatibilidade
+                form_registro['cavalo'] = registro_db['placa']  # Versão minúscula para o template
+                logger.info(f"Campo CAVALO/cavalo preenchido com valor da placa: {registro_db['placa']}")
+                
+            # Garantir que o campo data_registro seja preenchido corretamente
+            if 'data_registro' in registro_db and registro_db['data_registro'] is not None:
+                form_registro['data_registro'] = registro_db['data_registro']
+                logger.info(f"Campo data_registro preenchido: {registro_db['data_registro']}")
+                
             if request.method == 'POST':
                 # Obter dados do formulário
                 dados_form = {
