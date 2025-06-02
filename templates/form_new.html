@@ -9,134 +9,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-  <!-- Script para validação de campos obrigatórios e preenchimento automático -->
-  <script>
-    $(document).ready(function() {
-      // Verificar se estamos no modo de visualização
-      {% if modo_visualizacao %}
-        console.log('Modo de visualização ativado - desabilitando todos os campos');
-        // Desabilitar todos os campos de entrada
-        $('input, textarea, select').prop('disabled', true);
-        // Ocultar botões de upload e substituição de arquivos
-        $('.file-upload-area, .btn-outline-secondary').hide();
-        // Ocultar botões de envio e salvar
-        $('#submitButton').hide();
-        // Alterar o texto do botão Cancelar para Voltar
-        $('.btn-secondary').html('<i class="fas fa-arrow-left me-2"></i> Voltar');
-      {% endif %}
-      
-      // Preencher campos com valores do registro (se existir)
-      {% if registro %}
-        console.log('Preenchendo formulário com valores do registro:', {{ registro|tojson }});
-        
-        // Preencher campos de texto
-        {% for campo, valor in registro.items() %}
-          {% if valor is not none and valor != '' %}
-            const elemento = $('input[name="{{ campo }}"], textarea[name="{{ campo }}"]').not('input[type="file"]');
-            if (elemento.length > 0) {
-              console.log('Preenchendo campo {{ campo }} com valor: {{ valor }}');
-              elemento.val('{{ valor }}');
-            }
-          {% endif %}
-        {% endfor %}
-        
-        // Selecionar opções em selects
-        {% for campo, valor in registro.items() %}
-          {% if valor is not none and valor != '' %}
-            const select = $('select[name="{{ campo }}"]');
-            if (select.length > 0) {
-              console.log('Selecionando opção {{ valor }} no select {{ campo }}');
-              select.val('{{ valor }}');
-              
-              // Atualizar CPF do motorista se necessário
-              if ('{{ campo }}' === 'MOTORISTA') {
-                atualizarCpfMotorista();
-              }
-              
-              // Habilitar CARRETA 2 se CARRETA 1 estiver preenchida
-              if ('{{ campo }}' === 'CARRETA 1') {
-                verificarCarreta2();
-              }
-            }
-          {% endif %}
-        {% endfor %}
-      {% endif %}
-      
-      // Validar campos obrigatórios ao enviar o formulário
-      $('form').on('submit', function(e) {
-        let formValido = true;
-        let primeiroInvalido = null;
-
-        // Verificar todos os campos com a classe 'required'
-        $('.required').each(function() {
-          const label = $(this).closest('label');
-          const fieldName = label.text().trim().replace('*', '').trim();
-          const inputField = label.closest('.form-item').find('input, select, textarea');
-
-          if (!inputField.val()) {
-            formValido = false;
-            inputField.addClass('is-invalid');
-
-            // Destacar o campo com borda vermelha
-            if (inputField.is('select')) {
-              inputField.closest('.select-wrapper').addClass('invalid-select');
-            }
-
-            // Armazenar o primeiro campo inválido para focar nele
-            if (!primeiroInvalido) {
-              primeiroInvalido = inputField;
-            }
-          } else {
-            inputField.removeClass('is-invalid');
-            if (inputField.is('select')) {
-              inputField.closest('.select-wrapper').removeClass('invalid-select');
-            }
-          }
-        });
-
-        if (!formValido) {
-          e.preventDefault();
-
-          // Mostrar alerta de campos obrigatórios
-          $('#alertaCamposObrigatorios').fadeIn();
-
-          // Focar no primeiro campo inválido
-          if (primeiroInvalido) {
-            primeiroInvalido.focus();
-
-            // Rolar para o primeiro campo inválido
-            $('html, body').animate({
-              scrollTop: primeiroInvalido.offset().top - 100
-            }, 500);
-          }
-
-          // Esconder o alerta após 5 segundos
-          setTimeout(function() {
-            $('#alertaCamposObrigatorios').fadeOut();
-          }, 5000);
-        } else {
-          // Mostrar indicador de carregamento
-          $('#loadingIndicator').show();
-          $('#submitButton').prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...');
-        }
-      });
-
-      // Remover destaque de erro quando o campo for preenchido
-      $('input, select, textarea').on('change keyup', function() {
-        if ($(this).val()) {
-          $(this).removeClass('is-invalid');
-          if ($(this).is('select')) {
-            $(this).closest('.select-wrapper').removeClass('invalid-select');
-          }
-        }
-      });
-    });
-  </script>
-
   <style>
     body {
       background-color: #f8f9fa;
@@ -213,10 +85,6 @@
     .select-wrapper {
       position: relative;
     }
-    /* Removido o pseudo-elemento ::after que adicionava uma seta extra */
-    .select-wrapper select {
-      /* Mantemos o estilo do select, mas sem alterar a aparência padrão do Bootstrap */
-    }
     textarea {
       resize: vertical;
       min-height: 100px;
@@ -231,7 +99,7 @@
       grid-template-columns: 1fr 1fr;
       gap: 16px;
     }
-    .upload-area {
+    .file-upload-area {
       border: 2px dashed #ddd;
       border-radius: 5px;
       padding: 20px;
@@ -244,27 +112,27 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      margin-bottom: 15px;
     }
-    .upload-area:hover, .upload-area.dragover {
+    .file-upload-area:hover,
+    .file-upload-area.dragover {
       border-color: #007bff;
       background-color: #e9f2ff;
     }
-    .upload-placeholder {
-      color: #6c757d;
-      font-size: 14px;
-    }
-    .upload-placeholder i {
-      font-size: 20px;
-      margin-bottom: 8px;
-      display: block;
+    .file-upload-area.has-file {
+      border-color: #28a745;
+      background-color: #f8fff8;
     }
     .file-name {
       margin-top: 10px;
       font-size: 12px;
       word-break: break-all;
+      color: #28a745;
+      font-weight: 500;
     }
     @media (max-width: 768px) {
-      .form-grid, .file-upload-container {
+      .form-grid,
+      .file-upload-container {
         grid-template-columns: 1fr;
       }
     }
@@ -285,497 +153,505 @@
       transform: translateY(-2px);
       box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     }
-    .text-purple {
-      color: #6f42c1;
-    }
-    
-    /* Estilos para a u00e1rea de drag-and-drop */
-    .file-upload-area {
-      border: 2px dashed #ccc;
-      border-radius: 5px;
-      padding: 20px;
-      text-align: center;
-      background-color: #f8f9fa;
-      transition: all 0.3s ease;
-      margin-bottom: 15px;
-      cursor: pointer;
-      position: relative;
-    }
-    
-    .file-upload-area:hover {
-      border-color: #6c757d;
-      background-color: #f1f3f5;
-    }
-    
-    .file-upload-area.dragover {
-      border-color: #007bff;
-      background-color: #e9f2ff;
-    }
-    
-    .file-upload-area.has-file {
-      border-color: #28a745;
-      background-color: #f8fff8;
-    }
-    
-    .file-upload-area .file-name {
-      margin-top: 10px;
-      font-size: 13px;
-      color: #28a745;
-      font-weight: 500;
-      word-break: break-all;
-    }
   </style>
-  <!-- Script de validação do horário previsto -->
-  <script src="{{ url_for('static', filename='js/validacao_horario_previsto.js') }}"></script>
 </head>
 <body>
-<nav class="navbar">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="#">
-      <img src="{{ url_for('static', filename='assets/itracker_logo.png') }}" alt="Logo iTracker">
-      <span class="navbar-title">Novo Registro</span>
-    </a>
-    <a href="{% if session['nivel'] == 'gr' %}{{ url_for('gr.ambiente') }}{% else %}{{ url_for('comum.dashboard_comum') }}{% endif %}" class="btn btn-outline-primary btn-sm">
-      <i class="fas fa-arrow-left"></i> Voltar
-    </a>
-  </div>
-</nav>
 
-<div class="container mt-4 mb-4">
-  <!-- Alerta para campos obrigatu00f3rios -->
-  <div id="alertaCamposObrigatorios" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
-    <strong><i class="fas fa-exclamation-triangle"></i> Atenção!</strong> Por favor, preencha todos os campos obrigatórios marcados com <span class="required">*</span>.
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-  </div>
-
-  {% block form_action %}
-  <form action="{{ url_for('comum.novo_registro') }}" method="post" enctype="multipart/form-data" autocomplete="off">
-  {% endblock %}
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-    
-    <!-- SEÇÃO 1: Dados da Unidade -->
-    <div class="form-section">
-      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #0d6efd;">
-        <i class="fas fa-building text-primary"></i>
-        <h5>Dados da Unidade</h5>
-      </div>
-      <div class="form-section-body">
-        <div class="form-grid">
-          <!-- Unidade -->
-          <div class="form-item">
-            <label class="form-label">
-              UNIDADE{% if 'UNIDADE' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['UNIDADE']|default('Texto') }}</span>
-            </label>
-            <div class="select-wrapper">
-              <select name="UNIDADE" class="form-select">
-                <option value="">Selecione</option>
-                <option value="Rio de Janeiro" {% if registro and 'UNIDADE' in registro and registro['UNIDADE'] == 'Rio de Janeiro' %}selected{% endif %}>RIO DE JANEIRO</option>
-                <option value="Floriano" {% if registro and 'UNIDADE' in registro and registro['UNIDADE'] == 'Floriano' %}selected{% endif %}>FLORIANO</option>
-                <option value="Suzano" {% if registro and 'UNIDADE' in registro and registro['UNIDADE'] == 'Suzano' %}selected{% endif %}>SUZANO</option>
-              </select>
-            </div>
-          </div>
-          
-          <!-- Requisitante -->
-          <div class="form-item">
-            <label class="form-label">
-              Requisitante{% if 'Requisitante' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['Requisitante']|default('Texto') }}</span>
-            </label>
-            <input type="text" name="Requisitante" class="form-control" value="{{ usuario }}" readonly>
-          </div>
-          
-          <!-- O campo DATA foi removido do frontend conforme solicitado -->
-          <input type="hidden" name="DATA" value="{% if 'DATA' in valores %}{{ valores.DATA }}{% endif %}">
-        </div>
-      </div>
+  <nav class="navbar">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">
+        <img src="{{ url_for('static', filename='assets/itracker_logo.png') }}" alt="Logo iTracker">
+        <span class="navbar-title">Novo Registro</span>
+      </a>
+      <a href="{% if session['nivel'] == 'gr' %}{{ url_for('gr.ambiente') }}{% else %}{{ url_for('comum.dashboard_comum') }}{% endif %}"
+         class="btn btn-outline-primary btn-sm">
+        <i class="fas fa-arrow-left"></i> Voltar
+      </a>
     </div>
-    
-    <!-- SEÇÃO 2: Dados do Cliente -->
-    <div class="form-section">
-      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #28a745;">
-        <i class="fas fa-user-tie text-success"></i>
-        <h5>Dados do Cliente</h5>
-      </div>
-      <div class="form-section-body">
-        <div class="form-grid">
-          {% macro campo_texto(campo, label, placeholder='', valor=None, tipo='text') %}
-<div class="mb-3">
-  <label for="{{ campo }}" class="form-label">
-    {{ label }}{% if campo in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-    <span class="data-type-hint">{{ tipos[campo]|default('Texto') }}</span>
-  </label>
-  <input type="{{ tipo }}" class="form-control" name="{{ campo }}" id="{{ campo }}" placeholder="{{ placeholder }}" {% if campo in CAMPOS_OBRIGATORIOS %}required{% endif %} {% if valor %}value="{{ valor }}"{% endif %} {% if modo_visualizacao %}readonly disabled{% endif %}>
-</div>
-{% endmacro %}        
-          <!-- CLIENTE -->
-          <div class="form-item">
-            <label class="form-label">
-              CLIENTE{% if 'CLIENTE' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['CLIENTE']|default('Texto') }}</span>
-            </label>
-            <input type="text" name="CLIENTE" class="form-control" value="{% if registro and 'CLIENTE' in registro %}{{ registro['CLIENTE'] }}{% endif %}">
-          </div>
-          
-          <!-- MODALIDADE -->
-          <div class="form-item">
-            <label class="form-label">
-              MODALIDADE{% if 'MODALIDADE' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['MODALIDADE']|default('Texto') }}</span>
-            </label>
-            <div class="select-wrapper">
-              <select name="MODALIDADE" id="modalidade-select" class="form-select" onchange="verificarModalidade()">
-                <option value="">Selecione</option>
-                {% for modalidade in COMBOBOX_OPTIONS.get('MODALIDADE', []) %}
-                  <option value="{{ modalidade }}" {% if registro and 'MODALIDADE' in registro and registro['MODALIDADE'] == modalidade %}selected{% endif %}>{{ modalidade }}</option>
-                {% endfor %}
-                <option value="Manutenção" {% if registro and 'MODALIDADE' in registro and registro['MODALIDADE'] == 'Manutenção' %}selected{% endif %}>MANUTENÇÃO</option>
-              </select>
+  </nav>
+
+  <div class="container mt-4 mb-4">
+    <!-- Alerta para campos obrigatórios -->
+    <div id="alertaCamposObrigatorios" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;">
+      <strong><i class="fas fa-exclamation-triangle"></i> Atenção!</strong> Por favor, preencha todos os campos obrigatórios marcados com <span class="required">*</span>.
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    {% block form_action %}
+    <form action="{{ url_for('comum.novo_registro') }}" method="post" enctype="multipart/form-data" autocomplete="off">
+    {% endblock %}
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <!-- SEÇÃO 1: Dados da Unidade -->
+      <div class="form-section">
+        <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #0d6efd;">
+          <i class="fas fa-building text-primary"></i>
+          <h5>Dados da Unidade</h5>
+        </div>
+        <div class="form-section-body">
+          <div class="form-grid">
+            <!-- UNIDADE -->
+            <div class="form-item">
+              <label class="form-label">
+                UNIDADE{% if 'UNIDADE' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['UNIDADE']|default('Texto') }}</span>
+              </label>
+              <div class="select-wrapper">
+                <select name="UNIDADE" class="form-select">
+                  <option value="">Selecione</option>
+                  <option value="Rio de Janeiro" {% if registro and registro['UNIDADE'] == 'Rio de Janeiro' %}selected{% endif %}>
+                    RIO DE JANEIRO
+                  </option>
+                  <option value="Floriano" {% if registro and registro['UNIDADE'] == 'Floriano' %}selected{% endif %}>
+                    FLORIANO
+                  </option>
+                  <option value="Suzano" {% if registro and registro['UNIDADE'] == 'Suzano' %}selected{% endif %}>
+                    SUZANO
+                  </option>
+                </select>
+              </div>
             </div>
-          </div>
-          
-          <!-- PEDIDO/REFERÊNCIA -->
-          <div class="form-item">
-            <label class="form-label">
-              PEDIDO/REFERÊNCIA{% if 'PEDIDO/REFERÊNCIA' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['PEDIDO/REFERÊNCIA']|default('Texto') }}</span>
-            </label>
-            <input type="text" name="PEDIDO/REFERÊNCIA" class="form-control" value="{% if registro and 'PEDIDO/REFERÊNCIA' in registro %}{{ registro['PEDIDO/REFERÊNCIA'] }}{% endif %}">
-          </div>
-          
-          <!-- BOOKING / DI -->
-          <div class="form-item">
-            <label class="form-label">
-              BOOKING / DI{% if 'BOOKING / DI' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['BOOKING / DI']|default('Texto') }}</span>
-            </label>
-            <input type="text" name="BOOKING / DI" class="form-control" value="{% if registro and 'BOOKING / DI' in registro %}{{ registro['BOOKING / DI'] }}{% endif %}">
-          </div>
-          
-          <!-- CONTAINER 1 -->
-          <div class="form-item">
-            <label class="form-label">
-              CONTAINER 1{% if 'CONTAINER 1' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['CONTAINER 1']|default('Texto') }}</span>
-            </label>
-            <input type="text" name="CONTAINER 1" class="form-control" value="{% if registro and 'CONTAINER 1' in registro %}{{ registro['CONTAINER 1'] }}{% endif %}">
-          </div>
-          
-          <!-- CONTAINER 2 -->
-          <div class="form-item">
-            <label class="form-label">
-              CONTAINER 2{% if 'CONTAINER 2' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['CONTAINER 2']|default('Texto') }}</span>
-            </label>
-            <input type="text" name="CONTAINER 2" class="form-control" value="{% if registro and 'CONTAINER 2' in registro %}{{ registro['CONTAINER 2'] }}{% endif %}">
-          </div>
-          
-          <!-- LOTE CS -->
-          <div class="form-item">
-            <label class="form-label">
-              LOTE CS{% if 'LOTE CS' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['LOTE CS']|default('Texto') }}</span>
-            </label>
-            <input type="text" name="LOTE CS" class="form-control" value="{% if registro and 'LOTE CS' in registro %}{{ registro['LOTE CS'] }}{% endif %}">
-          </div>
-          
-          <!-- STATUS CONTAINER -->
-          <div class="form-item">
-            <label class="form-label">
-              <label for="status_container">STATUS CONTAINER <span class="text-danger">*</span></label>
-              <span class="data-type-hint">{{ tipos['STATUS CONTAINER']|default('Texto') }}</span>
-            </label>
-            <div class="select-wrapper">
-              <select name="STATUS CONTAINER" class="form-select">
-                <option value="">Selecione</option>
-                {% for op in campos['STATUS CONTAINER'] %}
-                  <option value="{{ op }}" {% if registro and 'STATUS CONTAINER' in registro and registro['STATUS CONTAINER'] == op %}selected{% endif %}>{{ op }}</option>
-                {% endfor %}
-              </select>
+
+            <!-- Requisitante -->
+            <div class="form-item">
+              <label class="form-label">
+                Requisitante{% if 'Requisitante' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['Requisitante']|default('Texto') }}</span>
+              </label>
+              <input type="text" name="Requisitante" class="form-control" value="{{ usuario }}" readonly>
             </div>
-          </div>
-          
-          <!-- ORIGEM -->
-          <div class="form-item">
-            <label class="form-label">
-              ORIGEM <span class="required">*</span>
-              <span class="data-type-hint">{{ tipos['ORIGEM']|default('Texto') }}</span>
-            </label>
-            <input type="text" name="ORIGEM" class="form-control" value="{% if registro and 'ORIGEM' in registro %}{{ registro['ORIGEM'] }}{% endif %}">
-          </div>
-          
-          <!-- DESTINO INTERMEDIÁRIO -->
-          <div class="form-item">
-            <label class="form-label">
-              DESTINO INTERMEDIÁRIO{% if 'DESTINO INTERMEDIÁRIO' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['DESTINO INTERMEDIÁRIO']|default('Texto') }}</span>
-            </label>
-            <input type="text" name="DESTINO INTERMEDIÁRIO" class="form-control" value="{% if registro and 'DESTINO INTERMEDIÁRIO' in registro %}{{ registro['DESTINO INTERMEDIÁRIO'] }}{% endif %}">
-          </div>
-          
-          <!-- DESTINO FINAL -->
-          <div class="form-item">
-            <label class="form-label">
-              <label for="destino_final">DESTINO FINAL <span class="text-danger">*</span></label>
-              <span class="data-type-hint">{{ tipos['DESTINO FINAL']|default('Texto') }}</span>
-            </label>
-            <input type="text" name="DESTINO FINAL" class="form-control" value="{% if registro and 'DESTINO FINAL' in registro %}{{ registro['DESTINO FINAL'] }}{% endif %}">
+
+            <!-- Campo DATA (oculto) -->
+            <input type="hidden" name="DATA" value="{% if 'DATA' in valores %}{{ valores.DATA }}{% endif %}">
           </div>
         </div>
       </div>
-    </div>
-    
-    <!-- SEÇÃO 3: Dados da Operação -->
-    <div class="form-section">
-      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #fd7e14;">
-        <i class="fas fa-truck text-warning"></i>
-        <h5>Dados da Operação</h5>
-      </div>
-      <div class="form-section-body">
-        <div class="form-grid">
-          <!-- MOTORISTA -->
-          <div class="form-item">
-            <label class="form-label">
-              MOTORISTA{% if 'MOTORISTA' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['MOTORISTA']|default('Texto') }}</span>
-            </label>
-            <div class="select-wrapper">
-              <select name="MOTORISTA" id="motorista-select" class="form-select" onchange="atualizarCpfMotorista()" onchange="atualizarCpfMotorista()">
-                <option value="">Selecione</option>
-                {% for motorista in COMBOBOX_OPTIONS.get('MOTORISTA', []) %}
-                  <option value="{{ motorista }}" data-cpf="{{ MOTORISTA_CPF_MAP.get(motorista, '') }}" {% if registro and 'MOTORISTA' in registro and registro['MOTORISTA'] == motorista %}selected{% endif %}>{{ motorista }}</option>
-                {% endfor %}
-              </select>
+
+      <!-- SEÇÃO 2: Dados do Cliente -->
+      <div class="form-section">
+        <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #28a745;">
+          <i class="fas fa-user-tie text-success"></i>
+          <h5>Dados do Cliente</h5>
+        </div>
+        <div class="form-section-body">
+          <div class="form-grid">
+            {% macro campo_texto(campo, label, placeholder='', valor=None, tipo='text') %}
+            <div class="mb-3">
+              <label for="{{ campo }}" class="form-label">
+                {{ label }}{% if campo in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos[campo]|default('Texto') }}</span>
+              </label>
+              <input type="{{ tipo }}" class="form-control" name="{{ campo }}" id="{{ campo }}" placeholder="{{ placeholder }}"
+                     {% if campo in CAMPOS_OBRIGATORIOS %}required{% endif %}
+                     {% if valor %}value="{{ valor }}"{% endif %}
+                     {% if modo_visualizacao %}readonly disabled{% endif %}>
             </div>
-          </div>
-          
-          <!-- CPF MOTORISTA -->
-          <div class="form-item">
-            <label class="form-label">
-              CPF MOTORISTA{% if 'CPF MOTORISTA' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['CPF MOTORISTA']|default('Texto') }}</span>
-            </label>
-            <input type="text" name="CPF MOTORISTA" id="cpf-motorista" class="form-control" value="{% if registro and 'CPF MOTORISTA' in registro %}{{ registro['CPF MOTORISTA'] }}{% endif %}" readonly {% if modo_visualizacao %}readonly disabled{% endif %}>
-          </div>
-          
-          <!-- CAVALO -->
-          <div class="form-item">
-            <label class="form-label">
-              CAVALO{% if 'CAVALO' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['CAVALO']|default('Texto') }}</span>
-            </label>
-            <div class="select-wrapper">
-              <select name="CAVALO" class="form-select">
-                <option value="">Selecione</option>
-                {% for cavalo in COMBOBOX_OPTIONS.get('CAVALO', []) %}
-                  <option value="{{ cavalo }}" {% if registro and 'CAVALO' in registro and registro['CAVALO'] == cavalo %}selected{% endif %}>{{ cavalo }}</option>
-                {% endfor %}
-              </select>
+            {% endmacro %}
+
+            <!-- CLIENTE -->
+            <div class="form-item">
+              <label class="form-label">
+                CLIENTE{% if 'CLIENTE' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['CLIENTE']|default('Texto') }}</span>
+              </label>
+              <input type="text" name="CLIENTE" class="form-control"
+                     value="{% if registro and registro['CLIENTE'] %}{{ registro['CLIENTE'] }}{% endif %}">
             </div>
-          </div>
-          
-          <!-- CARRETA 1 -->
-          <div class="form-item">
-            <label class="form-label">
-              CARRETA 1{% if 'CARRETA 1' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['CARRETA 1']|default('Texto') }}</span>
-            </label>
-            <div class="select-wrapper">
-              <select name="CARRETA 1" class="form-select" onchange="verificarCarreta2()">
-                <option value="">Selecione</option>
-                {% for carreta in COMBOBOX_OPTIONS.get('CARRETAS', []) %}
-                  <option value="{{ carreta }}" {% if registro and 'CARRETA 1' in registro and registro['CARRETA 1'] == carreta %}selected{% endif %}>{{ carreta }}</option>
-                {% endfor %}
-              </select>
+
+            <!-- MODALIDADE -->
+            <div class="form-item">
+              <label class="form-label">
+                MODALIDADE{% if 'MODALIDADE' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['MODALIDADE']|default('Texto') }}</span>
+              </label>
+              <div class="select-wrapper">
+                <select name="MODALIDADE" id="modalidade-select" class="form-select" onchange="verificarAnexoAgendamento()">
+                  <option value="">Selecione</option>
+                  {% for modalidade in COMBOBOX_OPTIONS.get('MODALIDADE', []) %}
+                  <option value="{{ modalidade }}" {% if registro and registro['MODALIDADE'] == modalidade %}selected{% endif %}>
+                    {{ modalidade }}
+                  </option>
+                  {% endfor %}
+                  <option value="Manutenção" {% if registro and registro['MODALIDADE'] == 'Manutenção' %}selected{% endif %}>
+                    MANUTENÇÃO
+                  </option>
+                </select>
+              </div>
             </div>
-          </div>
-          
-          <!-- CARRETA 2 -->
-          <div class="form-item">
-            <label class="form-label">
-              CARRETA 2{% if 'CARRETA 2' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['CARRETA 2']|default('Texto') }}</span>
-            </label>
-            <div class="select-wrapper">
-              <select name="CARRETA 2" class="form-select" {% if not registro or not registro.get('CARRETA 1') %}disabled{% endif %}>
-                <option value="">Selecione</option>
-                {% for carreta in COMBOBOX_OPTIONS.get('CARRETAS', []) %}
-                  <option value="{{ carreta }}" {% if registro and 'CARRETA 2' in registro and registro['CARRETA 2'] == carreta %}selected{% endif %}>{{ carreta }}</option>
-                {% endfor %}
-              </select>
+
+            <!-- PEDIDO/REFERÊNCIA -->
+            <div class="form-item">
+              <label class="form-label">
+                PEDIDO/REFERÊNCIA{% if 'PEDIDO/REFERÊNCIA' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['PEDIDO/REFERÊNCIA']|default('Texto') }}</span>
+              </label>
+              <input type="text" name="PEDIDO/REFERÊNCIA" class="form-control"
+                     value="{% if registro and registro['PEDIDO/REFERÊNCIA'] %}{{ registro['PEDIDO/REFERÊNCIA'] }}{% endif %}">
             </div>
-          </div>
-          
-          <!-- TIPO DE CARGA -->
-          <div class="form-item">
-            <label class="form-label">
-              TIPO DE CARGA{% if 'TIPO DE CARGA' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['TIPO DE CARGA']|default('Texto') }}</span>
-            </label>
-            <div class="select-wrapper">
-              <select name="TIPO DE CARGA" class="form-select">
-                <option value="">Selecione</option>
-                {% for op in campos['TIPO DE CARGA'] %}
-                  <option value="{{ op }}" {% if registro and 'TIPO DE CARGA' in registro and registro['TIPO DE CARGA'] == op %}selected{% endif %}>{{ op }}</option>
-                {% endfor %}
-              </select>
+
+            <!-- BOOKING / DI -->
+            <div class="form-item">
+              <label class="form-label">
+                BOOKING / DI{% if 'BOOKING / DI' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['BOOKING / DI']|default('Texto') }}</span>
+              </label>
+              <input type="text" name="BOOKING / DI" class="form-control"
+                     value="{% if registro and registro['BOOKING / DI'] %}{{ registro['BOOKING / DI'] }}{% endif %}">
             </div>
-          </div>
-          
-          <!-- HORÁRIO PREVISTO DE INÍCIO -->
-          <div class="form-item">
-            <label class="form-label">
-              HORÁRIO PREVISTO DE INÍCIO{% if 'HORÁRIO PREVISTO DE INÍCIO' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['HORÁRIO PREVISTO DE INÍCIO']|default('Data/Hora') }}</span>
-            </label>
-            <input type="datetime-local" name="HORÁRIO PREVISTO DE INÍCIO" class="form-control datetime-input" data-original-format="dd/mm/yyyy hh:mm" value="{% if registro and 'HORÁRIO PREVISTO DE INÍCIO' in registro %}{{ registro['HORÁRIO PREVISTO DE INÍCIO'] }}{% endif %}">
-            {% if registro and 'HORÁRIO PREVISTO DE INÍCIO_original' in registro and registro['HORÁRIO PREVISTO DE INÍCIO_original'] %}
-            <div class="mt-1 small text-muted">Valor atual: {{ registro['HORÁRIO PREVISTO DE INÍCIO_original'] }}</div>
-            <input type="hidden" name="HORÁRIO PREVISTO DE INÍCIO_original" value="{{ registro['HORÁRIO PREVISTO DE INÍCIO_original'] }}">
-            {% endif %}
-          </div>
-          
-          <!-- ON TIME (CLIENTE) -->
-          <div class="form-item">
-            <label class="form-label">
-              ON TIME (CLIENTE){% if 'ON TIME (CLIENTE)' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['ON TIME (CLIENTE)']|default('Data/Hora') }}</span>
-            </label>
-            <input type="datetime-local" name="ON TIME (CLIENTE)" class="form-control datetime-input" data-original-format="dd/mm/yyyy hh:mm" value="{% if registro and 'ON TIME (CLIENTE)' in registro %}{{ registro['ON TIME (CLIENTE)'] }}{% endif %}">
-            {% if registro and 'ON TIME (CLIENTE)_original' in registro and registro['ON TIME (CLIENTE)_original'] %}
-            <div class="mt-1 small text-muted">Valor atual: {{ registro['ON TIME (CLIENTE)_original'] }}</div>
-            <input type="hidden" name="ON TIME (CLIENTE)_original" value="{{ registro['ON TIME (CLIENTE)_original'] }}">
-            {% endif %}
+
+            <!-- CONTAINER 1 -->
+            <div class="form-item">
+              <label class="form-label">
+                CONTAINER 1{% if 'CONTAINER 1' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['CONTAINER 1']|default('Texto') }}</span>
+              </label>
+              <input type="text" name="CONTAINER 1" class="form-control"
+                     value="{% if registro and registro['CONTAINER 1'] %}{{ registro['CONTAINER 1'] }}{% endif %}">
+            </div>
+
+            <!-- CONTAINER 2 -->
+            <div class="form-item">
+              <label class="form-label">
+                CONTAINER 2{% if 'CONTAINER 2' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['CONTAINER 2']|default('Texto') }}</span>
+              </label>
+              <input type="text" name="CONTAINER 2" class="form-control"
+                     value="{% if registro and registro['CONTAINER 2'] %}{{ registro['CONTAINER 2'] }}{% endif %}">
+            </div>
+
+            <!-- LOTE CS -->
+            <div class="form-item">
+              <label class="form-label">
+                LOTE CS{% if 'LOTE CS' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['LOTE CS']|default('Texto') }}</span>
+              </label>
+              <input type="text" name="LOTE CS" class="form-control"
+                     value="{% if registro and registro['LOTE CS'] %}{{ registro['LOTE CS'] }}{% endif %}">
+            </div>
+
+            <!-- STATUS CONTAINER -->
+            <div class="form-item">
+              <label class="form-label">
+                STATUS CONTAINER <span class="required">*</span>
+                <span class="data-type-hint">{{ tipos['STATUS CONTAINER']|default('Texto') }}</span>
+              </label>
+              <div class="select-wrapper">
+                <select name="STATUS CONTAINER" class="form-select">
+                  <option value="">Selecione</option>
+                  {% for op in campos['STATUS CONTAINER'] %}
+                  <option value="{{ op }}" {% if registro and registro['STATUS CONTAINER'] == op %}selected{% endif %}>
+                    {{ op }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <!-- ORIGEM -->
+            <div class="form-item">
+              <label class="form-label">
+                ORIGEM <span class="required">*</span>
+                <span class="data-type-hint">{{ tipos['ORIGEM']|default('Texto') }}</span>
+              </label>
+              <input type="text" name="ORIGEM" class="form-control"
+                     value="{% if registro and registro['ORIGEM'] %}{{ registro['ORIGEM'] }}{% endif %}">
+            </div>
+
+            <!-- DESTINO INTERMEDIÁRIO -->
+            <div class="form-item">
+              <label class="form-label">
+                DESTINO INTERMEDIÁRIO{% if 'DESTINO INTERMEDIÁRIO' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['DESTINO INTERMEDIÁRIO']|default('Texto') }}</span>
+              </label>
+              <input type="text" name="DESTINO INTERMEDIÁRIO" class="form-control"
+                     value="{% if registro and registro['DESTINO INTERMEDIÁRIO'] %}{{ registro['DESTINO INTERMEDIÁRIO'] }}{% endif %}">
+            </div>
+
+            <!-- DESTINO FINAL -->
+            <div class="form-item">
+              <label class="form-label">
+                DESTINO FINAL <span class="required">*</span>
+                <span class="data-type-hint">{{ tipos['DESTINO FINAL']|default('Texto') }}</span>
+              </label>
+              <input type="text" name="DESTINO FINAL" class="form-control"
+                     value="{% if registro and registro['DESTINO FINAL'] %}{{ registro['DESTINO FINAL'] }}{% endif %}">
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    
-    <!-- SEÇÃO 4: Dados de GR -->
-    {% if mostrar_campos_gr %}
-    <div class="form-section">
-      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #6c757d;">
-        <i class="fas fa-shield-alt text-secondary"></i>
-        <h5>Dados de GR</h5>
+
+      <!-- SEÇÃO 3: Dados da Operação -->
+      <div class="form-section">
+        <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #fd7e14;">
+          <i class="fas fa-truck text-warning"></i>
+          <h5>Dados da Operação</h5>
+        </div>
+        <div class="form-section-body">
+          <div class="form-grid">
+            <!-- MOTORISTA -->
+            <div class="form-item">
+              <label class="form-label">
+                MOTORISTA{% if 'MOTORISTA' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['MOTORISTA']|default('Texto') }}</span>
+              </label>
+              <div class="select-wrapper">
+                <select name="MOTORISTA" id="motorista-select" class="form-select" onchange="atualizarCpfMotorista()">
+                  <option value="">Selecione</option>
+                  {% for motorista in COMBOBOX_OPTIONS.get('MOTORISTA', []) %}
+                  <option value="{{ motorista }}" data-cpf="{{ MOTORISTA_CPF_MAP.get(motorista, '') }}"
+                    {% if registro and registro['MOTORISTA'] == motorista %}selected{% endif %}>
+                    {{ motorista }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <!-- CPF MOTORISTA -->
+            <div class="form-item">
+              <label class="form-label">
+                CPF MOTORISTA{% if 'CPF MOTORISTA' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['CPF MOTORISTA']|default('Texto') }}</span>
+              </label>
+              <input type="text" name="CPF MOTORISTA" id="cpf-motorista" class="form-control"
+                     value="{% if registro and registro['CPF MOTORISTA'] %}{{ registro['CPF MOTORISTA'] }}{% endif %}"
+                     readonly {% if modo_visualizacao %}disabled{% endif %}>
+            </div>
+
+            <!-- CAVALO -->
+            <div class="form-item">
+              <label class="form-label">
+                CAVALO{% if 'CAVALO' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['CAVALO']|default('Texto') }}</span>
+              </label>
+              <div class="select-wrapper">
+                <select name="CAVALO" class="form-select">
+                  <option value="">Selecione</option>
+                  {% for cavalo in COMBOBOX_OPTIONS.get('CAVALO', []) %}
+                  <option value="{{ cavalo }}" {% if registro and registro['CAVALO'] == cavalo %}selected{% endif %}>
+                    {{ cavalo }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <!-- CARRETA 1 -->
+            <div class="form-item">
+              <label class="form-label">
+                CARRETA 1{% if 'CARRETA 1' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['CARRETA 1']|default('Texto') }}</span>
+              </label>
+              <div class="select-wrapper">
+                <select name="CARRETA 1" class="form-select" onchange="verificarCarreta2()">
+                  <option value="">Selecione</option>
+                  {% for carreta in COMBOBOX_OPTIONS.get('CARRETAS', []) %}
+                  <option value="{{ carreta }}" {% if registro and registro['CARRETA 1'] == carreta %}selected{% endif %}>
+                    {{ carreta }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <!-- CARRETA 2 -->
+            <div class="form-item">
+              <label class="form-label">
+                CARRETA 2{% if 'CARRETA 2' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['CARRETA 2']|default('Texto') }}</span>
+              </label>
+              <div class="select-wrapper">
+                <select name="CARRETA 2" class="form-select"
+                        {% if not registro or not registro.get('CARRETA 1') %}disabled{% endif %}>
+                  <option value="">Selecione</option>
+                  {% for carreta in COMBOBOX_OPTIONS.get('CARRETAS', []) %}
+                  <option value="{{ carreta }}" {% if registro and registro['CARRETA 2'] == carreta %}selected{% endif %}>
+                    {{ carreta }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <!-- TIPO DE CARGA -->
+            <div class="form-item">
+              <label class="form-label">
+                TIPO DE CARGA{% if 'TIPO DE CARGA' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['TIPO DE CARGA']|default('Texto') }}</span>
+              </label>
+              <div class="select-wrapper">
+                <select name="TIPO DE CARGA" class="form-select">
+                  <option value="">Selecione</option>
+                  {% for op in campos['TIPO DE CARGA'] %}
+                  <option value="{{ op }}" {% if registro and registro['TIPO DE CARGA'] == op %}selected{% endif %}>
+                    {{ op }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+
+            <!-- HORÁRIO PREVISTO DE INÍCIO -->
+            <div class="form-item">
+              <label class="form-label">
+                HORÁRIO PREVISTO DE INÍCIO{% if 'HORÁRIO PREVISTO DE INÍCIO' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['HORÁRIO PREVISTO DE INÍCIO']|default('Data/Hora') }}</span>
+              </label>
+              <input type="datetime-local" name="HORÁRIO PREVISTO DE INÍCIO" class="form-control datetime-input"
+                     data-original-format="dd/mm/yyyy hh:mm"
+                     value="{% if registro and registro['HORÁRIO PREVISTO DE INÍCIO'] %}{{ registro['HORÁRIO PREVISTO DE INÍCIO'] }}{% endif %}">
+              {% if registro and registro['HORÁRIO PREVISTO DE INÍCIO_original'] %}
+              <div class="mt-1 small text-muted">Valor atual: {{ registro['HORÁRIO PREVISTO DE INÍCIO_original'] }}</div>
+              <input type="hidden" name="HORÁRIO PREVISTO DE INÍCIO_original"
+                     value="{{ registro['HORÁRIO PREVISTO DE INÍCIO_original'] }}">
+              {% endif %}
+            </div>
+
+            <!-- ON TIME (CLIENTE) -->
+            <div class="form-item">
+              <label class="form-label">
+                ON TIME (CLIENTE){% if 'ON TIME (CLIENTE)' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['ON TIME (CLIENTE)']|default('Data/Hora') }}</span>
+              </label>
+              <input type="datetime-local" name="ON TIME (CLIENTE)" class="form-control datetime-input"
+                     data-original-format="dd/mm/yyyy hh:mm"
+                     value="{% if registro and registro['ON TIME (CLIENTE)'] %}{{ registro['ON TIME (CLIENTE)'] }}{% endif %}">
+              {% if registro and registro['ON TIME (CLIENTE)_original'] %}
+              <div class="mt-1 small text-muted">Valor atual: {{ registro['ON TIME (CLIENTE)_original'] }}</div>
+              <input type="hidden" name="ON TIME (CLIENTE)_original"
+                     value="{{ registro['ON TIME (CLIENTE)_original'] }}">
+              {% endif %}
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="form-section-body">
-        <div class="form-grid">
-          <!-- GERENCIADORA -->
-          <div class="form-item">
-            <label class="form-label">
-              GERENCIADORA{% if 'GERENCIADORA' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['GERENCIADORA']|default('Texto') }}</span>
-            </label>
-            <div class="select-wrapper">
-              <select name="GERENCIADORA" class="form-select">
-                <option value="">Selecione</option>
-                {% for op in campos['GERENCIADORA'] %}
+
+      <!-- SEÇÃO 4: Dados de GR -->
+      {% if mostrar_campos_gr %}
+      <div class="form-section">
+        <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #6c757d;">
+          <i class="fas fa-shield-alt text-secondary"></i>
+          <h5>Dados de GR</h5>
+        </div>
+        <div class="form-section-body">
+          <div class="form-grid">
+            <!-- GERENCIADORA -->
+            <div class="form-item">
+              <label class="form-label">
+                GERENCIADORA{% if 'GERENCIADORA' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['GERENCIADORA']|default('Texto') }}</span>
+              </label>
+              <div class="select-wrapper">
+                <select name="GERENCIADORA" class="form-select">
+                  <option value="">Selecione</option>
+                  {% for op in campos['GERENCIADORA'] %}
                   <option value="{{ op }}">{{ op }}</option>
-                {% endfor %}
-              </select>
+                  {% endfor %}
+                </select>
+              </div>
             </div>
-          </div>
-          
-          <!-- NÚMERO AE -->
-          <div class="form-item">
-            <label class="form-label">
-              NÚMERO AE{% if 'NÚMERO AE' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['NÚMERO AE']|default('Texto') }}</span>
-            </label>
-            <input type="text" name="NÚMERO AE" class="form-control">
-          </div>
-          
-          <!-- DT CRIACAO AE -->
-          <div class="form-item">
-            <label class="form-label">
-              DT CRIACAO AE{% if 'DT CRIACAO AE' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['DT CRIACAO AE']|default('Texto') }}</span>
-            </label>
-            <input type="text" name="DT CRIACAO AE" class="form-control">
-          </div>
-          
-          <!-- NUMERO SM -->
-          <div class="form-item">
-            <label class="form-label">
-              NUMERO SM{% if 'NUMERO SM' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['NUMERO SM']|default('Texto') }}</span>
-            </label>
-            <input type="text" name="NUMERO SM" class="form-control">
-          </div>
-          
-          <!-- DT CRIACAO SM -->
-          <div class="form-item">
-            <label class="form-label">
-              DT CRIACAO SM{% if 'DT CRIACAO SM' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
-              <span class="data-type-hint">{{ tipos['DT CRIACAO SM']|default('Texto') }}</span>
-            </label>
-            <input type="text" name="DT CRIACAO SM" class="form-control">
-          </div>
 
-          <!-- STATUS SM (oculto, preenchido automaticamente) -->
-          <div class="form-item" style="display: none;">
+            <!-- NÚMERO AE -->
+            <div class="form-item">
+              <label class="form-label">
+                NÚMERO AE{% if 'NÚMERO AE' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['NÚMERO AE']|default('Texto') }}</span>
+              </label>
+              <input type="text" name="NÚMERO AE" class="form-control">
+            </div>
+
+            <!-- DT CRIAÇÃO AE -->
+            <div class="form-item">
+              <label class="form-label">
+                DT CRIAÇÃO AE{% if 'DT CRIAÇÃO AE' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['DT CRIAÇÃO AE']|default('Texto') }}</span>
+              </label>
+              <input type="text" name="DT CRIAÇÃO AE" class="form-control">
+            </div>
+
+            <!-- NÚMERO SM -->
+            <div class="form-item">
+              <label class="form-label">
+                NÚMERO SM{% if 'NÚMERO SM' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['NÚMERO SM']|default('Texto') }}</span>
+              </label>
+              <input type="text" name="NÚMERO SM" class="form-control">
+            </div>
+
+            <!-- DT CRIAÇÃO SM -->
+            <div class="form-item">
+              <label class="form-label">
+                DT CRIAÇÃO SM{% if 'DT CRIAÇÃO SM' in CAMPOS_OBRIGATORIOS %} <span class="required">*</span>{% endif %}
+                <span class="data-type-hint">{{ tipos['DT CRIAÇÃO SM']|default('Texto') }}</span>
+              </label>
+              <input type="text" name="DT CRIAÇÃO SM" class="form-control">
+            </div>
+
+            <!-- STATUS SM (oculto) -->
             <input type="hidden" name="STATUS SM" value="não">
           </div>
         </div>
       </div>
-    </div>
-    {% else %}
-    <!-- Campos ocultos para usuários sem acesso a GR -->
-    <input type="hidden" name="GERENCIADORA" value="">
-    <input type="hidden" name="NÚMERO AE" value="">
-    <input type="hidden" name="DT CRIACAO AE" value="">
-    <input type="hidden" name="NUMERO SM" value="">
-    <input type="hidden" name="DT CRIACAO SM" value="">
-    <input type="hidden" name="STATUS SM" value="não">
-    {% endif %}
-    
-    <!-- Observações -->
-    <div class="form-section">
-      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #20c997;">
-        <i class="fas fa-comment-alt text-success"></i>
-        <h5>Observações</h5>
-      </div>
-      <div class="form-section-body">
-        <div class="observations-container">
-          <div class="observation-card">
-            <label class="form-label">Observação Operacional</label>
-            <textarea name="OBSERVACAO OPERACIONAL" class="form-control" rows="4">{% if registro and 'OBSERVACAO OPERACIONAL' in registro %}{{ registro['OBSERVACAO OPERACIONAL'] }}{% endif %}</textarea>
-            {% if registro and 'OBSERVACAO OPERACIONAL_original' in registro and registro['OBSERVACAO OPERACIONAL_original'] %}
-            <div class="mt-1 small text-muted">Valor atual: {{ registro['OBSERVACAO OPERACIONAL_original'] }}</div>
-            <input type="hidden" name="OBSERVACAO OPERACIONAL_original" value="{{ registro['OBSERVACAO OPERACIONAL_original'] }}">
+      {% else %}
+      <!-- Campos ocultos quando não mostrar GR -->
+      <input type="hidden" name="GERENCIADORA" value="">
+      <input type="hidden" name="NÚMERO AE" value="">
+      <input type="hidden" name="DT CRIAÇÃO AE" value="">
+      <input type="hidden" name="NÚMERO SM" value="">
+      <input type="hidden" name="DT CRIAÇÃO SM" value="">
+      <input type="hidden" name="STATUS SM" value="não">
+      {% endif %}
+
+      <!-- Observações -->
+      <div class="form-section">
+        <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #20c997;">
+          <i class="fas fa-comment-alt text-success"></i>
+          <h5>Observações</h5>
+        </div>
+        <div class="form-section-body">
+          <div class="observations-container">
+            <div class="observation-card">
+              <label class="form-label">Observação Operacional</label>
+              <textarea name="OBSERVAÇÃO OPERACIONAL" class="form-control" rows="4">{% if registro and registro['OBSERVAÇÃO OPERACIONAL'] %}{{ registro['OBSERVAÇÃO OPERACIONAL'] }}{% endif %}</textarea>
+              {% if registro and registro['OBSERVAÇÃO OPERACIONAL_original'] %}
+              <div class="mt-1 small text-muted">
+                Valor atual: {{ registro['OBSERVAÇÃO OPERACIONAL_original'] }}
+              </div>
+              <input type="hidden" name="OBSERVAÇÃO OPERACIONAL_original"
+                     value="{{ registro['OBSERVAÇÃO OPERACIONAL_original'] }}">
+              {% endif %}
+            </div>
+
+            {% if mostrar_campos_gr %}
+            <div class="observation-card">
+              <label class="form-label">Observação de Gestão de Risco</label>
+              <textarea name="OBSERVAÇÃO DE GR" class="form-control" rows="4">{% if registro and registro['OBSERVAÇÃO DE GR'] %}{{ registro['OBSERVAÇÃO DE GR'] }}{% endif %}</textarea>
+            </div>
+            {% else %}
+            <input type="hidden" name="OBSERVAÇÃO DE GR" value="">
             {% endif %}
           </div>
-          
-          {% if mostrar_campos_gr %}
-          <div class="observation-card">
-            <label class="form-label">Observação de Gestão de Risco</label>
-            <textarea name="OBSERVAÇÃO DE GR" class="form-control" rows="4"></textarea>
-          </div>
-          {% else %}
-          <input type="hidden" name="OBSERVAÇÃO DE GR" value="">
-          {% endif %}
         </div>
       </div>
-    </div>
-    
-    <!-- Campos de upload (anexos) -->
-    <div class="form-section">
-      <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #20c997;">
-        <i class="fas fa-file-upload text-success"></i>
-        <h5>Anexos</h5>
-      </div>
-      <div class="form-section-body">
-        <div class="file-upload-container">
-          <!-- Anexar NF -->
-          <div class="form-item">
-            <label class="form-label">ANEXAR NF <span class="data-type-hint">Arquivo</span></label>
-            {% if registro and registro.get('anexar_nf') %}
+
+      <!-- Anexos -->
+      <div class="form-section">
+        <div class="form-section-header" style="background-color: #f8f9fa; border-left: 4px solid #20c997;">
+          <i class="fas fa-file-upload text-success"></i>
+          <h5>Anexos</h5>
+        </div>
+        <div class="form-section-body">
+          <div class="file-upload-container">
+            <!-- Anexar NF -->
+            <div class="form-item">
+              <label class="form-label">ANEXAR NF <span class="data-type-hint">Arquivo</span></label>
+              {% if registro and registro.get('anexar_nf') %}
               <div class="file-upload-area has-file" id="upload-area-nf">
                 <i class="fas fa-file-check mb-2" style="font-size: 24px; color: #28a745;"></i>
                 <div>Arquivo enviado anteriormente</div>
-                <div class="file-name" id="file-name-nf" style="display: block;">{{ registro.get('arquivo_nf_nome', 'arquivo.pdf') }}</div>
+                <div class="file-name" id="file-name-nf" style="display: block;">
+                  {{ registro.get('arquivo_nf_nome', 'arquivo.pdf') }}
+                </div>
                 <div class="mt-2">
                   <a href="{{ url_for('comum.download_anexo', registro_id=registro['id'], tipo='nf') }}" class="btn btn-sm btn-success">
                     <i class="fas fa-download"></i> Baixar arquivo
@@ -785,28 +661,32 @@
                   <label for="file-nf" class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation();">
                     <i class="fas fa-exchange-alt"></i> Substituir arquivo
                   </label>
-                  <input type="file" name="ANEXAR NF" id="file-nf" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="opacity: 0; position: absolute; width: 0; height: 0;">
+                  <input type="file" name="ANEXAR NF" id="file-nf" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                         style="opacity: 0; position: absolute; width: 0; height: 0;">
                   <input type="hidden" name="anexar_nf_existente" value="{{ registro.get('anexar_nf', '') }}">
                 </div>
               </div>
-            {% else %}
+              {% else %}
               <div class="file-upload-area" id="upload-area-nf">
                 <i class="fas fa-file-upload mb-2" style="font-size: 24px; color: #6c757d;"></i>
                 <div>Arraste e solte ou clique para selecionar</div>
                 <div class="file-name" id="file-name-nf" style="display: none;"></div>
-                <input type="file" name="ANEXAR NF" id="file-nf" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer;">
+                <input type="file" name="ANEXAR NF" id="file-nf" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                       style="opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer;">
               </div>
-            {% endif %}
-          </div>
-          
-          <!-- Anexar OS -->
-          <div class="form-item">
-            <label class="form-label">ANEXAR OS <span class="data-type-hint">Arquivo</span></label>
-            {% if registro and registro.get('anexar_os') %}
+              {% endif %}
+            </div>
+
+            <!-- Anexar OS -->
+            <div class="form-item">
+              <label class="form-label">ANEXAR OS <span class="data-type-hint">Arquivo</span></label>
+              {% if registro and registro.get('anexar_os') %}
               <div class="file-upload-area has-file" id="upload-area-os">
                 <i class="fas fa-file-check mb-2" style="font-size: 24px; color: #28a745;"></i>
                 <div>Arquivo enviado anteriormente</div>
-                <div class="file-name" id="file-name-os" style="display: block;">{{ registro.get('arquivo_os_nome', 'arquivo.pdf') }}</div>
+                <div class="file-name" id="file-name-os" style="display: block;">
+                  {{ registro.get('arquivo_os_nome', 'arquivo.pdf') }}
+                </div>
                 <div class="mt-2">
                   <a href="{{ url_for('comum.download_anexo', registro_id=registro['id'], tipo='os') }}" class="btn btn-sm btn-success">
                     <i class="fas fa-download"></i> Baixar arquivo
@@ -816,30 +696,38 @@
                   <label for="file-os" class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation();">
                     <i class="fas fa-exchange-alt"></i> Substituir arquivo
                   </label>
-                  <input type="file" name="ANEXAR OS" id="file-os" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="opacity: 0; position: absolute; width: 0; height: 0;">
+                  <input type="file" name="ANEXAR OS" id="file-os" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                         style="opacity: 0; position: absolute; width: 0; height: 0;">
                   <input type="hidden" name="anexar_os_existente" value="{{ registro.get('anexar_os', '') }}">
                 </div>
               </div>
-            {% else %}
+              {% else %}
               <div class="file-upload-area" id="upload-area-os">
                 <i class="fas fa-file-upload mb-2" style="font-size: 24px; color: #6c757d;"></i>
                 <div>Arraste e solte ou clique para selecionar</div>
                 <div class="file-name" id="file-name-os" style="display: none;"></div>
-                <input type="file" name="ANEXAR OS" id="file-os" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer;">
+                <input type="file" name="ANEXAR OS" id="file-os" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                       style="opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer;">
               </div>
-            {% endif %}
-          </div>
-          
-          <!-- Anexar Agendamento (Novo campo - só aparece se modalidade for CST) -->
-          <div class="form-item" id="anexo-agendamento" {% if not registro or (not registro.get('anexar_agendamento') and not registro.get('MODALIDADE') == 'CST') %}style="display: none;"{% endif %}>
-            <label class="form-label">ANEXAR AGENDAMENTO <span class="data-type-hint">Arquivo</span></label>
-            {% if registro and registro.get('anexar_agendamento') %}
+              {% endif %}
+            </div>
+
+            <!-- Anexar Agendamento (aparece só se CST) -->
+            <div class="form-item" id="anexo-agendamento"
+                 {% if not registro or (registro.get('MODALIDADE') != 'CST' and not registro.get('anexar_agendamento')) %}
+                   style="display: none;"
+                 {% endif %}>
+              <label class="form-label">ANEXAR AGENDAMENTO <span class="data-type-hint">Arquivo</span></label>
+              {% if registro and registro.get('anexar_agendamento') %}
               <div class="file-upload-area has-file" id="upload-area-agendamento">
                 <i class="fas fa-file-check mb-2" style="font-size: 24px; color: #28a745;"></i>
                 <div>Arquivo enviado anteriormente</div>
-                <div class="file-name" id="file-name-agendamento" style="display: block;">{{ registro.get('arquivo_agendamento_nome', 'arquivo.pdf') }}</div>
+                <div class="file-name" id="file-name-agendamento" style="display: block;">
+                  {{ registro.get('arquivo_agendamento_nome', 'arquivo.pdf') }}
+                </div>
                 <div class="mt-2">
-                  <a href="{{ url_for('comum.download_anexo', registro_id=registro['id'], tipo='agendamento') }}" class="btn btn-sm btn-success">
+                  <a href="{{ url_for('comum.download_anexo', registro_id=registro['id'], tipo='agendamento') }}"
+                     class="btn btn-sm btn-success">
                     <i class="fas fa-download"></i> Baixar arquivo
                   </a>
                 </div>
@@ -847,413 +735,391 @@
                   <label for="file-agendamento" class="btn btn-sm btn-outline-secondary" onclick="event.stopPropagation();">
                     <i class="fas fa-exchange-alt"></i> Substituir arquivo
                   </label>
-                  <input type="file" name="ANEXAR AGENDAMENTO" id="file-agendamento" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="opacity: 0; position: absolute; width: 0; height: 0;">
+                  <input type="file" name="ANEXAR AGENDAMENTO" id="file-agendamento" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                         style="opacity: 0; position: absolute; width: 0; height: 0;">
                   <input type="hidden" name="anexar_agendamento_existente" value="{{ registro.get('anexar_agendamento', '') }}">
                 </div>
               </div>
-            {% else %}
+              {% else %}
               <div class="file-upload-area" id="upload-area-agendamento">
                 <i class="fas fa-file-upload mb-2" style="font-size: 24px; color: #6c757d;"></i>
                 <div>Arraste e solte ou clique para selecionar</div>
                 <div class="file-name" id="file-name-agendamento" style="display: none;"></div>
-                <input type="file" name="ANEXAR AGENDAMENTO" id="file-agendamento" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer;">
+                <input type="file" name="ANEXAR AGENDAMENTO" id="file-agendamento" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                       style="opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer;">
               </div>
-            {% endif %}
+              {% endif %}
+            </div>
+
           </div>
         </div>
       </div>
-    </div>
-    
-    <!-- Indicador de carregamento -->
-    <div id="loadingIndicator" class="text-center mb-3" style="display: none;">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Carregando...</span>
-      </div>
-      <p class="mt-2">Enviando formulário, por favor aguarde...</p>
-    </div>
 
-    <div class="d-flex justify-content-center mt-4">
-      {% if not modo_visualizacao %}
-      <button type="button" id="submitButton" class="btn btn-primary btn-lg">
-        <i class="fas fa-save me-2"></i> Salvar Registro
-      </button>
+      <!-- Indicador de carregamento -->
+      <div id="loadingIndicator" class="text-center mb-3" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Carregando...</span>
+        </div>
+        <p class="mt-2">Enviando formulário, por favor aguarde...</p>
+      </div>
+
+      <!-- Botões -->
+      <div class="d-flex justify-content-center mt-4">
+        {% if not modo_visualizacao %}
+        <!-- Mantido como type="button" para envio manual -->
+        <button type="button" id="submitButton" class="btn btn-primary btn-lg submit-btn">
+          <i class="fas fa-save me-2"></i> Salvar Registro
+        </button>
+        {% endif %}
+        <a href="{% if nivel == 'gr' %}{{ url_for('gr.ambiente') }}{% else %}{{ url_for('comum.dashboard_comum') }}{% endif %}"
+           class="btn btn-secondary btn-lg {% if not modo_visualizacao %}ms-2{% endif %}">
+          <i class="fas fa-{% if modo_visualizacao %}arrow-left{% else %}times{% endif %} me-2"></i>
+          {% if modo_visualizacao %}Voltar{% else %}Cancelar{% endif %}
+        </a>
+      </div>
+
+    </form>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/validacao_horario_previsto.js') }}"></script>
+
+  <script>
+    // Mapeamento de motoristas para CPFs
+    const MOTORISTA_CPF_MAP = {
+      {% for motorista, cpf in MOTORISTA_CPF_MAP.items() %}
+      "{{ motorista }}": "{{ cpf }}",
+      {% endfor %}
+    };
+
+    $(document).ready(function() {
+      // Se estivermos no modo de visualização, desabilita tudo
+      {% if modo_visualizacao %}
+      $('input, textarea, select').prop('disabled', true);
+      $('.file-upload-area, .btn-outline-secondary').hide();
+      $('#submitButton').hide();
+      $('.btn-secondary').html('<i class="fas fa-arrow-left me-2"></i> Voltar');
       {% endif %}
-      <a href="{% if nivel == 'gr' %}{{ url_for('gr.ambiente') }}{% else %}{{ url_for('comum.dashboard_comum') }}{% endif %}" class="btn btn-secondary btn-lg {% if not modo_visualizacao %}ms-2{% endif %}">
-        <i class="fas fa-{% if modo_visualizacao %}arrow-left{% else %}times{% endif %} me-2"></i> {% if modo_visualizacao %}Voltar{% else %}Cancelar{% endif %}
-      </a>
-    </div>
-    
-    <!-- Script para garantir o envio do formulário -->
-    <script>
-      document.getElementById('submitButton').addEventListener('click', function() {
-        console.log('Botão de envio clicado');
-        
-        // Verificar campos obrigatórios
-        const camposObrigatorios = {{ CAMPOS_OBRIGATORIOS|tojson }};
+
+      // Preencher formulário com valores existentes
+      {% if registro %}
+      const regData = {{ registro|tojson }};
+      console.log('Preenchendo formulário:', regData);
+      for (const [campo, valor] of Object.entries(regData)) {
+        if (valor !== null && valor !== '') {
+          // Campos de texto e textarea
+          const textoEl = $(`input[name="${campo}"], textarea[name="${campo}"]`).not('input[type="file"]');
+          if (textoEl.length) {
+            textoEl.val(valor);
+          }
+          // Campos de select
+          const selectEl = $(`select[name="${campo}"]`);
+          if (selectEl.length) {
+            selectEl.val(valor);
+            if (campo === 'MOTORISTA') atualizarCpfMotorista();
+            if (campo === 'CARRETA 1') verificarCarreta2();
+          }
+        }
+      }
+      {% endif %}
+
+      // Validação ao submeter (quando form.submit() é chamado)
+      $('form').on('submit', function(e) {
         let formValido = true;
         let primeiroInvalido = null;
-        
-        camposObrigatorios.forEach(campo => {
-          const input = document.querySelector(`[name="${campo}"]:not([type=hidden])`);
-          if (input && (!input.value || input.value.trim() === '')) {
-            console.log(`Campo obrigatório não preenchido: ${campo}`);
+
+        $('.required').each(function() {
+          const label = $(this).closest('label');
+          const inputField = label.closest('.form-item').find('input, select, textarea');
+
+          if (!inputField.val()) {
             formValido = false;
-            input.classList.add('is-invalid');
-            
-            if (!primeiroInvalido) {
-              primeiroInvalido = input;
+            inputField.addClass('is-invalid');
+            if (inputField.is('select')) {
+              inputField.closest('.select-wrapper').addClass('invalid-select');
             }
-          } else if (input) {
-            input.classList.remove('is-invalid');
+            if (!primeiroInvalido) primeiroInvalido = inputField;
+          } else {
+            inputField.removeClass('is-invalid');
+            if (inputField.is('select')) {
+              inputField.closest('.select-wrapper').removeClass('invalid-select');
+            }
           }
         });
-        
-        if (formValido) {
-          console.log('Formulário válido, enviando...');
-          // Mostrar indicador de carregamento
-          document.getElementById('loadingIndicator').style.display = 'block';
-          // Desabilitar botão para evitar cliques duplos
-          this.disabled = true;
-          this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
-          // Enviar o formulário manualmente
-          document.querySelector('form').submit();
-        } else {
-          // Mostrar alerta de campos obrigatórios
-          document.getElementById('alertaCamposObrigatorios').style.display = 'block';
-          
-          // Focar no primeiro campo inválido
+
+        if (!formValido) {
+          e.preventDefault();
+          $('#alertaCamposObrigatorios').fadeIn();
           if (primeiroInvalido) {
             primeiroInvalido.focus();
-            
-            // Rolar para o primeiro campo inválido
-            primeiroInvalido.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            $('html, body').animate({ scrollTop: primeiroInvalido.offset().top - 100 }, 500);
           }
-          
-          // Esconder o alerta após 5 segundos
-          setTimeout(function() {
-            document.getElementById('alertaCamposObrigatorios').style.display = 'none';
+          setTimeout(() => {
+            $('#alertaCamposObrigatorios').fadeOut();
           }, 5000);
+        } else {
+          // Mostra loading e deixa o envio prosseguir
+          $('#loadingIndicator').show();
+          $('#submitButton')
+            .prop('disabled', true)
+            .html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...');
         }
       });
-    </script>
-  </form>
-</div>
 
-<script>
-  // Mapeamento de motoristas para CPFs
-  const MOTORISTA_CPF_MAP = {
-    {% for motorista, cpf in MOTORISTA_CPF_MAP.items() %}
-      "{{ motorista }}": "{{ cpf }}",
-    {% endfor %}
-  };
-  
-  // Funu00e7u00e3o para vincular o CPF ao motorista selecionado
-  function atualizarCpfMotorista() {
-    const motoristaSelect = document.getElementById('motorista-select');
-    const cpfInput = document.getElementById('cpf-motorista');
-    
-    if (motoristaSelect && cpfInput) {
-      const selectedOption = motoristaSelect.options[motoristaSelect.selectedIndex];
-      const cpf = selectedOption.getAttribute('data-cpf');
-      cpfInput.value = cpf || '';
-    }
-  }
-  
-  // Configurar os campos de upload de arquivo
-  function setupFileUploads() {
-    // Selecionar todos os inputs de arquivo
-    const fileInputs = document.querySelectorAll('input[type="file"]');
-    
-    fileInputs.forEach(input => {
-      // Quando um arquivo for selecionado via input
-      input.addEventListener('change', function() {
-        if (this.files && this.files.length > 0) {
-          const fileName = this.files[0].name;
-          const fileNameElement = document.getElementById('file-name-' + this.id.split('-')[1]);
-          if (fileNameElement) {
-            fileNameElement.textContent = fileName;
-            fileNameElement.style.display = 'block';
-            const uploadArea = this.closest('.file-upload-area');
-            if (uploadArea) {
-              uploadArea.classList.add('has-file');
-            }
+      // Remover destaque de erro quando o campo for preenchido
+      $('input, select, textarea').on('change keyup', function() {
+        if ($(this).val()) {
+          $(this).removeClass('is-invalid');
+          if ($(this).is('select')) {
+            $(this).closest('.select-wrapper').removeClass('invalid-select');
           }
-          console.log(`Arquivo selecionado em ${this.name}: ${fileName}`);
         }
       });
+
+      // Configurar campos de upload e inicializações auxiliares
+      setupFileUploads();
+      atualizarCpfMotorista();
+      verificarCarreta2();
+      verificarContainer2();
+      verificarAnexoAgendamento();
+      setupDateTimeInputs();
+      destacarCamposVazios();
+
+      // Eventos adicionais
+      $('input[name="CONTAINER 1"]').on('input change', verificarContainer2);
+      $('select[name="CARRETA 1"]').on('change', verificarCarreta2);
+      $('select[name="MODALIDADE"]').on('change', verificarAnexoAgendamento);
     });
-    
-    // Configurar eventos de drag-and-drop para todas as áreas de upload
-    const uploadAreas = document.querySelectorAll('.file-upload-area');
-    uploadAreas.forEach(area => {
-      // Prevenir comportamento padrão para todos os eventos de drag-and-drop
-      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        area.addEventListener(eventName, function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-        });
-      });
-      
-      // Adicionar classe quando arrastar sobre a área
-      ['dragenter', 'dragover'].forEach(eventName => {
-        area.addEventListener(eventName, function() {
-          this.classList.add('dragover');
-        });
-      });
-      
-      // Remover classe quando sair da área
-      ['dragleave', 'drop'].forEach(eventName => {
-        area.addEventListener(eventName, function() {
-          this.classList.remove('dragover');
-        });
-      });
-      
-      // Processar o arquivo quando for solto na área
-      area.addEventListener('drop', function(e) {
-        const fileInput = this.querySelector('input[type="file"]');
-        if (fileInput && e.dataTransfer.files.length > 0) {
-          fileInput.files = e.dataTransfer.files;
-          // Disparar o evento change manualmente
-          const event = new Event('change');
-          fileInput.dispatchEvent(event);
+
+    // Quando clicar em Salvar Registro, valida e chama form.submit()
+    document.getElementById('submitButton').addEventListener('click', function() {
+      console.log('Botão de envio clicado');
+
+      // Verificar campos obrigatórios
+      const camposObrigatorios = {{ CAMPOS_OBRIGATORIOS|tojson }};
+      let formValido = true;
+      let primeiroInvalido = null;
+
+      camposObrigatorios.forEach(campo => {
+        const input = document.querySelector(`[name="${campo}"]:not([type=hidden])`);
+        if (input && (!input.value || input.value.trim() === '')) {
+          console.log(`Campo obrigatório não preenchido: ${campo}`);
+          formValido = false;
+          input.classList.add('is-invalid');
+          if (!primeiroInvalido) primeiroInvalido = input;
+        } else if (input) {
+          input.classList.remove('is-invalid');
         }
       });
+
+      if (formValido) {
+        console.log('Formulário válido, enviando...');
+        // Mostrar loading
+        document.getElementById('loadingIndicator').style.display = 'block';
+        // Desabilitar botão para evitar cliques duplos
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
+        // Enviar o formulário manualmente
+        document.querySelector('form').submit();
+      } else {
+        // Mostrar alerta de campos obrigatórios
+        document.getElementById('alertaCamposObrigatorios').style.display = 'block';
+
+        if (primeiroInvalido) {
+          primeiroInvalido.focus();
+          primeiroInvalido.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        setTimeout(() => {
+          document.getElementById('alertaCamposObrigatorios').style.display = 'none';
+        }, 5000);
+      }
     });
-  }
 
-  // Inicializar quando a página carregar
-  document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar funcionalidades principais
-    atualizarCpfMotorista();
-    verificarContainer2();
-    verificarCarreta2();
-    verificarAnexoAgendamento();
-    setupDateTimeInputs();
-    destacarCamposVazios();
-    setupFileUploads();
-    
-    // Adicionar evento para verificar Container 2 sempre que Container 1 mudar
-    const container1 = document.querySelector('input[name="CONTAINER 1"]');
-    if (container1) {
-      container1.addEventListener('input', verificarContainer2);
-      container1.addEventListener('change', verificarContainer2);
-    }
-    
-    // Adicionar evento para verificar Carreta 2 sempre que Carreta 1 mudar
-    const carreta1 = document.querySelector('select[name="CARRETA 1"]');
-    if (carreta1) {
-      carreta1.addEventListener('change', verificarCarreta2);
-    }
-    
-    // Verificar se a modalidade é CST para mostrar o campo de anexo de agendamento
-    const modalidadeSelect = document.querySelector('select[name="MODALIDADE"]');
-    if (modalidadeSelect) {
-      modalidadeSelect.addEventListener('change', verificarAnexoAgendamento);
-    }
-  });
-
-  // Função para vincular o CPF ao motorista selecionado
-  function atualizarCpfMotorista() {
-    const motoristaSelect = document.getElementById('motorista-select');
-    const cpfInput = document.getElementById('cpf-motorista');
-    
-    if (motoristaSelect && cpfInput) {
-      const selectedOption = motoristaSelect.options[motoristaSelect.selectedIndex];
-      let cpf = selectedOption.getAttribute('data-cpf') || '';
-      
-      // Remover pontos, traços e espaços do CPF
-      cpf = cpf.replace(/[.\-\s]/g, '');
-      
-      // Atualizar o valor do campo
-      cpfInput.value = cpf;
-      console.log('CPF formatado:', cpf);
-    }
-  }
-  
-  // Função para controlar disponibilidade do Container 2
-  function verificarContainer2() {
-    const container1 = document.querySelector('input[name="CONTAINER 1"]');
-    const container2 = document.querySelector('input[name="CONTAINER 2"]');
-    
-    if (container1 && container2) {
-      // Se Container 1 estiver vazio, desabilita Container 2
-      if (!container1.value.trim()) {
-        container2.disabled = true;
-        container2.value = '';
-      } else {
-        container2.disabled = false;
+    // Atualizar CPF baseado no motorista selecionado
+    function atualizarCpfMotorista() {
+      const motoristaSelect = document.getElementById('motorista-select');
+      const cpfInput = document.getElementById('cpf-motorista');
+      if (motoristaSelect && cpfInput) {
+        let cpf = motoristaSelect.options[motoristaSelect.selectedIndex].getAttribute('data-cpf') || '';
+        cpf = cpf.replace(/[.\-\s]/g, '');
+        cpfInput.value = cpf;
+        console.log('CPF atualizado:', cpf);
       }
     }
-  }
-  
-  // Função para controlar disponibilidade de CARRETA 2
-  function verificarCarreta2() {
-    const carreta1 = document.querySelector('select[name="CARRETA 1"]');
-    const carreta2 = document.querySelector('select[name="CARRETA 2"]');
-    
-    if (carreta1 && carreta2) {
-      // Se Carreta 1 estiver vazio, desabilita Carreta 2
-      if (!carreta1.value.trim()) {
-        carreta2.disabled = true;
-        carreta2.value = '';
-      } else {
-        carreta2.disabled = false;
+
+    // Controlar disponibilidade de Carreta 2
+    function verificarCarreta2() {
+      const carreta1 = document.querySelector('select[name="CARRETA 1"]');
+      const carreta2 = document.querySelector('select[name="CARRETA 2"]');
+      if (carreta1 && carreta2) {
+        if (!carreta1.value.trim()) {
+          carreta2.disabled = true;
+          carreta2.value = '';
+        } else {
+          carreta2.disabled = false;
+        }
       }
     }
-  }
-  
-  // Função para controlar visibilidade dos anexos baseado na modalidade
-  function verificarAnexoAgendamento() {
-    const modalidadeSelect = document.querySelector('select[name="MODALIDADE"]');
-    const anexoAgendamento = document.getElementById('anexo-agendamento');
-    const anexoNF = document.querySelector('.form-item:has(input[name="ANEXAR NF"])');
-    const anexoOS = document.querySelector('.form-item:has(input[name="ANEXAR OS"])');
-    const fileAgendamento = document.querySelector('#file-agendamento');
-    const fileNF = document.querySelector('input[name="ANEXAR NF"]');
-    const fileOS = document.querySelector('input[name="ANEXAR OS"]');
-    
-    if (modalidadeSelect) {
-      const modalidade = modalidadeSelect.value;
-      console.log('Modalidade selecionada:', modalidade);
-      
-      // 1. IMPORTAÇÃO, EXPORTAÇÃO ou CABOTAGEM: mostrar apenas OS e NF
+
+    // Controlar disponibilidade de Container 2
+    function verificarContainer2() {
+      const container1 = document.querySelector('input[name="CONTAINER 1"]');
+      const container2 = document.querySelector('input[name="CONTAINER 2"]');
+      if (container1 && container2) {
+        if (!container1.value.trim()) {
+          container2.disabled = true;
+          container2.value = '';
+        } else {
+          container2.disabled = false;
+        }
+      }
+    }
+
+    // Mostrar/ocultar campos de anexo conforme a modalidade
+    function verificarAnexoAgendamento() {
+      const modalidade = document.querySelector('select[name="MODALIDADE"]').value;
+      const anexoAg = document.getElementById('anexo-agendamento');
+      const itemNF = document.querySelector('.form-item:has(input[name="ANEXAR NF"])');
+      const itemOS = document.querySelector('.form-item:has(input[name="ANEXAR OS"])');
+      const fileAg = document.getElementById('file-agendamento');
+      const fileNF = document.getElementById('file-nf');
+      const fileOS = document.getElementById('file-os');
+
       if (modalidade === 'IMPORTAÇÃO' || modalidade === 'EXPORTAÇÃO' || modalidade === 'CABOTAGEM') {
-        // Mostrar NF e OS, ocultar Agendamento
-        if (anexoNF) anexoNF.style.display = 'block';
-        if (anexoOS) anexoOS.style.display = 'block';
-        if (anexoAgendamento) anexoAgendamento.style.display = 'none';
-        
-        // Remove a obrigatoriedade do campo de agendamento
-        if (fileAgendamento) {
-          fileAgendamento.removeAttribute('required');
-        }
-      } 
-      // 2. CST: mostrar apenas AGENDAMENTO
+        if (itemNF) itemNF.style.display = 'block';
+        if (itemOS) itemOS.style.display = 'block';
+        if (anexoAg) anexoAg.style.display = 'none';
+        if (fileAg) fileAg.removeAttribute('required');
+      }
       else if (modalidade === 'CST') {
-        // Oculta NF e OS, mostra apenas Agendamento
-        if (anexoNF) anexoNF.style.display = 'none';
-        if (anexoOS) anexoOS.style.display = 'none';
-        if (anexoAgendamento) anexoAgendamento.style.display = 'block';
-        
-        // Torna o campo de agendamento obrigatório
-        if (fileAgendamento) {
-          fileAgendamento.setAttribute('required', 'required');
-          const label = anexoAgendamento.querySelector('.form-label');
+        if (itemNF) itemNF.style.display = 'none';
+        if (itemOS) itemOS.style.display = 'none';
+        if (anexoAg) {
+          anexoAg.style.display = 'block';
+          if (fileAg) fileAg.setAttribute('required', 'required');
+          const label = anexoAg.querySelector('.form-label');
           if (label && !label.innerHTML.includes('*')) {
             label.innerHTML = 'ANEXAR AGENDAMENTO <span class="text-danger">*</span> <span class="data-type-hint">Arquivo</span>';
           }
         }
-      } 
-      // 3. MANUTENÇÃO: mostrar apenas OS
-      else if (modalidade === 'Manutenção' || modalidade === 'MANUTENÇÃO') {
-        // Oculta NF e Agendamento, mostra apenas OS
-        if (anexoNF) anexoNF.style.display = 'none';
-        if (anexoOS) anexoOS.style.display = 'block';
-        if (anexoAgendamento) anexoAgendamento.style.display = 'none';
-        
-        // Remove a obrigatoriedade do campo de agendamento
-        if (fileAgendamento) {
-          fileAgendamento.removeAttribute('required');
-        }
-      } 
-      // Para outras modalidades, não mostrar nenhum campo de anexo
+      }
+      else if (/^Manutenção$/i.test(modalidade)) {
+        if (itemNF) itemNF.style.display = 'none';
+        if (itemOS) itemOS.style.display = 'block';
+        if (anexoAg) anexoAg.style.display = 'none';
+        if (fileAg) fileAg.removeAttribute('required');
+      }
       else {
-        if (anexoNF) anexoNF.style.display = 'none';
-        if (anexoOS) anexoOS.style.display = 'none';
-        if (anexoAgendamento) anexoAgendamento.style.display = 'none';
-        
-        // Remove a obrigatoriedade de todos os campos
-        if (fileAgendamento) fileAgendamento.removeAttribute('required');
+        if (itemNF) itemNF.style.display = 'none';
+        if (itemOS) itemOS.style.display = 'none';
+        if (anexoAg) anexoAg.style.display = 'none';
+        if (fileAg) fileAg.removeAttribute('required');
         if (fileNF) fileNF.removeAttribute('required');
         if (fileOS) fileOS.removeAttribute('required');
       }
     }
-  }
-  
-  // Converter formato de data de DD/MM/AAAA HH:MM para YYYY-MM-DDTHH:MM (usado pelo input datetime-local)
-  function convertDateFormatToISO(dateStr) {
-    if (!dateStr) return '';
-    
-    // Verificar se a string está no formato esperado DD/MM/AAAA HH:MM
-    const dateParts = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}) (\d{1,2}):(\d{1,2})/);
-    if (!dateParts) return '';
-    
-    // Extrair partes da data
-    const day = dateParts[1].padStart(2, '0');
-    const month = dateParts[2].padStart(2, '0');
-    const year = dateParts[3];
-    const hours = dateParts[4].padStart(2, '0');
-    const minutes = dateParts[5].padStart(2, '0');
-    
-    // Retornar no formato YYYY-MM-DDTHH:MM
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  }
-  
-  // Converter formato de data de YYYY-MM-DDTHH:MM para DD/MM/AAAA HH:MM
-  function convertDateFormatToBR(isoDateStr) {
-    if (!isoDateStr) return '';
-    
-    try {
-      const date = new Date(isoDateStr);
-      if (isNaN(date.getTime())) return '';
-      
-      const day = date.getDate().toString().padStart(2, '0');
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const year = date.getFullYear();
-      const hours = date.getHours().toString().padStart(2, '0');
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      
-      return `${day}/${month}/${year} ${hours}:${minutes}`;
-    } catch (e) {
-      console.error('Erro ao converter data:', e);
-      return '';
+
+    // Converter "DD/MM/AAAA HH:MM" → "YYYY-MM-DDTHH:MM"
+    function convertDateFormatToISO(dateStr) {
+      if (!dateStr) return '';
+      const match = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4}) (\d{1,2}):(\d{1,2})/);
+      if (!match) return '';
+      const [_, d, m, y, h, min] = match;
+      return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}T${h.padStart(2,'0')}:${min.padStart(2,'0')}`;
     }
-  }
-  
-  // Configurar inputs de data com datepicker e formato brasileiro
-  function setupDateTimeInputs() {
-    const dateTimeInputs = document.querySelectorAll('.datetime-input');
-    
-    dateTimeInputs.forEach(input => {
-      // Criar um campo hidden para armazenar o valor no formato brasileiro
-      const hiddenField = document.createElement('input');
-      hiddenField.type = 'hidden';
-      hiddenField.name = input.name + '_original';
-      hiddenField.value = input.value;
-      input.parentNode.appendChild(hiddenField);
-      
-      // Adicionar listener para atualizar o campo hidden quando o valor mudar
-      input.addEventListener('change', function() {
-        hiddenField.value = convertDateFormatToBR(this.value);
-      });
-    });
-    
-    // Configuração básica do formulário
-    const form = document.querySelector('form');
-    if (form) {
-      // Remover o preventDefault para permitir o envio normal do formulário
-      // Apenas fazer validações básicas
-      console.log('Formulário configurado para envio normal');
-    }
-  }
-  
-  // Função para destacar campos vazios
-  function destacarCamposVazios() {
-    const inputs = document.querySelectorAll('input:not([type="hidden"]), select, textarea');
-    inputs.forEach(input => {
-      const value = input.value;
-      if (!value || value === 'none' || value === 'NaN' || value === 'undefined' || value.trim() === '') {
-        input.classList.add('empty-field');
-        if (value === 'none' || value === 'NaN' || value === 'undefined') {
-          input.value = ''; // Limpar valores 'none', 'NaN' ou 'undefined'
-        }
-      } else {
-        input.classList.remove('empty-field');
+
+    // Converter "YYYY-MM-DDTHH:MM" → "DD/MM/AAAA HH:MM"
+    function convertDateFormatToBR(isoStr) {
+      if (!isoStr) return '';
+      try {
+        const date = new Date(isoStr);
+        if (isNaN(date)) return '';
+        const dd = String(date.getDate()).padStart(2,'0');
+        const mm = String(date.getMonth()+1).padStart(2,'0');
+        const yyyy = date.getFullYear();
+        const hh = String(date.getHours()).padStart(2,'0');
+        const mn = String(date.getMinutes()).padStart(2,'0');
+        return `${dd}/${mm}/${yyyy} ${hh}:${mn}`;
+      } catch {
+        return '';
       }
-    });
-  }
-  
-  // Nota: A inicialização principal é feita no primeiro bloco document.addEventListener acima
-</script>
+    }
+
+    // Configurar inputs datetime-local para manter valor original em formato BR
+    function setupDateTimeInputs() {
+      document.querySelectorAll('.datetime-input').forEach(input => {
+        const hiddenField = document.createElement('input');
+        hiddenField.type = 'hidden';
+        hiddenField.name = input.name + '_original';
+        hiddenField.value = input.value;
+        input.parentNode.appendChild(hiddenField);
+
+        input.addEventListener('change', function() {
+          hiddenField.value = convertDateFormatToBR(this.value);
+        });
+      });
+    }
+
+    // Destacar campos vazios
+    function destacarCamposVazios() {
+      document.querySelectorAll('input:not([type="hidden"]), select, textarea').forEach(input => {
+        const val = input.value;
+        if (!val || val.trim() === '' || ['none','NaN','undefined'].includes(val)) {
+          input.classList.add('empty-field');
+          if (['none','NaN','undefined'].includes(val)) {
+            input.value = '';
+          }
+        } else {
+          input.classList.remove('empty-field');
+        }
+      });
+    }
+
+    // Configurar drag-and-drop e File Upload
+    function setupFileUploads() {
+      document.querySelectorAll('input[type="file"]').forEach(input => {
+        input.addEventListener('change', function() {
+          if (this.files && this.files.length > 0) {
+            const fileName = this.files[0].name;
+            const fileNameEl = document.getElementById('file-name-' + this.id.split('-')[1]);
+            if (fileNameEl) {
+              fileNameEl.textContent = fileName;
+              fileNameEl.style.display = 'block';
+              this.closest('.file-upload-area').classList.add('has-file');
+            }
+            console.log(`Arquivo selecionado em ${this.name}: ${fileName}`);
+          }
+        });
+      });
+
+      document.querySelectorAll('.file-upload-area').forEach(area => {
+        ['dragenter','dragover','dragleave','drop'].forEach(evt => {
+          area.addEventListener(evt, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+          });
+        });
+        ['dragenter','dragover'].forEach(evt => {
+          area.addEventListener(evt, function() {
+            this.classList.add('dragover');
+          });
+        });
+        ['dragleave','drop'].forEach(evt => {
+          area.addEventListener(evt, function() {
+            this.classList.remove('dragover');
+          });
+        });
+        area.addEventListener('drop', function(e) {
+          const fileInput = this.querySelector('input[type="file"]');
+          if (fileInput && e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            fileInput.dispatchEvent(new Event('change'));
+          }
+        });
+      });
+    }
+  </script>
 </body>
 </html>

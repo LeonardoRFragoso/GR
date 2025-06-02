@@ -22,7 +22,6 @@
         .nav-link {
             color: rgba(255, 255, 255, 0.8);
             padding: 0.8rem 1.2rem;
-            border-radius: 0;
             margin-bottom: 0.3rem;
         }
         .nav-link:hover {
@@ -48,8 +47,6 @@
             transform: translateY(-5px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.15);
         }
-        
-        /* Estilo para destacar registros com alterações pós SM/AE */
         .alteracao-pos-smae {
             background-color: rgba(13, 110, 253, 0.12) !important;
         }
@@ -82,7 +79,6 @@
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            padding: 0;
             overflow: hidden;
         }
         .table th {
@@ -130,8 +126,6 @@
             margin-bottom: 1.5rem;
             box-shadow: 0 3px 10px rgba(0,0,0,0.1);
         }
-        
-        /* Estilo para destacar as diferenças entre valores originais e alterados */
         .bg-light-yellow {
             background-color: rgba(255, 235, 59, 0.2);
             font-weight: 500;
@@ -147,7 +141,6 @@
                     <h4>AutoSAT</h4>
                     <p class="small mb-0">Gestão de Risco</p>
                 </div>
-                
                 <div class="nav flex-column px-3">
                     <a href="{{ url_for('gr.ambiente') }}" class="nav-link active">
                         <i class="fas fa-home me-2"></i> Ambiente GR
@@ -172,17 +165,37 @@
                     </a>
                 </div>
             </div>
-            
+
             <!-- Content -->
             <div class="col-md-10 p-4">
                 <div class="dashboard-header d-flex justify-content-between align-items-center">
                     <h2><i class="fas fa-tasks me-2" style="color: #fd7e14;"></i> Ambiente de Gestão de Risco</h2>
-                    <div>
-                        <i class="fas fa-user-circle me-1"></i> {{ usuario }}
+                    <div class="user-info">
+                        <i class="fas fa-user me-1"></i> {{ usuario }}
                         <span class="badge bg-warning text-dark ms-1">{{ nivel }}</span>
                     </div>
                 </div>
                 
+                <!-- Alertas de erro de JSON -->
+                {% if erro_json is defined and erro_json %}
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Atenção!</strong> Alguns dados históricos não puderam ser carregados devido a um erro de formato nos dados JSON. 
+                    Estamos exibindo dados parciais. O administrador do sistema foi notificado.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                </div>
+                {% endif %}
+                
+                <!-- Alertas de erro geral -->
+                {% if erro_geral is defined and erro_geral %}
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Atenção!</strong> Ocorreu um erro ao carregar todos os dados. 
+                    Estamos exibindo dados parciais. O administrador do sistema foi notificado.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                </div>
+                {% endif %}
+
                 <!-- Métricas de Tempo -->
                 <div class="section-title">Métricas de Tempo</div>
                 <div class="row mb-4">
@@ -201,7 +214,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Tempo Médio SM -->
                     <div class="col-md-3 mb-3">
                         <div class="kpi-card card h-100">
@@ -224,7 +237,10 @@
                 <div class="row mb-4">
                     <!-- Alterações pós SM/AE -->
                     <div class="col-md-3 mb-3">
-                        <div class="kpi-card card h-100 {% if request.args.get('alteracoes_pos_smae') == 'true' %}border border-primary border-2{% endif %}" onclick="window.location.href='{% if request.args.get("alteracoes_pos_smae") == "true" %}{{ url_for("gr.ambiente") }}{% else %}{{ url_for("gr.ambiente") }}?alteracoes_pos_smae=true{% endif %}'" style="cursor: pointer;">
+                        <div
+                            class="kpi-card card h-100 {% if request.args.get('alteracoes_pos_smae') == 'true' %}border border-primary border-2{% endif %}"
+                            onclick="window.location.href='{% if request.args.get('alteracoes_pos_smae') == 'true' %}{{ url_for('gr.ambiente') }}{% else %}{{ url_for('gr.ambiente') }}?alteracoes_pos_smae=true{% endif %}'"
+                        >
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <div class="kpi-icon bg-primary bg-opacity-10">
@@ -241,10 +257,13 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Sem container definido -->
                     <div class="col-md-3 mb-3">
-                        <div class="kpi-card card h-100 {% if request.args.get('sem_container') == 'true' %}border border-warning border-2{% endif %}" onclick="window.location.href='{% if request.args.get("sem_container") == "true" %}{{ url_for("gr.ambiente") }}{% else %}{{ url_for("gr.ambiente") }}?sem_container=true{% endif %}'" style="cursor: pointer;">
+                        <div
+                            class="kpi-card card h-100 {% if request.args.get('sem_container') == 'true' %}border border-warning border-2{% endif %}"
+                            onclick="window.location.href='{% if request.args.get('sem_container') == 'true' %}{{ url_for('gr.ambiente') }}{% else %}{{ url_for('gr.ambiente') }}?sem_container=true{% endif %}'"
+                        >
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <div class="kpi-icon bg-warning bg-opacity-10">
@@ -261,10 +280,13 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Sem SM definido -->
                     <div class="col-md-3 mb-3">
-                        <div class="kpi-card card h-100 {% if request.args.get('sem_sm') == 'true' %}border border-danger border-2{% endif %}" onclick="window.location.href='{% if request.args.get("sem_sm") == "true" %}{{ url_for("gr.ambiente") }}{% else %}{{ url_for("gr.ambiente") }}?sem_sm=true{% endif %}'" style="cursor: pointer;">
+                        <div
+                            class="kpi-card card h-100 {% if request.args.get('sem_sm') == 'true' %}border border-danger border-2{% endif %}"
+                            onclick="window.location.href='{% if request.args.get('sem_sm') == 'true' %}{{ url_for('gr.ambiente') }}{% else %}{{ url_for('gr.ambiente') }}?sem_sm=true{% endif %}'"
+                        >
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <div class="kpi-icon bg-danger bg-opacity-10">
@@ -281,10 +303,13 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Sem AE definido -->
                     <div class="col-md-3 mb-3">
-                        <div class="kpi-card card h-100 {% if request.args.get('sem_ae') == 'true' %}border border-info border-2{% endif %}" onclick="window.location.href='{% if request.args.get("sem_ae") == "true" %}{{ url_for("gr.ambiente") }}{% else %}{{ url_for("gr.ambiente") }}?sem_ae=true{% endif %}'" style="cursor: pointer;">
+                        <div
+                            class="kpi-card card h-100 {% if request.args.get('sem_ae') == 'true' %}border border-info border-2{% endif %}"
+                            onclick="window.location.href='{% if request.args.get('sem_ae') == 'true' %}{{ url_for('gr.ambiente') }}{% else %}{{ url_for('gr.ambiente') }}?sem_ae=true{% endif %}'"
+                        >
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <div class="kpi-icon bg-info bg-opacity-10">
@@ -302,17 +327,21 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="row mb-4">
                     <!-- Sem NF definido -->
                     <div class="col-md-3 mb-3">
-                        <div class="kpi-card card h-100 {% if request.args.get('sem_nf') == 'true' %}border border-success border-2{% endif %}" onclick="window.location.href='{% if request.args.get("sem_nf") == "true" %}{{ url_for("gr.ambiente") }}{% else %}{{ url_for("gr.ambiente") }}?sem_nf=true{% endif %}'" style="cursor: pointer;">
+                        <div
+                            class="kpi-card card h-100 {% if request.args.get('sem_nf') == 'true' %}border border-success border-2{% endif %}"
+                            onclick="window.location.href='{% if request.args.get('sem_nf') == 'true' %}{{ url_for('gr.ambiente') }}{% else %}{{ url_for('gr.ambiente') }}?sem_nf=true{% endif %}'"
+                        >
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <div class="kpi-icon bg-success bg-opacity-10">
                                         <i class="fas fa-file-invoice text-success"></i>
                                     </div>
                                     <div class="kpi-value">{{ sem_nf }}</div>
+                                    <!-- Debug: Valor de sem_nf = {{ sem_nf|default('Não definido', true) }} -->
                                 </div>
                                 <div class="kpi-title">
                                     Sem NF
@@ -323,10 +352,13 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Sem OS definido -->
                     <div class="col-md-3 mb-3">
-                        <div class="kpi-card card h-100 {% if request.args.get('sem_os') == 'true' %}border border-secondary border-2{% endif %}" onclick="window.location.href='{% if request.args.get("sem_os") == "true" %}{{ url_for("gr.ambiente") }}{% else %}{{ url_for("gr.ambiente") }}?sem_os=true{% endif %}'" style="cursor: pointer;">
+                        <div
+                            class="kpi-card card h-100 {% if request.args.get('sem_os') == 'true' %}border border-secondary border-2{% endif %}"
+                            onclick="window.location.href='{% if request.args.get('sem_os') == 'true' %}{{ url_for('gr.ambiente') }}{% else %}{{ url_for('gr.ambiente') }}?sem_os=true{% endif %}'"
+                        >
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <div class="kpi-icon bg-secondary bg-opacity-10">
@@ -344,12 +376,17 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Indicador de filtro ativo e botão para limpar -->
-                {% if request.args.get('alteracoes_pos_smae') == 'true' or request.args.get('sem_container') == 'true' or request.args.get('sem_sm') == 'true' or request.args.get('sem_ae') == 'true' or request.args.get('sem_nf') == 'true' or request.args.get('sem_os') == 'true' %}
+                {% if request.args.get('alteracoes_pos_smae') == 'true' 
+                      or request.args.get('sem_container') == 'true' 
+                      or request.args.get('sem_sm') == 'true' 
+                      or request.args.get('sem_ae') == 'true' 
+                      or request.args.get('sem_nf') == 'true' 
+                      or request.args.get('sem_os') == 'true' %}
                 <div class="alert alert-info d-flex justify-content-between align-items-center mb-3">
                     <div>
-                        <i class="fas fa-filter me-2"></i> Filtro ativo: 
+                        <i class="fas fa-filter me-2"></i> Filtro ativo:
                         {% if request.args.get('alteracoes_pos_smae') == 'true' %}
                             <span class="badge bg-primary me-1">Alterações pós SM/AE</span>
                         {% endif %}
@@ -374,22 +411,45 @@
                     </a>
                 </div>
                 {% endif %}
-                
+
                 <!-- Filtros da tabela -->
                 <form id="filtroForm" action="{{ url_for('gr.ambiente') }}" method="get" class="d-flex flex-wrap mb-3">
                     <div class="form-check me-3">
-                        <input class="form-check-input" type="checkbox" id="filterSemSM" name="sem_sm" value="true" {% if filtro_sem_sm %}checked{% endif %} onchange="document.getElementById('filtroForm').submit()">
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="filterSemSM"
+                            name="sem_sm"
+                            value="true"
+                            {% if filtro_sem_sm %}checked{% endif %}
+                            onchange="document.getElementById('filtroForm').submit()"
+                        >
                         <label class="form-check-label" for="filterSemSM">Sem SM</label>
                     </div>
                     <div class="form-check me-3">
-                        <input class="form-check-input" type="checkbox" id="filterSemAE" name="sem_ae" value="true" {% if filtro_sem_ae %}checked{% endif %} onchange="document.getElementById('filtroForm').submit()">
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="filterSemAE"
+                            name="sem_ae"
+                            value="true"
+                            {% if filtro_sem_ae %}checked{% endif %}
+                            onchange="document.getElementById('filtroForm').submit()"
+                        >
                         <label class="form-check-label" for="filterSemAE">Sem AE</label>
                     </div>
                     <div class="form-check me-3">
-                        <input class="form-check-input" type="checkbox" id="filterSemContainer" name="sem_container" value="true" {% if filtro_sem_container %}checked{% endif %} onchange="document.getElementById('filtroForm').submit()">
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="filterSemContainer"
+                            name="sem_container"
+                            value="true"
+                            {% if filtro_sem_container %}checked{% endif %}
+                            onchange="document.getElementById('filtroForm').submit()"
+                        >
                         <label class="form-check-label" for="filterSemContainer">Sem Container</label>
                     </div>
-                    
                     {% if filtro_sem_sm or filtro_sem_ae or filtro_sem_container %}
                     <div class="ms-auto">
                         <a href="{{ url_for('gr.ambiente') }}" class="btn btn-sm btn-outline-secondary">
@@ -398,7 +458,7 @@
                     </div>
                     {% endif %}
                 </form>
-                
+
                 <!-- Filtros adicionais para a tabela -->
                 {% if request.args.get('alteracoes_pos_smae') == 'true' and registros_alterados|length > 0 %}
                 <div class="card mb-3">
@@ -410,27 +470,53 @@
                             <div class="col-md-3">
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text">Cliente</span>
-                                    <input type="text" id="filtroCliente" class="form-control" placeholder="Filtrar por cliente..." onkeyup="filtrarTabela()">
+                                    <input
+                                        type="text"
+                                        id="filtroCliente"
+                                        class="form-control"
+                                        placeholder="Filtrar por cliente..."
+                                        onkeyup="filtrarTabela()"
+                                    >
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text">Motorista</span>
-                                    <input type="text" id="filtroMotorista" class="form-control" placeholder="Filtrar por motorista..." onkeyup="filtrarTabela()">
+                                    <input
+                                        type="text"
+                                        id="filtroMotorista"
+                                        class="form-control"
+                                        placeholder="Filtrar por motorista..."
+                                        onkeyup="filtrarTabela()"
+                                    >
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text">Container</span>
-                                    <input type="text" id="filtroContainer" class="form-control" placeholder="Filtrar por container..." onkeyup="filtrarTabela()">
+                                    <input
+                                        type="text"
+                                        id="filtroContainer"
+                                        class="form-control"
+                                        placeholder="Filtrar por container..."
+                                        onkeyup="filtrarTabela()"
+                                    >
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="d-flex justify-content-end">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary me-2" onclick="limparFiltrosTabela()">
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline-secondary me-2"
+                                        onclick="limparFiltrosTabela()"
+                                    >
                                         <i class="fas fa-eraser me-1"></i> Limpar
                                     </button>
-                                    <button type="button" class="btn btn-sm btn-primary" onclick="exportarTabela()">
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-primary"
+                                        onclick="exportarTabela()"
+                                    >
                                         <i class="fas fa-file-export me-1"></i> Exportar
                                     </button>
                                 </div>
@@ -438,17 +524,17 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Alerta para registros com alterações -->
                 <div class="alert alert-info mb-4">
                     <h5 class="mb-3"><i class="fas fa-info-circle me-2"></i> Registros com alterações após inclusão de SM/AE</h5>
                     <p>Os seguintes registros tiveram alterações em campos importantes após a inclusão de SM/AE. Verifique cada registro e confirme as alterações.</p>
                 </div>
                 {% endif %}
-                
+
                 <!-- Tabela de Registros -->
                 <div class="section-title">Registros</div>
-                
+
                 <!-- Legenda para indicadores visuais -->
                 <div class="mb-3">
                     <span class="badge bg-info me-2">Legenda:</span>
@@ -459,7 +545,7 @@
                         <i class="fas fa-history text-info me-1"></i> Botão para visualizar alterações
                     </span>
                 </div>
-                
+
                 <div class="table-responsive">
                     <table class="table table-hover align-middle bg-white rounded overflow-hidden">
                         <thead>
@@ -508,57 +594,76 @@
                                 <td>{{ r['numero_ae'] if r['numero_ae'] is not none else '' }}</td>
                                 <td>
                                     <div class="d-flex justify-content-center gap-1">
-                                        <!-- Botão de Ver Alterações -->
                                         {% if r.get('tem_alteracoes_pos_smae', False) or registro_id in registros_alterados_ids %}
-                                        <button data-action="mostrar-alteracoes" data-registro-id="{{ r['id'] }}" onclick="mostrarAlteracoes({{ r['id'] }})" class="btn btn-sm {% if filtro_alteracoes_pos_smae %}btn-primary{% else %}btn-outline-info{% endif %} p-1" title="Ver Alterações">
+                                        <button
+                                            data-action="mostrar-alteracoes"
+                                            data-registro-id="{{ r['id'] }}"
+                                            onclick="mostrarAlteracoes({{ r['id'] }})"
+                                            class="btn btn-sm {% if filtro_alteracoes_pos_smae %}btn-primary{% else %}btn-outline-info{% endif %} p-1"
+                                            title="Ver Alterações"
+                                        >
                                             <i class="fas fa-history"></i>
                                         </button>
                                         {% endif %}
-                                        
-                                        <!-- Botão de Visualizar -->
                                         <a href="{{ url_for('gr.visualizar_registro', registro_id=r['id']) }}" class="btn btn-sm btn-outline-primary p-1" title="Visualizar">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        
-                                        <!-- Botão de Editar -->
                                         <a href="{{ url_for('gr.editar_registro', registro_id=r['id']) }}" class="btn btn-sm btn-outline-warning p-1" title="Editar Dados GR">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        
-                                        <!-- Downloads de anexos -->
                                         {% if r.get('anexar_nf') or r.get('anexar_os') or r.get('anexar_agendamento') %}
                                         <div class="dropdown d-inline-block">
-                                            <button class="btn btn-sm btn-outline-secondary p-1 dropdown-toggle" type="button" id="dropdownAnexos{{ r['id'] }}" data-bs-toggle="dropdown" aria-expanded="false" title="Anexos">
+                                            <button
+                                                class="btn btn-sm btn-outline-secondary p-1 dropdown-toggle"
+                                                type="button"
+                                                id="dropdownAnexos{{ r['id'] }}"
+                                                data-bs-toggle="dropdown"
+                                                aria-expanded="false"
+                                                title="Anexos"
+                                            >
                                                 <i class="fas fa-paperclip"></i>
                                             </button>
                                             <ul class="dropdown-menu" aria-labelledby="dropdownAnexos{{ r['id'] }}">
                                                 {% if r.get('anexar_nf') %}
-                                                <li><a class="dropdown-item" href="{{ url_for('comum.download_anexo', registro_id=r['id'], tipo='nf') }}"><i class="fas fa-file-download me-2"></i> NF</a></li>
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ url_for('comum.download_anexo', registro_id=r['id'], tipo='nf') }}">
+                                                        <i class="fas fa-file-download me-2"></i> NF
+                                                    </a>
+                                                </li>
                                                 {% endif %}
                                                 {% if r.get('anexar_os') %}
-                                                <li><a class="dropdown-item" href="{{ url_for('comum.download_anexo', registro_id=r['id'], tipo='os') }}"><i class="fas fa-file-download me-2"></i> OS</a></li>
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ url_for('comum.download_anexo', registro_id=r['id'], tipo='os') }}">
+                                                        <i class="fas fa-file-download me-2"></i> OS
+                                                    </a>
+                                                </li>
                                                 {% endif %}
                                                 {% if r.get('anexar_agendamento') %}
-                                                <li><a class="dropdown-item" href="{{ url_for('comum.download_anexo', registro_id=r['id'], tipo='agendamento') }}"><i class="fas fa-file-download me-2"></i> Agendamento</a></li>
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ url_for('comum.download_anexo', registro_id=r['id'], tipo='agendamento') }}">
+                                                        <i class="fas fa-file-download me-2"></i> Agendamento
+                                                    </a>
+                                                </li>
                                                 {% endif %}
                                             </ul>
                                         </div>
                                         {% endif %}
-                                        
-                                        <!-- Botão de marcar como verificado -->
                                         {% if filtro_alteracoes_pos_smae and r.get('alteracoes_verificadas') == 0 %}
                                         <button onclick="confirmarVerificacao({{ r['id'] }})" class="btn btn-sm btn-outline-success p-1" title="Marcar como verificado">
                                             <i class="fas fa-check"></i>
                                         </button>
                                         {% endif %}
-                                        
-                                        <!-- Botão de Exclusão apenas para Admin -->
                                         {% if nivel == 'admin' %}
-                                            <form action="{{ url_for('comum.delete_registro', registro_id=r['id']) }}" method="post" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.');">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger p-1" title="Excluir">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
+                                        <form
+                                            action="{{ url_for('comum.delete_registro', registro_id=r['id']) }}"
+                                            method="post"
+                                            style="display:inline;"
+                                            onsubmit="return confirm('Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.');"
+                                        >
+                                            <button type="submit" class="btn btn-sm btn-outline-danger p-1" title="Excluir">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
                                         {% endif %}
                                     </div>
                                 </td>
@@ -567,7 +672,7 @@
                         </tbody>
                     </table>
                 </div>
-                
+
                 <!-- Paginação -->
                 <nav aria-label="Paginação" class="mt-4">
                     <ul class="pagination justify-content-center">
@@ -578,13 +683,11 @@
                             </a>
                         </li>
                         {% endif %}
-                        
                         {% for p in range(1, total_paginas + 1) %}
                         <li class="page-item {% if p == pagina_atual %}active{% endif %}">
                             <a class="page-link" href="{{ gerar_url_paginacao(p) }}">{{ p }}</a>
                         </li>
                         {% endfor %}
-                        
                         {% if page < total_paginas %}
                         <li class="page-item">
                             <a class="page-link" href="{{ gerar_url_paginacao(page + 1) }}" aria-label="Próximo">
@@ -594,7 +697,7 @@
                         {% endif %}
                     </ul>
                 </nav>
-                
+
                 {% if registros|length == 0 %}
                 <div class="card-body text-center py-5">
                     <i class="fas fa-search text-muted mb-3" style="font-size: 48px;"></i>
@@ -607,7 +710,7 @@
                     {% endif %}
                 </div>
                 {% endif %}
-                
+
                 <!-- Paginação Funcional -->
                 <div class="d-flex justify-content-between align-items-center mt-3">
                     <div class="small text-muted">
@@ -617,25 +720,32 @@
                         <ul class="pagination pagination-sm mb-0">
                             <!-- Botão Anterior -->
                             <li class="page-item {% if pagina_atual == 1 %}disabled{% endif %}">
-                                <a class="page-link" href="{% if pagina_atual > 1 %}{{ gerar_url_paginacao(pagina_atual - 1) }}{% else %}#{% endif %}" {% if pagina_atual == 1 %}tabindex="-1" aria-disabled="true"{% endif %}>
+                                <a
+                                    class="page-link"
+                                    href="{% if pagina_atual > 1 %}{{ gerar_url_paginacao(pagina_atual - 1) }}{% else %}#{% endif %}"
+                                    {% if pagina_atual == 1 %}tabindex="-1" aria-disabled="true"{% endif %}
+                                >
                                     Anterior
                                 </a>
                             </li>
-                            
+
                             <!-- Números das páginas -->
                             {% set start_page = [1, pagina_atual - 2]|max %}
                             {% set end_page = [start_page + 4, total_paginas]|min %}
                             {% set start_page = [end_page - 4, 1]|max %}
-                            
                             {% for p in range(start_page, end_page + 1) %}
-                                <li class="page-item {% if p == pagina_atual %}active{% endif %}">
-                                    <a class="page-link" href="{{ gerar_url_paginacao(p) }}">{{ p }}</a>
-                                </li>
+                            <li class="page-item {% if p == pagina_atual %}active{% endif %}">
+                                <a class="page-link" href="{{ gerar_url_paginacao(p) }}">{{ p }}</a>
+                            </li>
                             {% endfor %}
-                            
+
                             <!-- Botão Próximo -->
                             <li class="page-item {% if pagina_atual >= total_paginas %}disabled{% endif %}">
-                                <a class="page-link" href="{% if pagina_atual < total_paginas %}{{ gerar_url_paginacao(pagina_atual + 1) }}{% else %}#{% endif %}" {% if pagina_atual >= total_paginas %}tabindex="-1" aria-disabled="true"{% endif %}>
+                                <a
+                                    class="page-link"
+                                    href="{% if pagina_atual < total_paginas %}{{ gerar_url_paginacao(pagina_atual + 1) }}{% else %}#{% endif %}"
+                                    {% if pagina_atual >= total_paginas %}tabindex="-1" aria-disabled="true"{% endif %}
+                                >
                                     Próximo
                                 </a>
                             </li>
@@ -651,52 +761,52 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="alteracoesModalLabel"><i class="fas fa-history me-2"></i> Alterações após SM/AE</h5>
+                    <h5 class="modal-title" id="alteracoesModalLabel"><i class="fas fa-history me-2"></i> Histórico de Alterações</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="alteracoesLoading" class="text-center py-4">
+                    <div id="alteracoesModalErro" class="alert alert-danger" style="display: none;"></div>
+                    <div id="alteracoesModalInfo" class="alert alert-info" style="display: none;"></div>
+                    <div id="alteracoesModalAlertas"></div>
+
+                    <div id="alteracoesModalLoading" class="text-center py-4">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Carregando...</span>
                         </div>
-                        <p class="mt-2">Carregando alterações...</p>
+                        <p class="mt-2">Carregando histórico de alterações...</p>
                     </div>
-                    
-                    <div id="alteracoesContent" class="d-none">
-                        <div class="card mb-3">
-                            <div class="card-header bg-primary text-white">
-                                <h6 class="mb-0">Informações do Registro</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <p><strong>ID:</strong> <span id="registro-id"></span></p>
-                                        <p><strong>Cliente:</strong> <span id="registro-cliente"></span></p>
-                                        <p><strong>Data de Registro:</strong> <span id="registro-data"></span></p>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <p><strong>Número SM:</strong> <span id="registro-sm"></span></p>
-                                        <p><strong>Número AE:</strong> <span id="registro-ae"></span></p>
-                                        <p><strong>Data de Modificação:</strong> <span id="registro-modificacao" class="text-danger"></span></p>
-                                    </div>
+
+                    <div class="card mb-3" id="alteracoesModalResumo" style="display: none;">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i> Resumo do Registro</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2"><i class="fas fa-user text-muted me-2"></i> <strong>Cliente:</strong> <span id="resumoCliente">-</span></p>
+                                    <p class="mb-2"><i class="fas fa-clipboard-list text-muted me-2"></i> <strong>Número SM:</strong> <span id="resumoNumeroSM">-</span></p>
+                                    <p class="mb-2"><i class="fas fa-file-signature text-muted me-2"></i> <strong>Número AE:</strong> <span id="resumoNumeroAE">-</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2"><i class="far fa-calendar-plus text-muted me-2"></i> <strong>Data Registro:</strong> <span id="resumoDataRegistro">-</span></p>
+                                    <p class="mb-2"><i class="far fa-calendar-check text-muted me-2"></i> <strong>Última Modificação:</strong> <span id="resumoDataModificacao">-</span></p>
+                                    <p class="mb-2"><i class="fas fa-history text-primary me-2"></i> <strong>Total de Alterações:</strong> <span id="resumoTotalAlteracoes" class="badge bg-primary">0</span></p>
                                 </div>
                             </div>
                         </div>
-                        
-                        <div id="mensagemAlteracoes" class="alert alert-info d-none">
-                            <i class="fas fa-info-circle me-2"></i> <span id="total-alteracoes"></span> campo(s) foram alterados após a inclusão dos números SM e AE:
-                        </div>
-                        
-                        <div id="semAlteracoes" class="alert alert-warning d-none">
-                            <i class="fas fa-exclamation-triangle me-2"></i> Não foram encontradas alterações nos campos importantes após a inclusão de SM/AE.
-                        </div>
-                        
-                        <div id="alteracoesInfo" class="alert alert-secondary mb-3 d-none">
-                            <i class="fas fa-info-circle me-2"></i> Abaixo estão os campos que foram alterados, mostrando o valor original e o valor atual (destacado em amarelo).
-                        </div>
-                        
-                        <table id="tabelaAlteracoes" class="table table-striped table-hover">
-                            <thead>
+                    </div>
+
+                    <div id="mensagemAlteracoes" class="alert alert-primary" style="display: none;">
+                        <i class="fas fa-info-circle me-2"></i> Foram encontradas <strong><span id="total-alteracoes">0</span> alterações</strong> para este registro.
+                    </div>
+
+                    <div id="semAlteracoes" class="alert alert-warning" style="display: none;">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Nenhuma alteração encontrada para este registro.
+                    </div>
+
+                    <div id="alteracoesModalTabela" class="table-responsive" style="display: none;">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-light">
                                 <tr>
                                     <th>Campo</th>
                                     <th>Valor Original</th>
@@ -711,50 +821,38 @@
                         </table>
                     </div>
                 </div>
+
                 <div class="modal-footer">
-                    <form id="formConfirmarVerificacao" method="POST">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}"/>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Não</button>
-                        <button type="submit" class="btn btn-success">
-                            <i class="fas fa-check me-2"></i> Sim, visualizei as alterações
-                        </button>
-                    </form>
+                    <button type="button" id="btnConfirmarVisualizacao" class="btn btn-primary me-2" onclick="confirmarVisualizacao()">
+                        <i class="fas fa-check"></i> Confirmar Visualização
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="fecharModal()">
+                        <i class="fas fa-times"></i> Fechar
+                    </button>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <script>
-        // Verificar se o Bootstrap está disponível quando a página carrega
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Página carregada. Verificando Bootstrap...');
-            
-            // Verificar se o Bootstrap está disponível
             if (typeof bootstrap === 'undefined') {
                 console.error('Bootstrap não está disponível na inicialização.');
             } else {
                 console.log('Bootstrap já está disponível.');
             }
-            
-            // Configurar os botões de alterações
             configurarBotoesAlteracoes();
-            
-            // Iniciar a atualização automática dos contadores
             atualizarContadores();
-            
-            // Configurar atualização a cada 30 segundos
             setInterval(atualizarContadores, 30000);
         });
-        
-        // Função para configurar os botões de alterações
+
         function configurarBotoesAlteracoes() {
             const botoes = document.querySelectorAll('[data-action="mostrar-alteracoes"]');
             console.log(`Encontrados ${botoes.length} botões para configurar`);
-            
             botoes.forEach(botao => {
                 const registroId = botao.getAttribute('data-registro-id');
                 console.log(`Configurando botão para registro ID: ${registroId}`);
-                
                 botao.addEventListener('click', function(event) {
                     event.preventDefault();
                     console.log(`Botão clicado para registro ID: ${registroId}`);
@@ -762,13 +860,11 @@
                 });
             });
         }
-        
-        // Função para atualizar os contadores automaticamente
+
         function atualizarContadores() {
             fetch('/gr/api/contadores')
                 .then(response => response.json())
                 .then(data => {
-                    // Atualizar os valores dos contadores nos cards
                     if (data.alteracoes_pos_smae !== undefined) {
                         document.querySelectorAll('.kpi-value').forEach(element => {
                             const cardTitle = element.closest('.kpi-card').querySelector('.kpi-title').textContent.trim();
@@ -791,195 +887,345 @@
                 .catch(error => console.error('Erro ao atualizar contadores:', error));
         }
 
-        // Função para mostrar o modal com as alterações
         function mostrarAlteracoes(registroId) {
-            console.log('Função mostrarAlteracoes chamada com ID:', registroId);
-            
-            // Limpar o conteúdo anterior
+            console.log('Mostrando alterações para o registro ID:', registroId);
+            $('#alteracoesModal').data('registro-id', registroId);
             $('#alteracoesTableBody').empty();
-            $('#alteracoesContent').hide();
-            $('#alteracoesLoading').show();
-            $('#mensagemAlteracoes').hide();
-            $('#semAlteracoes').hide();
-            $('#alteracoesInfo').hide();
-            
-            // Configurar o formulário de confirmação
-            $('#formConfirmarVerificacao').attr('action', `/gr/confirmar_verificacao/${registroId}`);
-            
-            // Abrir o modal
+            $('#alteracoesModalErro, #alteracoesModalInfo, #alteracoesModalTabela, #mensagemAlteracoes, #semAlteracoes, #alteracoesModalResumo').hide();
+            $('#alteracoesModalLoading').show();
+
+            const modalElement = document.getElementById('alteracoesModal');
+            console.log('Elemento do modal encontrado:', modalElement != null);
+
             try {
-                console.log('Tentando abrir o modal...');
-                var modalElement = document.getElementById('alteracoesModal');
-                
-                if (typeof bootstrap !== 'undefined') {
-                    var modal = new bootstrap.Modal(modalElement);
-                    modal.show();
-                    console.log('Modal aberto com Bootstrap 5');
-                } else {
+                console.log('Tentando abrir modal com Bootstrap 5');
+                const alteracoesModal = new bootstrap.Modal(modalElement);
+                alteracoesModal.show();
+                console.log('Modal aberto com Bootstrap 5');
+            } catch (e) {
+                console.warn('Erro ao abrir modal via Bootstrap 5:', e);
+                try {
+                    console.log('Tentando abrir modal com jQuery');
                     $('#alteracoesModal').modal('show');
-                    console.log('Modal aberto com jQuery fallback');
-                }
-            } catch (error) {
-                console.error('Erro ao abrir o modal:', error);
-                
-                // Fallback manual
-                var modalElement = document.getElementById('alteracoesModal');
-                if (modalElement) {
-                    modalElement.style.display = 'block';
-                    modalElement.classList.add('show');
-                    document.body.classList.add('modal-open');
-                    console.log('Modal aberto manualmente');
+                    console.log('Modal aberto com jQuery');
+                } catch (e2) {
+                    console.warn('Erro ao abrir modal via jQuery:', e2);
+                    console.log('Tentando abrir modal manualmente');
+                    if (modalElement) {
+                        modalElement.style.display = 'block';
+                        modalElement.classList.add('show');
+                        document.body.classList.add('modal-open');
+                        const backdrop = document.createElement('div');
+                        backdrop.className = 'modal-backdrop fade show';
+                        document.body.appendChild(backdrop);
+                        console.log('Modal aberto manualmente');
+                    } else {
+                        console.error('Elemento do modal não encontrado!');
+                    }
                 }
             }
-            
-            // Carregar as alterações via AJAX - usando a URL correta
+
             $.ajax({
-                url: `/gr/historico_alteracoes/${registroId}`,
-                type: 'GET',
-                dataType: 'json',
-                success: function(data) {
-                    console.log('Dados recebidos do histórico:', data);
-                    
-                    // Esconder o indicador de carregamento
-                    $('#alteracoesLoading').hide();
-                    $('#alteracoesContent').show();
-                    
-                    // Preencher as informações do registro
-                    if (data.registro_info) {
-                        const formatarValor = (valor) => valor && valor !== 'N/A' && valor !== null && valor !== undefined ? valor : 'Não informado';
-                        
-                        $('#registro-id').text(data.registro_info.id || registroId);
-                        $('#registro-cliente').text(formatarValor(data.registro_info.cliente));
-                        $('#registro-sm').text(formatarValor(data.registro_info.numero_sm));
-                        $('#registro-ae').text(formatarValor(data.registro_info.numero_ae));
-                        $('#registro-data').text(formatarValor(data.registro_info.data_registro));
-                        $('#registro-modificacao').text(formatarValor(data.registro_info.data_modificacao));
+                url: '/gr/historico_alteracoes/' + registroId,
+                method: 'GET',
+                success: function(response) {
+                    $('#alteracoesModalLoading').hide();
+                    if (!response.success) {
+                        $('#alteracoesModalErro').text(response.message || 'Erro ao buscar alterações').show();
+                        return;
                     }
                     
-                    // Verificar se há alterações para exibir
-                    if (data.success && data.alteracoes && data.alteracoes.length > 0) {
-                        console.log(`Processando ${data.alteracoes.length} alterações`);
-                        
-                        // Mostrar mensagem de alterações encontradas
-                        $('#total-alteracoes').text(data.alteracoes.length);
-                        $('#mensagemAlteracoes').show();
-                        $('#alteracoesInfo').show();
-                        
-                        // Ordenar as alterações por data (mais recentes primeiro)
-                        data.alteracoes.sort((a, b) => {
-                            return new Date(b.data_hora || b.data_alteracao || 0) - new Date(a.data_hora || a.data_alteracao || 0);
-                        });
-                        
-                        // Preencher a tabela com as alterações
-                        const tbody = $('#alteracoesTableBody');
-                        
-                        data.alteracoes.forEach(function(alteracao) {
-                            console.log('Processando alteração:', alteracao);
-                            
-                            // Formatar o nome do campo para exibição
-                            let nomeCampo = alteracao.campo || 'Campo não identificado';
-                            
-                            // Mapear nomes de campos para exibição
-                            const mapeamentoCampos = {
-                                'cliente': 'Cliente',
-                                'container_1': 'Container 1',
-                                'container_2': 'Container 2',
-                                'lote_cs': 'Lote CS',
-                                'status_container': 'Status Container',
-                                'destino_intermediario': 'Destino Intermediário',
-                                'destino_final': 'Destino Final',
-                                'motorista': 'Motorista',
-                                'cpf': 'CPF Motorista',
-                                'placa': 'Cavalo',
-                                'carreta': 'Carreta 1',
-                                'carreta1': 'Carreta 1',
-                                'carreta2': 'Carreta 2',
-                                'horario_previsto': 'Horário Previsto de Início',
-                                'on_time_cliente': 'On Time (Cliente)',
-                                'anexar_nf': 'Anexo NF',
-                                'anexar_os': 'Anexo OS',
-                                'anexar_agendamento': 'Anexo Agendamento',
-                                'numero_sm': 'Número SM',
-                                'numero_ae': 'Número AE',
-                                'observacao_gr': 'Observação GR',
-                                'data_registro': 'Data de Registro',
-                                'status_sm': 'Status SM'
-                            };
-                            
-                            nomeCampo = mapeamentoCampos[alteracao.campo] || nomeCampo;
-                            
-                            // Formatar valores para exibição
-                            let valorOriginal = alteracao.valor_anterior || alteracao.valor_antigo || '<em>Vazio</em>';
-                            let valorAlterado = alteracao.valor_novo || '<em>Vazio</em>';
-                            
-                            // Tratar valores null/undefined
-                            if (valorOriginal === null || valorOriginal === undefined || valorOriginal === 'None') {
-                                valorOriginal = '<em>Vazio</em>';
-                            }
-                            if (valorAlterado === null || valorAlterado === undefined || valorAlterado === 'None') {
-                                valorAlterado = '<em>Vazio</em>';
-                            }
-                            
-                            // Formatar data e hora da alteração
-                            let dataHoraAlteracao = alteracao.data_hora || alteracao.data_alteracao || 'Data não informada';
-                            
-                            // Formatar data se necessário
-                            if (dataHoraAlteracao && dataHoraAlteracao !== 'Data não informada') {
-                                try {
-                                    // Se a data está no formato ISO ou similar, converter para DD/MM/YYYY HH:MM:SS
-                                    if (dataHoraAlteracao.match(/^\d{4}-\d{2}-\d{2}/) || dataHoraAlteracao.match(/^\d{2}-\d{2}-\d{4}/)) {
-                                        const dataObj = new Date(dataHoraAlteracao.replace(' ', 'T'));
-                                        if (!isNaN(dataObj.getTime())) {
-                                            const dia = String(dataObj.getDate()).padStart(2, '0');
-                                            const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
-                                            const ano = dataObj.getFullYear();
-                                            const hora = String(dataObj.getHours()).padStart(2, '0');
-                                            const minuto = String(dataObj.getMinutes()).padStart(2, '0');
-                                            const segundo = String(dataObj.getSeconds()).padStart(2, '0');
-                                            dataHoraAlteracao = `${dia}/${mes}/${ano} ${hora}:${minuto}:${segundo}`;
-                                        }
-                                    }
-                                } catch (e) {
-                                    console.warn('Erro ao formatar data da alteração:', e);
-                                }
-                            }
-                            
-                            // Destacar se os valores são diferentes
-                            const valoresDiferentes = valorOriginal !== valorAlterado;
-                            
-                            // Criar linha da tabela
-                            const row = $('<tr>');
-                            row.append($('<td>').html(`<strong>${nomeCampo}</strong>`));
-                            row.append($('<td>').html(valorOriginal));
-                            row.append($('<td>').html(valorAlterado).addClass(valoresDiferentes ? 'bg-light-yellow' : ''));
-                            row.append($('<td>').text(dataHoraAlteracao));
-                            row.append($('<td>').text(alteracao.usuario || 'Sistema'));
-                            
-                            tbody.append(row);
-                        });
+                    // Verificar se há um aviso na resposta
+                    if (response.warning) {
+                        $('#alteracoesModalInfo').text(response.warning).show();
+                    }
+                    console.log('Dados recebidos:', response);
+                    const registro = response.registro_info || {};
+                    $('#resumoCliente').text(registro.cliente || '-');
+                    $('#resumoNumeroSM').text(registro.numero_sm || '-');
+                    $('#resumoNumeroAE').text(registro.numero_ae || '-');
+
+                    let dataRegistro = registro.data_registro || registro.data_registro_raw || '';
+                    let dataModificacao = registro.data_modificacao || registro.data_modificacao_raw || '';
+                    $('#resumoDataRegistro').text(dataRegistro ? formatarDataPadrao(dataRegistro) : 'Não informado');
+                    $('#resumoDataModificacao').text(dataModificacao ? formatarDataPadrao(dataModificacao) : 'Não informado');
+
+                    const alteracoes = response.alteracoes || [];
+                    const totalAlteracoes = alteracoes.length;
+                    $('#resumoTotalAlteracoes').text(totalAlteracoes);
+                    if (totalAlteracoes > 0) {
+                        $('#resumoTotalAlteracoes').addClass('badge bg-primary');
                     } else {
-                        console.log('Nenhuma alteração encontrada ou erro no processamento');
-                        $('#semAlteracoes').show();
-                        $('#alteracoesTableBody').html('<tr><td colspan="5" class="text-center">Não foram encontradas alterações após a inclusão de SM/AE.</td></tr>');
+                        $('#resumoTotalAlteracoes').removeClass('badge bg-primary').addClass('text-muted');
                     }
+                    $('#alteracoesModalResumo').show();
+
+                    if (alteracoes.length === 0) {
+                        $('#semAlteracoes').show();
+                        return;
+                    }
+                    $('#mensagemAlteracoes').show();
+                    $('#total-alteracoes').text(alteracoes.length);
+                    $('#alteracoesModalTabela').show();
+
+                    if (!document.getElementById('alteracoes-style')) {
+                        const style = document.createElement('style');
+                        style.id = 'alteracoes-style';
+                        style.innerHTML = '.bg-light-yellow { background-color: rgba(255, 236, 179, 0.4); }';
+                        document.head.appendChild(style);
+                    }
+
+                    const camposMap = {
+                        'cliente': 'Cliente',
+                        'booking_di': 'Booking/DI',
+                        'pedido_referencia': 'Pedido/Referência',
+                        'container_1': 'Container 1',
+                        'container_2': 'Container 2',
+                        'motorista': 'Motorista',
+                        'placa': 'Placa do Cavalo',
+                        'on_time_cliente': 'On Time Cliente',
+                        'horario_previsto': 'Horário Previsto',
+                        'numero_sm': 'Número SM',
+                        'numero_ae': 'Número AE',
+                        'observacoes': 'Observações'
+                    };
+
+                    alteracoes.forEach(function(alteracao) {
+                        const campo = alteracao.campo;
+                        let valorOriginal = alteracao.valor_anterior !== null && alteracao.valor_anterior !== undefined ? alteracao.valor_anterior : '-';
+                        let valorAlterado = alteracao.valor_novo !== null && alteracao.valor_novo !== undefined ? alteracao.valor_novo : '-';
+                        let dataHoraAlteracao = alteracao.data_hora || 'Data não informada';
+                        dataHoraAlteracao = formatarDataPadrao(dataHoraAlteracao);
+
+                        const nomeCampo = camposMap[campo] || campo;
+                        const valoresDiferentes = valorOriginal !== valorAlterado;
+
+                        const row = $('<tr>');
+                        const campoTd = $('<td>');
+                        if (valoresDiferentes) {
+                            campoTd.html(`<strong>${nomeCampo}</strong> <i class="fas fa-exchange-alt text-primary ms-1" title="Campo alterado"></i>`);
+                        } else {
+                            campoTd.html(`<strong>${nomeCampo}</strong>`);
+                        }
+                        row.append(campoTd);
+
+                        let valorAnteriorExibicao;
+                        if (valorOriginal === null || valorOriginal === undefined || valorOriginal === '') {
+                            valorAnteriorExibicao = '-';
+                            if (alteracao.campo === 'data_registro' ||
+                                alteracao.campo.includes('data_') ||
+                                alteracao.campo.includes('horario')) {
+                                valorAnteriorExibicao = 'Não informado';
+                            }
+                        } else {
+                            if (alteracao.campo === 'data_registro' ||
+                                alteracao.campo.includes('data_') ||
+                                alteracao.campo.includes('horario')) {
+                                valorAnteriorExibicao = formatarDataPadrao(valorOriginal);
+                            } else {
+                                valorAnteriorExibicao = valorOriginal;
+                            }
+                        }
+
+                        row.append($('<td>').text(valorAnteriorExibicao));
+
+                        const valorCell = $('<td>').addClass('alterado-highlight');
+                        valorCell.append($('<i class="fas fa-arrow-right text-primary me-1"></i>'));
+                        valorCell.append(document.createTextNode(valorAlterado || '-'));
+                        row.append(valorCell);
+
+                        const dataTd = $('<td>');
+                        dataTd.html(`<i class="far fa-clock me-1 text-muted"></i> ${dataHoraAlteracao}`);
+                        row.append(dataTd);
+
+                        const usuarioTd = $('<td>');
+                        usuarioTd.html(`<i class="fas fa-user me-1 text-muted"></i> ${alteracao.usuario || 'Sistema'}`);
+                        row.append(usuarioTd);
+
+                        $('#alteracoesTableBody').append(row);
+                    });
                 },
                 error: function(xhr, status, error) {
-                    console.error('Erro ao carregar alterações:', error);
-                    console.error('Status:', status);
-                    console.error('Response:', xhr.responseText);
-                    
-                    $('#alteracoesLoading').hide();
-                    $('#alteracoesContent').show();
-                    $('#alteracoesTableBody').html(`<tr><td colspan="5" class="text-center text-danger"><i class="fas fa-exclamation-triangle me-2"></i> Erro ao carregar alterações: ${error}</td></tr>`);
+                    $('#alteracoesModalLoading').hide();
+                    $('#alteracoesModalErro').text('Erro ao buscar alterações: ' + (error || 'Falha na requisição')).show();
                 }
             });
         }
-        
-        // Função para confirmar verificação de alterações
+
+        function formatarDataPadrao(dataString) {
+            if (!dataString || dataString === 'Não informado') {
+                return dataString || '-';
+            }
+            try {
+                let dataObj;
+                if (dataString.match(/^\d{4}-\d{2}-\d{2}/) || dataString.match(/^\d{2}-\d{2}-\d{4}/)) {
+                    if (dataString.match(/^\d{4}-\d{2}-\d{2}/)) {
+                        const [dataParte, horaParte] = dataString.split(' ');
+                        const [ano, mes, dia] = dataParte.split('-');
+                        const horaCompleta = horaParte || '00:00:00';
+                        dataObj = new Date(`${ano}-${mes}-${dia}T${horaCompleta}`);
+                    } else if (dataString.match(/^\d{2}-\d{2}-\d{4}/)) {
+                        const [dataParte, horaParte] = dataString.split(' ');
+                        const [dia, mes, ano] = dataParte.split('-');
+                        const horaCompleta = horaParte || '00:00:00';
+                        dataObj = new Date(`${ano}-${mes}-${dia}T${horaCompleta}`);
+                    }
+                    if (!isNaN(dataObj.getTime())) {
+                        const dia = String(dataObj.getDate()).padStart(2, '0');
+                        const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
+                        const ano = dataObj.getFullYear();
+                        const hora = String(dataObj.getHours()).padStart(2, '0');
+                        const minuto = String(dataObj.getMinutes()).padStart(2, '0');
+                        const segundo = String(dataObj.getSeconds()).padStart(2, '0');
+                        return `${dia}/${mes}/${ano} ${hora}:${minuto}:${segundo}`;
+                    }
+                }
+                if (dataString.match(/^\d{2}\/\d{2}\/\d{4}/)) {
+                    return dataString;
+                }
+                return dataString;
+            } catch (e) {
+                console.error('Erro ao formatar data:', e, dataString);
+                return dataString;
+            }
+        }
+
+        function fecharModal() {
+            console.log('Tentando fechar o modal');
+            try {
+                const modalElement = document.getElementById('alteracoesModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                if (modalInstance) {
+                    modalInstance.hide();
+                    console.log('Modal fechado com Bootstrap 5');
+                    return;
+                }
+            } catch (e) {
+                console.warn('Erro ao fechar modal via Bootstrap 5:', e);
+            }
+            try {
+                $('#alteracoesModal').modal('hide');
+                console.log('Modal fechado com jQuery');
+                return;
+            } catch (e2) {
+                console.warn('Erro ao fechar modal via jQuery:', e2);
+            }
+            const modalElement = document.getElementById('alteracoesModal');
+            if (modalElement) {
+                modalElement.style.display = 'none';
+                modalElement.classList.remove('show');
+                document.body.classList.remove('modal-open');
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) {
+                    backdrop.parentNode.removeChild(backdrop);
+                }
+                console.log('Modal fechado manualmente');
+            }
+        }
+
+        function confirmarVisualizacao() {
+            const registroId = $('#alteracoesModal').data('registro-id');
+            if (!registroId) {
+                console.error('ID do registro não encontrado');
+                alert('Erro: ID do registro não encontrado');
+                return;
+            }
+            console.log('Confirmando visualização para o registro ID:', registroId);
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            console.log('Token CSRF:', csrfToken);
+            $('#btnConfirmarVisualizacao').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processando...');
+            $.ajax({
+                url: `/gr/confirmar_visualizacao/${registroId}`,
+                type: 'POST',
+                headers: { 'X-CSRFToken': csrfToken },
+                data: { csrf_token: csrfToken },
+                success: function(response) {
+                    console.log('Visualização confirmada com sucesso');
+                    const alertaHtml = `
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i> Alterações confirmadas com sucesso!
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                        </div>`;
+                    $('#alteracoesModalAlertas').html(alertaHtml);
+                    
+                    // Corrigir seletor para encontrar a linha correta na tabela
+                    const linhaSelector = `tr[data-registro-id="${registroId}"]`;
+                    console.log('Procurando linha com seletor:', linhaSelector);
+                    const linha = $(linhaSelector);
+                    
+                    if (linha.length) {
+                        console.log('Linha encontrada, removendo destaque');
+                        linha.removeClass('table-primary alteracao-pos-smae');
+                        
+                        // Se estamos na visualização filtrada, esconder a linha
+                        if (window.location.href.includes('alteracoes_pos_smae=true')) {
+                            linha.fadeOut('slow');
+                        }
+                        
+                        // Remover botão de visualizar alterações
+                        const botaoAlteracoes = linha.find('button[data-action="mostrar-alteracoes"]');
+                        if (botaoAlteracoes.length) {
+                            botaoAlteracoes.remove();
+                            console.log('Botão de alterações removido');
+                        }
+                    } else {
+                        console.warn('Linha não encontrada com seletor:', linhaSelector);
+                    }
+                    
+                    // Atualizar contador no card
+                    const cardAlteracoes = $('#alteracoes-pos-smae');
+                    if (cardAlteracoes.length) {
+                        const contadorAtual = parseInt(cardAlteracoes.text()) || 0;
+                        if (contadorAtual > 0) {
+                            const novoValor = contadorAtual - 1;
+                            cardAlteracoes.text(novoValor);
+                            console.log('Contador atualizado para:', novoValor);
+                        }
+                    }
+                    
+                    // Atualizar badge global se existir
+                    const badgeAlteracoes = $('#badge-alteracoes-pendentes');
+                    if (badgeAlteracoes.length) {
+                        const totalAtual = parseInt(badgeAlteracoes.text()) || 0;
+                        if (totalAtual > 0) {
+                            const novoTotal = totalAtual - 1;
+                            if (novoTotal > 0) {
+                                badgeAlteracoes.text(novoTotal);
+                            } else {
+                                badgeAlteracoes.remove();
+                            }
+                        }
+                    }
+                    
+                    $('#btnConfirmarVisualizacao').prop('disabled', true)
+                        .removeClass('btn-primary').addClass('btn-success')
+                        .html('<i class="fas fa-check-circle"></i> Confirmado');
+                    
+                    // Recarregar a página após fechar o modal para garantir atualização completa
+                    setTimeout(function() {
+                        fecharModal();
+                        // Recarregar a página após fechar o modal
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 500);
+                    }, 2000);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Erro ao confirmar visualização:', error);
+                    const alertaHtml = `
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i> Erro ao confirmar visualização: ${error || 'Falha na requisição'}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                        </div>`;
+                    $('#alteracoesModalAlertas').html(alertaHtml);
+                    $('#btnConfirmarVisualizacao').prop('disabled', false).html('<i class="fas fa-check"></i> Confirmar Visualização');
+                }
+            });
+        }
+
         function confirmarVerificacao(registroId) {
             if (confirm('As alterações neste registro já foram verificadas?')) {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                
                 fetch(`/gr/marcar_alteracoes_verificadas/${registroId}`, {
                     method: 'POST',
                     headers: {
@@ -992,14 +1238,10 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Fechar o modal atual
-                        const modals = document.querySelectorAll('.modal');
-                        modals.forEach(modal => {
+                        document.querySelectorAll('.modal').forEach(modal => {
                             const bsModal = bootstrap.Modal.getInstance(modal);
                             if (bsModal) bsModal.hide();
                         });
-                        
-                        // Remover a linha da tabela ou atualizar o estilo
                         const row = document.querySelector(`tr[data-registro-id="${registroId}"]`);
                         if (row) {
                             if (new URLSearchParams(window.location.search).get('alteracoes_pos_smae') === 'true') {
@@ -1010,17 +1252,13 @@
                                 if (btnConfirmar) btnConfirmar.remove();
                             }
                         }
-                        
-                        // Mostrar mensagem de sucesso
                         setTimeout(() => {
                             const alertDiv = document.createElement('div');
                             alertDiv.className = 'alert alert-success alert-dismissible fade show';
                             alertDiv.innerHTML = `
                                 <strong>Sucesso!</strong> Alterações verificadas com sucesso.
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            `;
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`;
                             document.querySelector('.container-fluid').prepend(alertDiv);
-                            
                             setTimeout(() => {
                                 const bsAlert = new bootstrap.Alert(alertDiv);
                                 bsAlert.close();
@@ -1029,8 +1267,6 @@
                     } else {
                         alert(`Erro ao marcar alterações como verificadas: ${data.error || 'Erro desconhecido'}`);
                     }
-                    
-                    // Atualizar os contadores
                     atualizarContadores();
                 })
                 .catch(error => {
@@ -1039,23 +1275,22 @@
                 });
             }
         }
-        
-        // Funções auxiliares para filtros de tabela
+
         function filtrarTabela() {
-            // Implementar filtros da tabela
             console.log('Filtrar tabela chamada');
+            // Implementar filtros da tabela
         }
-        
+
         function limparFiltrosTabela() {
             document.getElementById('filtroCliente').value = '';
             document.getElementById('filtroMotorista').value = '';
             document.getElementById('filtroContainer').value = '';
             filtrarTabela();
         }
-        
+
         function exportarTabela() {
-            // Implementar exportação da tabela
             console.log('Exportar tabela chamada');
+            // Implementar exportação da tabela
         }
     </script>
 </body>

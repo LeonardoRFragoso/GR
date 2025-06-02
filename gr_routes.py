@@ -6,6 +6,7 @@ import re
 import json
 from datetime import datetime, timedelta
 from functools import wraps
+from historico_utils import sanitize_json_string
 
 # Configurar logging
 logging.basicConfig(level=logging.DEBUG)
@@ -178,96 +179,191 @@ def fetchone_dict(cursor):
     return dict((cursor.description[i][0], value) for i, value in enumerate(row))
 
 # Função auxiliar para obter registros com alterações pós SM/AE
-def get_registros_com_alteracoes_pos_smae(cursor, colunas):
+def get_registros_com_alteracoes_pos_smae(cursor=None, colunas=None):
     """Função auxiliar para obter registros com alterações pós SM/AE
     
     Args:
-        cursor: Cursor do banco de dados
-        colunas: Lista de colunas da tabela registros
+        cursor: Cursor do banco de dados (opcional)
+        colunas: Lista de colunas da tabela registros (opcional)
         
     Returns:
         tuple: (registros_alterados, alteracoes_pos_smae)
     """
+    # Inicializar valores de retorno com defaults seguros
     registros_alterados = []
-    alteracoes_pos_smae = 0
+    registros_alterados_ids = []
     
-    # Lista de campos a serem monitorados após inclusão de SM/AE
-    campos_monitorados = [
-        'usuario', 'placa', 'motorista', 'cpf', 'mot_loc', 'carreta', 'carreta1', 'carreta2',
-        'carreta_loc', 'cliente', 'loc_cliente', 'arquivo', 'container_1', 'container_2',
-        'status_sm', 'tipo_carga', 'status_container', 'modalidade', 'gerenciadora',
-        'booking_di', 'pedido_referencia', 'lote_cs', 'on_time_cliente', 'horario_previsto',
-        'observacao_operacional', 'observacao_gr', 'destino_intermediario', 'destino_final',
-        'anexar_nf', 'anexar_os', 'anexar_agendamento', 'numero_nf', 'serie', 'quantidade',
-        'peso_bruto', 'valor_total_nota', 'unidade', 'arquivo_nf_nome', 'arquivo_os_nome',
-        'arquivo_agendamento_nome', 'origem'
-    ]
-    
-    # Verificar quais desses campos existem na tabela
-    campos_existentes = [campo for campo in campos_monitorados if campo in colunas]
-    
-    if not campos_existentes:
-        logger.warning("Nenhum campo monitorado encontrado na tabela registros")
-        return registros_alterados, alteracoes_pos_smae
+    # Criar conexão e cursor se não fornecidos
+    conn_local = None
+    if cursor is None:
+        conn_local = get_db_connection()
+        cursor = conn_local.cursor()
+        
+        # Obter colunas se não fornecidas
+        if colunas is None:
+            colunas = verificar_criar_colunas(conn_local, cursor)
     
     try:
-        # Verificar se a tabela histórico existe
+        # Lista de campos a serem monitorados após inclusão de SM/AE
+        campos_monitorados = [
+            'usuario', 'placa', 'motorista', 'cpf', 'mot_loc', 'carreta', 'carreta1', 'carreta2',
+            'carreta_loc', 'cliente', 'loc_cliente', 'arquivo', 'container_1', 'container_2',
+            'status_sm', 'tipo_carga', 'status_container', 'modalidade', 'gerenciadora',
+            'booking_di', 'pedido_referencia', 'lote_cs', 'on_time_cliente', 'horario_previsto',
+            'observacao_operacional', 'observacao_gr', 'destino_intermediario', 'destino_final',
+            'anexar_nf', 'anexar_os', 'anexar_agendamento', 'numero_nf', 'serie', 'quantidade',
+            'peso_bruto', 'valor_total_nota', 'unidade', 'arquivo_nf_nome', 'arquivo_os_nome',
+            'arquivo_agendamento_nome', 'origem'
+        ]
+        
+        # Verificar quais desses campos existem na tabela
+        campos_existentes = [campo for campo in campos_monitorados if campo in colunas]
+        
+        if not campos_existentes:
+            logger.warning("Nenhum campo monitorado encontrado na tabela registros")
+            return registros_alterados, registros_alterados_ids
+        
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='historico'")
-        tabela_historico_existe = cursor.fetchone() is not None
+        if not cursor.fetchone():
+            logger.warning("Tabela historico não existe. Retornando lista vazia.")
+            return [], []
         
-        # Verificar se a coluna alteracoes_verificadas existe
-        coluna_alteracoes_verificadas_existe = 'alteracoes_verificadas' in colunas
-        
-        if tabela_historico_existe:
-            # Construir consulta para verificar alterações nos campos monitorados
-            campos_clausula = " OR ".join([f"h.alteracoes LIKE '%{campo}%'" for campo in campos_existentes])
-            
-            # Consulta para obter registros com alterações pós SM/AE usando histórico
-            # Modificada para excluir alterações feitas pelo usuário GR (inclusão de SM/AE)
-            cursor.execute(f"""
-                SELECT DISTINCT r.* 
-                FROM registros r
-                JOIN historico h ON r.id = h.registro_id
-                WHERE ((r.numero_sm IS NOT NULL AND r.numero_sm != '' AND r.numero_sm != '0') 
+        # Primeiro, obter apenas os IDs dos registros que atendem aos critérios
+        # Isso evita processar JSON potencialmente problemático na consulta principal
+        query_ids = f"""
+                SELECT DISTINCT r.id
+                FROM {TABLE_REGISTROS} r
+                JOIN {TABLE_HISTORICO} h ON r.id = h.registro_id
+                WHERE ((r.numero_sm IS NOT NULL AND r.numero_sm != '' AND r.numero_sm != '0')
                    OR (r.numero_ae IS NOT NULL AND r.numero_ae != '' AND r.numero_ae != '0'))
                 AND r.excluido = 0
-                AND {'r.alteracoes_verificadas = 0' if coluna_alteracoes_verificadas_existe else '1=1'}
-                AND h.data_alteracao > 
-                    CASE 
+                AND r.alteracoes_verificadas = 0
+                AND h.data_alteracao >
+                    CASE
                         WHEN r.data_sm IS NOT NULL AND r.data_sm > r.data_ae THEN r.data_sm
                         WHEN r.data_ae IS NOT NULL THEN r.data_ae
                         ELSE r.data_sm
                     END
-                AND ({campos_clausula})
                 AND h.alterado_por NOT IN (SELECT username FROM usuarios WHERE nivel = 'gr')
                 AND h.alteracoes NOT LIKE '%"tipo": "Edição GR"%'
                 AND h.alteracoes NOT LIKE '%numero_sm%'
                 AND h.alteracoes NOT LIKE '%numero_ae%'
-            """)
-            registros_alterados = [dict(row) for row in cursor.fetchall()]
-        elif coluna_alteracoes_verificadas_existe:
-            # Fallback: usar apenas a coluna alteracoes_verificadas se não houver tabela histórico
-            # Neste caso, não temos como filtrar por quem fez a alteração, então usamos apenas o flag
-            cursor.execute("""
-                SELECT * FROM registros 
-                WHERE ((numero_sm IS NOT NULL AND numero_sm != '' AND numero_sm != '0') 
-                    OR (numero_ae IS NOT NULL AND numero_ae != '' AND numero_ae != '0'))
-                AND excluido = 0 
-                AND alteracoes_verificadas = 0
-            """)
-            registros_alterados = [dict(row) for row in cursor.fetchall()]
-        else:
-            logger.warning("Nem tabela histórico nem coluna alteracoes_verificadas encontradas")
+        """
         
-        alteracoes_pos_smae = len(registros_alterados)
-        logger.info(f"Obtidos {alteracoes_pos_smae} registros com alterações pós SM/AE")
-        logger.debug(f"Filtro alteracoes_pos_smae: {bool(registros_alterados)}")
-        logger.debug(f"Total de registros obtidos: {len(registros_alterados)}")
-        logger.debug(f"Total de registros alterados: {alteracoes_pos_smae}")
+        logger.debug(f"Executando consulta para obter IDs: \n{query_ids}")
+        cursor.execute(query_ids)
+        id_rows = cursor.fetchall()
+        
+        # Extrair IDs
+        ids_registros = [str(row[0]) for row in id_rows]
+        
+        if not ids_registros:
+            logger.info("Nenhum registro encontrado com alterações pós SM/AE")
+            return [], []
+        
+        # Agora, obter os detalhes completos dos registros usando os IDs
+        placeholders = ', '.join(['?' for _ in ids_registros])
+        query_registros = f"""
+            SELECT * FROM {TABLE_REGISTROS} 
+            WHERE id IN ({placeholders}) 
+            AND excluido = 0
+        """
+        
+        cursor.execute(query_registros, [int(id) for id in ids_registros])
+        registros = cursor.fetchall()
+        
+        # Converter para lista de dicionários
+        registros_dict = []
+        for registro in registros:
+            registro_dict = {}
+            for i, col in enumerate(cursor.description):
+                registro_dict[col[0]] = registro[i]
+            registros_dict.append(registro_dict)
+        
+        # Para cada registro, verificar se as alterações realmente correspondem aos critérios
+        # sem depender de LIKE na consulta SQL para campos JSON
+        registros_filtrados = []
+        ids_filtrados = []
+        
+        campos_relevantes = ['usuario', 'placa', 'motorista', 'cpf', 'mot_loc', 'carreta', 'carreta1', 'carreta2', 
+                             'carreta_loc', 'cliente', 'loc_cliente', 'arquivo', 'container_1', 'container_2', 
+                             'status_sm', 'tipo_carga', 'status_container', 'modalidade', 'gerenciadora', 
+                             'booking_di', 'pedido_referencia', 'lote_cs', 'on_time_cliente', 'horario_previsto', 
+                             'observacao_operacional', 'observacao_gr', 'destino_intermediario', 'destino_final', 
+                             'anexar_nf', 'anexar_os', 'anexar_agendamento', 'numero_nf', 'serie', 'quantidade', 
+                             'peso_bruto', 'valor_total_nota', 'unidade', 'arquivo_nf_nome', 'arquivo_os_nome', 
+                             'arquivo_agendamento_nome', 'origem']
+        
+        for registro_dict in registros_dict:
+            registro_id = registro_dict['id']
+            
+            # Obter histórico de alterações para este registro
+            cursor.execute(f"""
+                SELECT alteracoes FROM {TABLE_HISTORICO} 
+                WHERE registro_id = ? 
+                AND data_alteracao > 
+                    CASE
+                        WHEN ? IS NOT NULL AND ? > ? THEN ?
+                        WHEN ? IS NOT NULL THEN ?
+                        ELSE ?
+                    END
+                AND alterado_por NOT IN (SELECT username FROM usuarios WHERE nivel = 'gr')
+            """, (registro_id, 
+                   registro_dict.get('data_sm'), registro_dict.get('data_sm'), registro_dict.get('data_ae'), registro_dict.get('data_sm'),
+                   registro_dict.get('data_ae'), registro_dict.get('data_ae'), registro_dict.get('data_sm')))
+            
+            historico_rows = cursor.fetchall()
+            tem_alteracao_relevante = False
+            
+            for hist_row in historico_rows:
+                alteracoes_json = hist_row[0]
+                
+                # Aplicar sanitização extrema ao JSON para evitar erros de parsing
+                try:
+                    # Primeiro tentar sanitização normal
+                    alteracoes_json_sanitizado = sanitize_json_string(alteracoes_json)
+                    
+                    # Se falhar, aplicar sanitização extrema
+                    if not alteracoes_json_sanitizado or alteracoes_json_sanitizado == '{}':
+                        # Sanitização extrema: remover todas as barras invertidas e caracteres de controle
+                        alteracoes_json_sanitizado = re.sub(r'\\', '', alteracoes_json)
+                        alteracoes_json_sanitizado = re.sub(r'[\x00-\x1F\x7F]', '', alteracoes_json_sanitizado)
+                    
+                    # Verificar se contém campos relevantes
+                    for campo in campos_relevantes:
+                        if campo in alteracoes_json_sanitizado:
+                            tem_alteracao_relevante = True
+                            break
+                    
+                    # Verificar se não contém campos a serem excluídos
+                    if 'numero_sm' in alteracoes_json_sanitizado or 'numero_ae' in alteracoes_json_sanitizado:
+                        tem_alteracao_relevante = False
+                        
+                    if 'tipo' in alteracoes_json_sanitizado and 'Edição GR' in alteracoes_json_sanitizado:
+                        tem_alteracao_relevante = False
+                        
+                    if tem_alteracao_relevante:
+                        break
+                        
+                except Exception as e:
+                    logger.error(f"Erro ao processar JSON do histórico para registro {registro_id}: {e}")
+                    # Continuar para o próximo histórico
+                    continue
+            
+            if tem_alteracao_relevante:
+                registros_filtrados.append(registro_dict)
+                ids_filtrados.append(str(registro_id))
+        
+        logger.info(f"Após filtragem de JSON, encontrados {len(registros_filtrados)} registros com alterações pós SM/AE")
+        return registros_filtrados, ids_filtrados
+        
     except Exception as e:
         logger.error(f"Erro ao obter registros com alterações pós SM/AE: {e}")
-    
-    return registros_alterados, alteracoes_pos_smae
+        return [], []
+    finally:
+        # Fechar a conexão local se ela foi criada nesta função
+        if conn_local:
+            conn_local.close()
 
 # Função auxiliar para obter contagens básicas de registros
 def get_contagens_basicas(cursor):
@@ -313,14 +409,34 @@ def get_contagens_basicas(cursor):
     """)
     contagens['sem_ae'] = cursor.fetchone()[0]
     
-    # Contagem de registros sem NF anexada
+    # Contagem de registros sem NF anexada - Abordagem mais abrangente
     cursor.execute("""
         SELECT COUNT(*) 
         FROM registros 
-        WHERE (anexar_nf IS NULL OR anexar_nf = 0 OR anexar_nf = '') 
+        WHERE (anexar_nf IS NULL OR anexar_nf = 0 OR anexar_nf = '' OR anexar_nf = 'None' OR anexar_nf = '0') 
         AND excluido = 0
     """)
     contagens['sem_nf'] = cursor.fetchone()[0]
+    logger.info(f"Contagem sem_nf (consulta modificada): {contagens['sem_nf']}")
+    
+    # Verificar todos os valores distintos de anexar_nf para diagnóstico
+    cursor.execute("""
+        SELECT DISTINCT anexar_nf 
+        FROM registros 
+        WHERE excluido = 0
+    """)
+    valores_distintos = cursor.fetchall()
+    logger.info(f"Valores distintos de anexar_nf: {valores_distintos}")
+    
+    # Verificação detalhada dos registros sem NF
+    cursor.execute("""
+        SELECT id, anexar_nf 
+        FROM registros 
+        WHERE excluido = 0
+        LIMIT 10
+    """)
+    registros_sem_nf = cursor.fetchall()
+    logger.info(f"Amostra de registros: {registros_sem_nf}")
     
     # Contagem de registros sem OS anexada
     cursor.execute("""
@@ -702,12 +818,12 @@ def ambiente():
                 
             if filtro_alteracoes_pos_smae:
                 # Obter registros com alterações pós SM/AE usando a função auxiliar
-                registros_alterados_filtro, _ = get_registros_com_alteracoes_pos_smae(cursor, colunas)
+                # A função agora retorna os registros e seus IDs
+                registros_alterados_filtro, registro_ids = get_registros_com_alteracoes_pos_smae(cursor, colunas)
                 
-                if registros_alterados_filtro:
+                if registros_alterados_filtro and registro_ids:
                     # Usar os IDs na consulta principal
-                    registro_ids = [str(registro['id']) for registro in registros_alterados_filtro]
-                    ids_str = ",".join(registro_ids)
+                    ids_str = ",".join([str(id) for id in registro_ids])
                     query = f"SELECT * FROM registros WHERE id IN ({ids_str}) AND excluido = 0 ORDER BY id DESC"
                     params = []
                     logger.info(f"Filtro alterações pós SM/AE: Encontrados {len(registro_ids)} registros")
@@ -750,10 +866,10 @@ def ambiente():
             registros = [dict(row) for row in cursor.fetchall()]
             
             # Obter registros com alterações pós SM/AE para destacar na tabela
-            registros_alterados, alteracoes_pos_smae = get_registros_com_alteracoes_pos_smae(cursor, colunas)
+            registros_alterados, registros_alterados_ids = get_registros_com_alteracoes_pos_smae(cursor, colunas)
             
-            # Extrair os IDs dos registros alterados para facilitar a comparação no template
-            registros_alterados_ids = [str(r['id']) for r in registros_alterados] if registros_alterados else []
+            # Garantir que os IDs dos registros alterados sejam strings para facilitar a comparação no template
+            registros_alterados_ids = [str(id) for id in registros_alterados_ids] if registros_alterados_ids else []
             
             # Marcar os registros que estão na página atual e também na lista de alterados
             for registro in registros:
@@ -775,20 +891,29 @@ def ambiente():
             sem_nf_total = contagens['sem_nf']
             sem_os_total = contagens['sem_os']
             
+            # Log detalhado dos valores dos contadores
+            logger.info(f"Valores dos contadores antes de renderizar o template:")
+            logger.info(f"registros_pendentes: {registros_pendentes}")
+            logger.info(f"sem_container: {sem_container}")
+            logger.info(f"sem_ae_total: {sem_ae_total}")
+            logger.info(f"sem_nf_total: {sem_nf_total}")
+            logger.info(f"sem_os_total: {sem_os_total}")
+            
             # Calcular tempos médios usando a função auxiliar
             tempos = calcular_tempos_medios(cursor)
             tempo_medio_inicio = tempos['tempo_medio_inicio']
             tempo_medio_conclusao = tempos['tempo_medio_conclusao']
             
             # Usar a função auxiliar para obter a contagem de alterações nos campos específicos após inclusão de SM/AE
-            _, alteracoes_pos_smae = get_registros_com_alteracoes_pos_smae(cursor, colunas)
+            _, registros_alterados_ids = get_registros_com_alteracoes_pos_smae(cursor, colunas)
+            alteracoes_pos_smae = len(registros_alterados_ids)
                 
             logger.info(f"Total de registros com alterações pós SM/AE: {alteracoes_pos_smae}")
             
             # Obter registros com alterações para exibir quando o filtro está ativo
             if filtro_alteracoes_pos_smae:
                 # Usar a função auxiliar para obter os registros com alterações pós SM/AE
-                registros_alterados, _ = get_registros_com_alteracoes_pos_smae(cursor, colunas)
+                registros_alterados, registros_alterados_ids = get_registros_com_alteracoes_pos_smae(cursor, colunas)
                 
                 # Se não houver registros alterados e a tabela histórico não existir, usar fallback
                 if not registros_alterados:
@@ -813,6 +938,10 @@ def ambiente():
             alteracoes_pos_smae_verificado = alteracoes_pos_smae
         
         # Renderizar o template com todos os dados
+        # Log dos valores que serão passados para o template
+        logger.info(f"Valores que serão passados para o template:")
+        logger.info(f"sem_nf: {contagens['sem_nf']}")
+        
         return render_template('gr_ambiente.html', 
                            usuario=session.get('user', 'Usuário'),
                            nivel=session.get('nivel', 'N/A'),
@@ -820,31 +949,140 @@ def ambiente():
                            tempo_medio_inicio=tempo_medio_inicio,
                            registros_pendentes=registros_pendentes,
                            registros_andamento=registros_andamento,
-                            registros_concluidos=registros_concluidos,
-                            sem_container=sem_container,
-                            sem_sm=registros_pendentes,
-                            sem_ae=sem_ae_total,
-                            sem_nf=sem_nf_total,
-                            sem_os=sem_os_total,
-                            alteracoes_pos_smae=alteracoes_pos_smae_verificado,
-                            registros=registros,
-                            registros_alterados=registros_alterados,
-                            registros_alterados_ids=registros_alterados_ids,  # Adicionado para facilitar comparação no template
-                            page=page,
-                            pagina_atual=pagina_atual,
-                            total_paginas=total_paginas,
-                            total_registros=total_registros,
-                            filtro_sem_sm=filtro_sem_sm,
-                            filtro_sem_ae=filtro_sem_ae,
-                            filtro_sem_container=filtro_sem_container,
-                            filtro_sem_nf=filtro_sem_nf,
-                            filtro_sem_os=filtro_sem_os,
-                            gerar_url_paginacao=gerar_url_paginacao)
+                           registros_concluidos=registros_concluidos,
+                           sem_container=contagens['sem_container'],
+                           sem_sm=contagens['sem_sm'],
+                           sem_ae=contagens['sem_ae'],
+                           sem_nf=contagens['sem_nf'],
+                           sem_os=contagens['sem_os'],
+                           alteracoes_pos_smae=alteracoes_pos_smae_verificado,
+                           registros=registros,
+                           registros_alterados=registros_alterados,
+                           registros_alterados_ids=registros_alterados_ids,  # Adicionado para facilitar comparação no template
+                           page=page,
+                           pagina_atual=pagina_atual,
+                           total_paginas=total_paginas,
+                           total_registros=total_registros,
+                           filtro_sem_sm=filtro_sem_sm,
+                           filtro_sem_ae=filtro_sem_ae,
+                           filtro_sem_container=filtro_sem_container,
+                           filtro_sem_nf=filtro_sem_nf,
+                           filtro_sem_os=filtro_sem_os,
+                           gerar_url_paginacao=gerar_url_paginacao)
                            
+    except json.JSONDecodeError as je:
+        # Tratar especificamente erros de JSON parse
+        logger.error(f"Erro de parsing JSON ao renderizar ambiente GR: {je}")
+        logger.error(f"Posição do erro: {je.pos}, linha: {je.lineno}, coluna: {je.colno}")
+        
+        # Em vez de redirecionar, renderizar a página com uma mensagem de erro
+        # e sem os dados que causaram o erro
+        flash("Ocorreu um erro ao processar alguns dados. A página foi carregada com informações limitadas.", "warning")
+        
+        # Renderizar o template com valores padrão seguros para evitar loops de redirecionamento
+        return render_template('gr_ambiente.html', 
+                           usuario=session.get('user', 'Usuário'),
+                           nivel=session.get('nivel', 'N/A'),
+                           tempo_medio_conclusao='N/A',
+                           tempo_medio_inicio='N/A',
+                           registros_pendentes=0,
+                           registros_andamento=0,
+                           registros_concluidos=0,
+                           sem_container=0,
+                           sem_sm=0,
+                           sem_ae=0,
+                           sem_nf=0,
+                           sem_os=0,
+                           alteracoes_pos_smae=0,
+                           registros=[],
+                           registros_alterados=[],
+                           registros_alterados_ids=[],
+                           page=1,
+                           pagina_atual=1,
+                           total_paginas=1,
+                           total_registros=0,
+                           filtro_sem_sm=False,
+                           filtro_sem_ae=False,
+                           filtro_sem_container=False,
+                           filtro_sem_nf=False,
+                           filtro_sem_os=False,
+                           gerar_url_paginacao=gerar_url_paginacao)
     except Exception as e:
         logger.error(f"Erro ao renderizar ambiente GR: {e}")
-        flash(f"Erro ao carregar o ambiente: {str(e)}", "danger")
-        return redirect(url_for('auth.login'))
+        
+        # Em vez de redirecionar, renderizar a página com uma mensagem de erro
+        # e sem os dados que causaram o erro
+        flash("Ocorreu um erro ao carregar o ambiente. A página foi carregada com informações limitadas.", "warning")
+        logger.error(f"Erro detalhado: {str(e)}")
+        
+        # Tentar obter contagens básicas mesmo em caso de erro
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                contagens = get_contagens_basicas(cursor)
+                logger.info(f"Contagens obtidas no fallback: {contagens}")
+                
+                # Renderizar o template com os valores obtidos
+                return render_template('gr_ambiente.html', 
+                               usuario=session.get('user', 'Usuário'),
+                               nivel=session.get('nivel', 'N/A'),
+                               tempo_medio_conclusao='N/A',
+                               tempo_medio_inicio='N/A',
+                               registros_pendentes=contagens.get('registros_pendentes', 0),
+                               registros_andamento=contagens.get('registros_andamento', 0),
+                               registros_concluidos=contagens.get('registros_concluidos', 0),
+                               sem_container=contagens.get('sem_container', 0),
+                               sem_sm=contagens.get('sem_sm', 0),
+                               sem_ae=contagens.get('sem_ae', 0),
+                               sem_nf=contagens.get('sem_nf', 0),
+                               sem_os=contagens.get('sem_os', 0),
+                               alteracoes_pos_smae=0,
+                               registros=[],
+                               registros_alterados=[],
+                               registros_alterados_ids=[],
+                               page=1,
+                               pagina_atual=1,
+                               total_paginas=1,
+                               total_registros=0,
+                               filtro_sem_sm=False,
+                               filtro_sem_ae=False,
+                               filtro_sem_container=False,
+                               filtro_sem_nf=False,
+                               filtro_sem_os=False,
+                               gerar_url_paginacao=gerar_url_paginacao)
+        except Exception as inner_e:
+            logger.error(f"Erro ao obter contagens no fallback: {str(inner_e)}")
+            
+            # Fallback final com valores fixos
+            return render_template('gr_ambiente.html', 
+                               usuario=session.get('user', 'Usuário'),
+                               nivel=session.get('nivel', 'N/A'),
+                               tempo_medio_conclusao='N/A',
+                               tempo_medio_inicio='N/A',
+                               registros_pendentes=0,
+                               registros_andamento=0,
+                               registros_concluidos=0,
+                               sem_container=0,
+                               sem_sm=0,
+                               sem_ae=0,
+                               sem_nf=0,
+                               sem_os=0,
+                               alteracoes_pos_smae=0,
+                               registros=[],
+                               registros_alterados=[],
+                               registros_alterados_ids=[],
+                               page=1,
+                               pagina_atual=1,
+                               total_paginas=1,
+                               total_registros=0,
+                               filtro_sem_sm=False,
+                               filtro_sem_ae=False,
+                               filtro_sem_container=False,
+                               filtro_sem_nf=False,
+                               filtro_sem_os=False,
+                               gerar_url_paginacao=gerar_url_paginacao)
+
+# A rota API para contadores foi movida para o final do arquivo
 
 # Rota para o dashboard GR
 @gr_blueprint.route('/dashboard')
@@ -1128,16 +1366,70 @@ def dashboard():
                                data_inicio=data_inicio,
                                data_fim=data_fim)
     
+    except json.JSONDecodeError as je:
+        # Tratamento específico para erros de parsing JSON
+        logger.error(f"Erro de parsing JSON no ambiente GR: {je}")
+        logger.error(f"Posição do erro: {je.pos}, linha: {je.lineno}, coluna: {je.colno}")
+        flash("Erro ao processar dados JSON. Por favor, entre em contato com o suporte.", "danger")
+        # Redirecionar para o login para evitar loops
+        return redirect(url_for('auth.login'))
     except Exception as e:
-        logger.error(f"Erro ao renderizar dashboard GR: {e}")
-        flash(f"Erro ao carregar o dashboard: {str(e)}", "danger")
-        return redirect(url_for('gr.ambiente'))
+        # Tratamento geral de exceções
+        logger.error(f"Erro ao carregar ambiente GR: {e}")
+        flash("Ocorreu um erro ao carregar o ambiente. Por favor, tente novamente mais tarde.", "danger")
+        # Redirecionar para o login para evitar loops
+        return redirect(url_for('auth.login'))
+
+# Rota para confirmar visualização de alterações
+@gr_blueprint.route('/confirmar_visualizacao/<int:registro_id>', methods=['POST'])
+@gr_required
+def confirmar_visualizacao(registro_id):
+    try:
+        logger.info(f"Confirmando visualização de alterações para o registro ID: {registro_id}")
+        
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            
+            # Verificar se o registro existe
+            cursor.execute(f"SELECT {COL_ID} FROM {TABLE_REGISTROS} WHERE {COL_ID} = ? AND {COL_EXCLUIDO} = 0", (registro_id,))
+            if not cursor.fetchone():
+                logger.warning(f"Registro não encontrado: {registro_id}")
+                return jsonify({"success": False, "message": "Registro não encontrado"}), 404
+            
+            # Atualizar o status de visualização das alterações na tabela historico
+            data_atual = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            cursor.execute(
+                f"UPDATE historico SET verificado = 1, data_verificacao = ? WHERE registro_id = ?", 
+                (data_atual, registro_id)
+            )
+            
+            # Atualizar também a tabela registros para marcar as alterações como verificadas
+            # Isso é necessário para que o frontend remova corretamente a linha da tabela
+            cursor.execute(
+                f"UPDATE {TABLE_REGISTROS} SET alteracoes_verificadas = 1 WHERE {COL_ID} = ?",
+                (registro_id,)
+            )
+            
+            conn.commit()
+            
+            # Registrar a ação no log
+            usuario = session.get('usuario', 'Sistema')
+            logger.info(f"Alterações confirmadas para o registro {registro_id} pelo usuário {usuario}")
+            
+            return jsonify({"success": True, "message": "Alterações confirmadas com sucesso"})
+    
+    except Exception as e:
+        logger.error(f"Erro ao confirmar visualização de alterações: {e}")
+        return jsonify({"success": False, "message": f"Erro ao confirmar visualização: {str(e)}"}), 500
 
 # Rota para obter histórico de alterações de um registro
 @gr_blueprint.route('/historico_alteracoes/<int:registro_id>', methods=['GET'])
 @gr_required
 def obter_historico_alteracoes(registro_id):
-    logger.info(f"Obtendo histórico de alterações para registro {registro_id}")
+    # Importar módulos necessários
+    import re
+    
+    logger.info(f"Obtendo histórico de alterações para o registro {registro_id}")
     
     try:
         with DatabaseConnection() as conn:
@@ -1157,14 +1449,70 @@ def obter_historico_alteracoes(registro_id):
             registro = dict(row)
             
             # Preparar informações do registro
+            # Obter os valores brutos das datas para garantir que temos os dados originais
+            data_registro_raw = registro.get('data_registro', '')
+            data_modificacao_raw = registro.get('data_modificacao', '')
+            
+            # Log para depuração
+            logger.info(f"Valores brutos - data_registro: {data_registro_raw}, data_modificacao: {data_modificacao_raw}")
+            
+            # Formatar para exibição no padrão DD/MM/YYYY HH:MM:SS se existir valor
+            data_registro_formatada = ''
+            data_modificacao_formatada = ''
+            
+            if data_registro_raw:
+                try:
+                    # Converter para o formato de exibição se for uma data válida
+                    if '-' in data_registro_raw:
+                        partes = data_registro_raw.split(' ')
+                        if len(partes) > 0:
+                            data_partes = partes[0].split('-')
+                            if len(data_partes) == 3:
+                                # Se estiver no formato YYYY-MM-DD
+                                if len(data_partes[0]) == 4:
+                                    data_registro_formatada = f"{data_partes[2]}/{data_partes[1]}/{data_partes[0]}"
+                                # Se estiver no formato DD-MM-YYYY
+                                else:
+                                    data_registro_formatada = f"{data_partes[0]}/{data_partes[1]}/{data_partes[2]}"
+                                 
+                                if len(partes) > 1:
+                                    data_registro_formatada += f" {partes[1]}"
+                except Exception as e:
+                    logger.warning(f"Erro ao formatar data_registro {data_registro_raw}: {e}")
+            
+            if data_modificacao_raw:
+                try:
+                    # Converter para o formato de exibição se for uma data válida
+                    if '-' in data_modificacao_raw:
+                        partes = data_modificacao_raw.split(' ')
+                        if len(partes) > 0:
+                            data_partes = partes[0].split('-')
+                            if len(data_partes) == 3:
+                                # Se estiver no formato YYYY-MM-DD
+                                if len(data_partes[0]) == 4:
+                                    data_modificacao_formatada = f"{data_partes[2]}/{data_partes[1]}/{data_partes[0]}"
+                                # Se estiver no formato DD-MM-YYYY
+                                else:
+                                    data_modificacao_formatada = f"{data_partes[0]}/{data_partes[1]}/{data_partes[2]}"
+                                 
+                                if len(partes) > 1:
+                                    data_modificacao_formatada += f" {partes[1]}"
+                except Exception as e:
+                    logger.warning(f"Erro ao formatar data_modificacao {data_modificacao_raw}: {e}")
+            
             registro_info = {
                 "id": registro_id,
                 "cliente": registro.get('cliente', 'Não informado') or 'Não informado',
                 "numero_sm": registro.get('numero_sm', 'Não informado') or 'Não informado',
                 "numero_ae": registro.get('numero_ae', 'Não informado') or 'Não informado',
-                "data_registro": registro.get('data_registro', 'Não informado') or 'Não informado',
-                "data_modificacao": registro.get('data_modificacao', 'Não informado') or 'Não informado'
+                "data_registro": data_registro_formatada or 'Não informado',
+                "data_modificacao": data_modificacao_formatada or 'Não informado',
+                "data_registro_raw": data_registro_raw,
+                "data_modificacao_raw": data_modificacao_raw
             }
+            
+            # Log para depuração
+            logger.info(f"Informações do registro formatadas: {registro_info}")
             
             # Buscar alterações no histórico
             alteracoes = []
@@ -1191,17 +1539,95 @@ def obter_historico_alteracoes(registro_id):
                         
                         if alteracoes_json:
                             try:
-                                alteracoes_data = json.loads(alteracoes_json)
-                                logger.info(f"Processando alteração: {alteracoes_data}")
-                                
+                                # Sanitizar o JSON antes de processá-lo
+                                try:
+                                    # Primeiro tenta sanitização normal
+                                    alteracoes_json_str = sanitize_json_string(alteracoes_json)
+                                    try:
+                                        alteracoes_data = json.loads(alteracoes_json_str)
+                                        logger.info(f"Processando alteração: {alteracoes_data}")
+                                    except json.JSONDecodeError as je:
+                                        logger.error(f"Erro ao decodificar JSON no histórico do registro {registro_id}: {je}")
+                                        logger.error(f"Posição do erro: {je.pos}, linha: {je.lineno}, coluna: {je.colno}")
+                                        
+                                        # Tentar sanitização mais agressiva
+                                        try:
+                                            logger.info(f"Tentando sanitização agressiva para o histórico do registro {registro_id}")
+                                            alteracoes_json_str = sanitize_json_string(alteracoes_json, aggressive=True)
+                                            alteracoes_data = json.loads(alteracoes_json_str)
+                                            logger.info(f"Sanitização agressiva bem-sucedida para o histórico do registro {registro_id}")
+                                        except json.JSONDecodeError as je2:
+                                            logger.error(f"Erro na sanitização agressiva para o histórico do registro {registro_id}: {je2}")
+                                            logger.error(f"Posição do erro: {je2.pos}, linha: {je2.lineno}, coluna: {je2.colno}")
+                                            
+                                            # Tentar sanitização extrema como último recurso
+                                            try:
+                                                logger.info(f"Tentando sanitização extrema para o histórico do registro {registro_id}")
+                                                # Usar a função sanitize_json_string com o parâmetro extreme=True
+                                                alteracoes_json_str = sanitize_json_string(alteracoes_json, aggressive=True, extreme=True)
+                                                alteracoes_data = json.loads(alteracoes_json_str)
+                                                logger.info(f"Sanitização extrema bem-sucedida para o histórico do registro {registro_id}")
+                                                logger.info(f"JSON sanitizado: {alteracoes_json_str[:100]}...")
+                                                logger.info(f"Dados recuperados: {str(alteracoes_data)[:100]}...")
+                                                logger.info(f"Tipo de dados: {type(alteracoes_data)}")
+                                                logger.info(f"Número de campos: {len(alteracoes_data) if isinstance(alteracoes_data, dict) else 'N/A'}")
+                                                logger.info(f"Sanitização extrema bem-sucedida para o histórico do registro {registro_id}")
+                                                # Registrar o sucesso da sanitização extrema para análise posterior
+                                                logger.info(f"SUCESSO_SANITIZACAO_EXTREMA: registro_id={registro_id}")
+                                                # Adicionar uma nota ao histórico para indicar que houve sanitização extrema
+                                                alteracoes.append({
+                                                    'campo': 'sistema',
+                                                    'valor_anterior': 'N/A',
+                                                    'valor_novo': 'Dados recuperados com sanitização extrema',
+                                                    'data_hora': datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
+                                                    'usuario': 'Sistema'
+                                                })
+                                            except Exception:
+                                                # Criar um objeto vazio para não quebrar o processamento
+                                                logger.error(f"Todas as tentativas de sanitização falharam para o histórico do registro {registro_id}")
+                                                alteracoes_data = {}
+                                        except Exception as e2:
+                                            logger.error(f"Falha na sanitização agressiva para o histórico do registro {registro_id}: {e2}")
+                                            # Criar um objeto vazio para não quebrar o processamento
+                                            alteracoes_data = {}
+                                except Exception as e:
+                                    logger.error(f"Erro ao sanitizar JSON para o histórico do registro {registro_id}: {e}")
+                                    # Criar um objeto vazio para não quebrar o processamento
+                                    alteracoes_data = {}
+                                 
                                 # Verificar diferentes formatos de alterações
                                 if isinstance(alteracoes_data, dict):
                                     # Formato 1: {campo: {valor_antigo: x, valor_novo: y}}
                                     for campo, valores in alteracoes_data.items():
                                         if isinstance(valores, dict) and 'valor_antigo' in valores:
+                                            # Recuperar o valor original do campo
+                                            valor_anterior = valores.get('valor_antigo', '')
+                                            
+                                            # Formatação especial para datas conforme o padrão do sistema
+                                            if campo in ['data_registro', 'data_modificacao', 'horario_previsto'] and valor_anterior:
+                                                # Garantir que as datas estejam no formato padrão DD/MM/YYYY HH:MM:SS para exibição
+                                                try:
+                                                    # Converter para o formato de exibição se for uma data válida
+                                                    if '-' in valor_anterior:
+                                                        partes = valor_anterior.split(' ')
+                                                        if len(partes) > 0:
+                                                            data_partes = partes[0].split('-')
+                                                            if len(data_partes) == 3:
+                                                                # Se estiver no formato YYYY-MM-DD
+                                                                if len(data_partes[0]) == 4:
+                                                                    valor_anterior = f"{data_partes[2]}/{data_partes[1]}/{data_partes[0]}"
+                                                                # Se estiver no formato DD-MM-YYYY
+                                                                else:
+                                                                    valor_anterior = f"{data_partes[0]}/{data_partes[1]}/{data_partes[2]}"
+                                                                
+                                                                if len(partes) > 1:
+                                                                    valor_anterior += f" {partes[1]}"
+                                                except Exception as e:
+                                                    logger.warning(f"Erro ao formatar data {valor_anterior}: {e}")
+                                            
                                             alteracoes.append({
                                                 'campo': campo,
-                                                'valor_anterior': valores.get('valor_antigo', ''),
+                                                'valor_anterior': valor_anterior,
                                                 'valor_novo': valores.get('valor_novo', ''),
                                                 'data_hora': data_alteracao,
                                                 'usuario': usuario
@@ -1227,13 +1653,23 @@ def obter_historico_alteracoes(registro_id):
                                                 'usuario': usuario
                                             })
                                 
-                            except json.JSONDecodeError as e:
-                                logger.warning(f"Erro ao decodificar JSON do histórico: {e}")
-                                # Adicionar como texto bruto se não conseguir decodificar
+                            except json.JSONDecodeError as je:
+                                # Log detalhado do erro de parsing JSON
+                                logger.error(f"Erro de parsing JSON após sanitização para registro {registro_id}: {je}")
+                                logger.error(f"Posição do erro: {je.pos}, linha: {je.lineno}, coluna: {je.colno}")
                                 alteracoes.append({
-                                    'campo': 'Alteração não estruturada',
-                                    'valor_anterior': '',
-                                    'valor_novo': alteracoes_json,
+                                    'campo': 'Erro de formato JSON',
+                                    'valor_anterior': 'N/A',
+                                    'valor_novo': f"Erro ao processar JSON: {str(je)}",
+                                    'data_hora': data_alteracao,
+                                    'usuario': usuario
+                                })
+                            except Exception as e:
+                                logger.error(f"Erro ao processar alterações JSON: {e}")
+                                alteracoes.append({
+                                    'campo': 'Erro',
+                                    'valor_anterior': 'N/A',
+                                    'valor_novo': f"Erro ao processar alterações: {str(e)}",
                                     'data_hora': data_alteracao,
                                     'usuario': usuario
                                 })
@@ -1270,15 +1706,56 @@ def obter_historico_alteracoes(registro_id):
                 "alteracoes": alteracoes
             })
     
+    except json.JSONDecodeError as je:
+        logger.error(f"Erro de parsing JSON ao obter histórico de alterações: {je}")
+        logger.error(f"Posição do erro: {je.pos}, linha: {je.lineno}, coluna: {je.colno}")
+        
+        # Retornar uma resposta JSON válida com uma mensagem de erro amigável
+        return jsonify({
+            "success": True,  # Mantemos como true para evitar erros no frontend
+            "registro_info": {
+                "id": registro_id,
+                "cliente": "Não disponível",
+                "numero_sm": "Não disponível",
+                "numero_ae": "Não disponível",
+                "data_registro": "Não disponível",
+                "data_modificacao": "Não disponível"
+            },
+            "alteracoes": [],
+            "warning": "Ocorreu um erro ao processar o histórico. Algumas informações podem não estar disponíveis."
+        })
     except Exception as e:
         logger.error(f"Erro geral ao obter histórico de alterações: {e}")
+        
+        # Retornar uma resposta JSON válida com uma mensagem de erro amigável
         return jsonify({
-            "success": False,
-            "message": f"Erro ao carregar histórico: {str(e)}"
-        }), 500
+            "success": True,  # Mantemos como true para evitar erros no frontend
+            "registro_info": {
+                "id": registro_id,
+                "cliente": "Não disponível",
+                "numero_sm": "Não disponível",
+                "numero_ae": "Não disponível",
+                "data_registro": "Não disponível",
+                "data_modificacao": "Não disponível"
+            },
+            "alteracoes": [],
+            "warning": f"Ocorreu um erro ao carregar o histórico: {str(e)}"
+        })
     
-    # Chamar a função de utilidade para obter o histórico
-    return get_historico(registro_id)
+    # Esta linha não deve ser alcançada, mas mantemos como fallback
+    return jsonify({
+        "success": True,
+        "registro_info": {
+            "id": registro_id,
+            "cliente": "Não disponível",
+            "numero_sm": "Não disponível",
+            "numero_ae": "Não disponível",
+            "data_registro": "Não disponível",
+            "data_modificacao": "Não disponível"
+        },
+        "alteracoes": [],
+        "warning": "Não foi possível obter o histórico de alterações."
+    })
 
 # Rota para obter detalhes das alterações pós SM/AE (rota legada, redireciona para historico_alteracoes)
 @gr_blueprint.route('/alteracoes/<int:registro_id>', methods=['GET'])
@@ -1321,6 +1798,9 @@ def confirmar_verificacao(registro_id):
         logger.error(f"Erro ao confirmar verificação de alterações: {e}")
         flash(f"Erro ao confirmar verificação: {str(e)}", "danger")
         return redirect(url_for('gr.ambiente'))
+
+# Comentário: Rota para confirmar visualização de alterações já existe na linha ~1310
+# Não é necessário duplicar a implementação
 
 # Rota para visualizar histu00f3rico de um registro
 @gr_blueprint.route('/historico/<int:registro_id>')
@@ -1414,10 +1894,69 @@ def historico_registro(registro_id):
                     for registro_hist in registros_historico:
                         if registro_hist[0]:  # Se temos alterações em JSON
                             try:
-                                alteracoes_json = json.loads(registro_hist[0])
-                                data_alteracao = registro_hist[1]
-                                usuario = registro_hist[2]
-                                nivel_usuario = registro_hist[3]
+                                # Registrar o tamanho da string JSON para depuração
+                                json_str_length = len(registro_hist[0]) if registro_hist[0] else 0
+                                logger.debug(f"Processando JSON de tamanho {json_str_length} para histórico do registro {registro_id}")
+                                
+                                # Sanitizar o JSON antes de processá-lo - usar modo agressivo para strings grandes
+                                use_aggressive = json_str_length > 5000
+                                alteracoes_json_str = sanitize_json_string(registro_hist[0], aggressive=use_aggressive)
+                                
+                                try:
+                                    alteracoes_json = json.loads(alteracoes_json_str)
+                                    data_alteracao = registro_hist[1]
+                                    usuario = registro_hist[2]
+                                    nivel_usuario = registro_hist[3]
+                                except json.JSONDecodeError as je:
+                                    logger.error(f"Erro ao decodificar JSON no histórico do registro {registro_id}: {je}")
+                                    logger.error(f"Posição do erro: {je.pos}, linha: {je.lineno}, coluna: {je.colno}")
+                                    
+                                    # Registrar um trecho do JSON em torno da posição do erro
+                                    error_pos = je.pos
+                                    context_start = max(0, error_pos - 50)
+                                    context_end = min(len(alteracoes_json_str), error_pos + 50)
+                                    error_context = alteracoes_json_str[context_start:context_end]
+                                    logger.error(f"Contexto do erro: {error_context}")
+                                    
+                                    # Tentar sanitização mais agressiva
+                                    try:
+                                        alteracoes_json_str = sanitize_json_string(registro_hist[0], aggressive=True)
+                                        alteracoes_json = json.loads(alteracoes_json_str)
+                                        data_alteracao = registro_hist[1]
+                                        usuario = registro_hist[2]
+                                        nivel_usuario = registro_hist[3]
+                                        logger.info(f"Sanitização agressiva bem-sucedida para o histórico do registro {registro_id}")
+                                    except json.JSONDecodeError as je2:
+                                        logger.error(f"Sanitização agressiva falhou para histórico do registro {registro_id}: {je2}")
+                                        logger.error(f"Posição do erro após sanitização agressiva: {je2.pos}, linha: {je2.lineno}, coluna: {je2.colno}")
+                                        
+                                        # Tentar uma abordagem ainda mais radical: remover todos os caracteres de escape
+                                        try:
+                                            # Remover todas as barras invertidas
+                                            sanitized_extreme = re.sub(r'\\', '', registro_hist[0])
+                                            # Substituir aspas simples por aspas duplas
+                                            sanitized_extreme = sanitized_extreme.replace("'", '"')
+                                            # Remover caracteres de controle
+                                            sanitized_extreme = re.sub(r'[\x00-\x1F\x7F]', ' ', sanitized_extreme)
+                                            
+                                            try:
+                                                alteracoes_json = json.loads(sanitized_extreme)
+                                                data_alteracao = registro_hist[1]
+                                                usuario = registro_hist[2]
+                                                nivel_usuario = registro_hist[3]
+                                                logger.info(f"Sanitização extrema bem-sucedida para histórico do registro {registro_id}")
+                                            except json.JSONDecodeError as je3:
+                                                logger.error(f"Sanitização extrema falhou: {je3}")
+                                                # Se falhar, pular este registro e continuar com o próximo
+                                                continue
+                                        except Exception as e3:
+                                            logger.error(f"Erro na sanitização extrema: {e3}")
+                                            # Se falhar, pular este registro e continuar com o próximo
+                                            continue
+                                    except Exception as e2:
+                                        logger.error(f"Sanitização agressiva falhou com erro não-JSON: {e2}")
+                                        # Se falhar, pular este registro e continuar com o próximo
+                                        continue
                                 
                                 # Processar cada campo alterado
                                 for campo, valores in alteracoes_json.items():
@@ -1475,8 +2014,15 @@ def historico_registro(registro_id):
                                                 'valor_anterior': valor_anterior,
                                                 'valor_novo': valor_novo
                                             })
-                            except json.JSONDecodeError:
-                                logger.warning(f"Formato JSON inválido no histórico: {registro_hist[0]}")
+                            except json.JSONDecodeError as je:
+                                logger.warning(f"Formato JSON inválido no histórico: erro na posição {je.pos}, linha {je.lineno}, coluna {je.colno}")
+                                # Não logar o JSON completo para evitar poluir os logs, apenas um trecho em torno do erro
+                                if registro_hist[0] and len(registro_hist[0]) > 0:
+                                    error_pos = min(je.pos, len(registro_hist[0])-1) if je.pos < len(registro_hist[0]) else 0
+                                    context_start = max(0, error_pos - 30)
+                                    context_end = min(len(registro_hist[0]), error_pos + 30)
+                                    error_context = registro_hist[0][context_start:context_end]
+                                    logger.warning(f"Contexto do erro: {error_context}")
             except Exception as e:
                 logger.error(f"Erro ao processar histórico: {e}")
         
@@ -1510,11 +2056,26 @@ def historico_registro(registro_id):
             "alteracoes": alteracoes
         })
     
+    except json.JSONDecodeError as je:
+        # Tratar especificamente erros de JSON parse
+        logger.error(f"Erro de parsing JSON ao renderizar histórico do registro {registro_id}: {je}")
+        logger.error(f"Posição do erro: {je.pos}, linha: {je.lineno}, coluna: {je.colno}")
+        return jsonify({
+            "success": False,
+            "message": "Erro ao processar dados do histórico: formato inválido nos dados históricos.",
+            "error_type": "json_decode",
+            "error_details": {
+                "pos": je.pos,
+                "lineno": je.lineno,
+                "colno": je.colno
+            }
+        }), 400
     except Exception as e:
         logger.error(f"Erro ao renderizar histórico do registro {registro_id}: {e}")
         return jsonify({
             "success": False,
-            "message": f"Erro ao carregar o histórico: {str(e)}"
+            "message": f"Erro ao carregar o histórico: {str(e)}",
+            "error_type": "general"
         }), 500
         
 # Rota para editar um registro como GR
@@ -1940,16 +2501,20 @@ def api_contadores():
             # Obter contagens básicas usando a função auxiliar
             contadores = get_contagens_basicas(cursor)
             
-            # Renomear a chave 'sem_nf' para 'operacoes_sem_nf' para manter compatibilidade
-            contadores['operacoes_sem_nf'] = contadores.pop('sem_nf')
+            # Manter a chave 'sem_nf' e adicionar 'operacoes_sem_nf' para compatibilidade
+            contadores['operacoes_sem_nf'] = contadores['sem_nf']
+            
+            # Adicionar log para diagnóstico
+            logger.info(f"API contadores retornando sem_nf: {contadores['sem_nf']}")
+            logger.info(f"Contadores completos: {contadores}")
             
             # Inicializar a chave 'alteracoes_pos_smae' se não existir
             if 'alteracoes_pos_smae' not in contadores:
                 contadores['alteracoes_pos_smae'] = 0
             
             # Usar a função auxiliar para obter a contagem de alterações nos campos específicos após inclusão de SM/AE
-            _, alteracoes_pos_smae = get_registros_com_alteracoes_pos_smae(cursor, colunas)
-            contadores['alteracoes_pos_smae'] = alteracoes_pos_smae
+            _, registros_alterados_ids = get_registros_com_alteracoes_pos_smae(cursor, colunas)
+            contadores['alteracoes_pos_smae'] = len(registros_alterados_ids)
             
             return jsonify(contadores)
             
