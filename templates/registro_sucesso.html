@@ -44,7 +44,7 @@
             </div>
             <h2 class="mb-3">Registro Salvo com Sucesso!</h2>
             <p class="lead">O registro foi criado com o ID: <strong>{{ registro_id }}</strong></p>
-            <p>Você será redirecionado para o dashboard em <span id="countdown">5</span> segundos.</p>
+            <p>Você será redirecionado para o dashboard em <span id="countdown">2</span> segundos.</p>
             
             <div class="btn-actions">
                 <a href="{{ url_for('comum.visualizar_registro', registro_id=registro_id) }}" class="btn btn-primary">
@@ -59,7 +59,7 @@
     
     <script>
         // Contagem regressiva para redirecionamento
-        let count = 5;
+        let count = 2;
         const countdownElement = document.getElementById('countdown');
         
         const interval = setInterval(function() {
