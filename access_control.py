@@ -130,7 +130,6 @@ ICONES_SECOES = {
     'transporte': 'truck',
     'cargas': 'box',
     'observacoes': 'comment',
-    'notas': 'file-invoice',
     'documentos': 'file-alt',
     'gr': 'clipboard-list'
 }
@@ -142,7 +141,6 @@ TITULOS_SECOES = {
     'transporte': 'Dados da Operação',
     'cargas': 'Dados da Carga',
     'observacoes': 'Observações',
-    'notas': 'Notas Fiscais',
     'documentos': 'Anexos',
     'gr': 'Dados de GR'
 }
@@ -156,8 +154,7 @@ CAMPOS_SECAO = {
         'CONTAINER 1', 'CONTAINER 2', 'STATUS CONTAINER', 'MODALIDADE',
         'ORIGEM', 'DESTINO INTERMEDIÁRIO', 'DESTINO FINAL', 'LOTE CS'
     ],
-    'observacoes': ['OBSERVACAO OPERACIONAL'],
-    'notas': ['Nº NF', 'SÉRIE', 'QUANTIDADE', 'PESO BRUTO', 'VALOR TOTAL DA NOTA'],
+    'observacoes': ['OBSERVAÇÃO OPERACIONAL'],
     'documentos': ['ANEXAR NF', 'ANEXAR OS', 'ANEXAR AGENDAMENTO'],
     'gr': [
         'NUMERO SM', 'DATA SM', 'STATUS SM', 'NÚMERO AE', 'DATA AE', 

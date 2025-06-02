@@ -155,7 +155,7 @@
         <div class="form-grid">
           <!-- Campos dinâmicos baseados na seção atual -->
           {% for campo in CAMPOS_SECAO[secao] %}
-            {% if campo in registro and registro[campo] %}
+            {% if secao == 'observacoes' or (campo in registro and registro[campo]) %}
             <div class="mb-3">
               <label class="form-label">{{ campo }}</label>
               {% if campo == 'ON TIME (CLIENTE)' or campo == 'HORÁRIO PREVISTO DE INÍCIO' %}

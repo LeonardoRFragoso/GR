@@ -1277,7 +1277,7 @@ def visualizar_registro(registro_id):
             nivel = session.get('nivel', 'comum')
             
             # Para visualização, mostrar todas as seções disponíveis
-            todas_secoes = ['unidade', 'cliente', 'transporte', 'cargas', 'observacoes', 'notas', 'documentos', 'gr']
+            todas_secoes = ['unidade', 'cliente', 'transporte', 'cargas', 'observacoes', 'documentos', 'gr']
             
             # Obter histórico de alterações do registro
             try:
